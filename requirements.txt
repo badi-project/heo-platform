@@ -1,0 +1,3 @@
+# Runtime: src/features.py and the web application use the standard library only.
+# These are the development and continuous-integration dependencies.
+pytest>=8.0

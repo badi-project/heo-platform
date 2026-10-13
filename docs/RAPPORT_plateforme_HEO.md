@@ -217,8 +217,9 @@ par famille chimique, pas ligne à ligne. Et la probabilité affichée est celle
 
 Le modèle embarqué dans la page est l'export exact du modèle `scikit-learn` : 42 272 nœuds
 d'arbres, seuils non arrondis. Les descripteurs sont recalculés en JavaScript et la parité
-numérique avec `features.py` a été vérifiée sur 200 compositions tirées au hasard —
-**écart maximal de probabilité 5,6 × 10⁻¹⁶** (`parity_check.txt`).
+numérique avec `features.py` est vérifiée sur 200 compositions tirées au hasard —
+**écart maximal de probabilité 1,1 × 10⁻¹⁶** (`QC/parity_check.txt`, régénéré par
+`tools/parity_check.py` et rejoué à chaque commit).
 
 Trois bugs de parité ont dû être corrigés, et le dernier mérite d'être noté pour quiconque
 reproduira ce portage :

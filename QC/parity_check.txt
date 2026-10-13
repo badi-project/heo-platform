@@ -1,8 +1,14 @@
 compositions testees : 200
 longueur du vecteur de descripteurs : 134 / attendu 134
-ecart maximal de probabilite JS vs Python : 5.551e-16
-(MgCoNiCuZn)O -> rocksalt 84.6% | a = 4.156 A | 5 pics | 37.45(111) 43.51(200) 63.23(220) 75.85(311)
-(CrMnFeCoNi)3O4 -> spinel 68.1% | a = 8.763 A | pic principal 33.90(311)
-(LaSrPrBaCe)CoO3 -> perovskite 97.0% | a = 3.856 A | t = 0.977
-domaine (MgCoNiCuZn)O : distance 0.000 seuil 2.837 -> dans le domaine : true
-composition exotique Na-K-Te-Ag-Pb : distance 5.74 -> dans le domaine : false
+ecart maximal de descripteur JS vs Python : 3.553e-15 (tolerance 1e-12)
+ecart maximal de probabilite JS vs Python : 1.110e-16 (tolerance 1e-12)
+
+comparaison informative avec les probabilites figees du probe (issues du modele scikit-learn d'origine, tolerance indicative 1e-08) :
+  ecart median 9.096e-08, ecart maximal 7.674e-02
+  22 compositions sur 200 au-dela de 1e-3, 1 changement(s) de classe predite
+  ces ecarts viennent de seuils de coupure poses exactement sur des valeurs
+  d'entrainement : un ecart d'un ulp fait basculer quelques arbres. Ils ne sont
+  pas bloquants ; la garantie verifiee en integration continue est l'accord
+  Python / JavaScript ci-dessus.
+
+genere par tools/parity_check.py

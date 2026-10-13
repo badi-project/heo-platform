@@ -1,5 +1,7 @@
 # heo-platform — conception assistée d'oxydes à haute entropie
 
+[![CI](https://github.com/badi-project/heo-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/badi-project/heo-platform/actions/workflows/ci.yml)
+
 Chaîne complète allant de la récolte de littérature à une application de design
 autonome : extraction d'une base de données d'oxydes à haute entropie (HEO) à partir
 de 2 189 notices bibliographiques, calcul de 134 descripteurs compositionnels,
@@ -36,9 +38,14 @@ git clone https://github.com/badi-project/heo-platform.git
 cd heo-platform/app && python -m http.server 8000   # puis http://localhost:8000/heo_designer.html
 ```
 
-Le portage JavaScript des descripteurs est vérifié bit-à-bit contre `features.py` sur
-200 compositions tirées au hasard : écart maximal de probabilité 5,6 × 10⁻¹⁶
-(`QC/parity_check.txt`).
+Le portage JavaScript des descripteurs est vérifié contre `features.py` sur les
+200 compositions du jeu de contrôle : écart maximal de probabilité 1,1 × 10⁻¹⁶
+(`QC/parity_check.txt`, régénéré par `tools/parity_check.py` et vérifié à chaque commit).
+
+L'onglet « Candidats criblés » montre les **3 589 candidats exportés** — un
+sous-ensemble plafonné à 700 par prototype, pour que les pérovskites n'écrasent pas la
+liste. Le criblage intégral des 734 208 compositions est dans
+`data/screening_all.csv.gz`, pas dans l'application.
 
 ## Organisation du dépôt
 
@@ -49,8 +56,14 @@ data/       base curée, descripteurs, candidats, criblage complet, corpus brut
 data/reference/  tables élémentaires, prototypes DRX, constantes du modèle de maille
 figures/    fig1 à fig6
 docs/       rapport méthodologique et note de faisabilité
-QC/         contrôle de parité JavaScript / Python
+tools/      sync_app.py (ré-inline les JS dans le HTML), parity_check.py
+tests/      suite pytest exécutée en intégration continue
+QC/         résultat du contrôle de parité JavaScript / Python
 ```
+
+`app/heo_designer.html` **inline** des copies de `heo_engine.js` et `heo_ui.js` entre
+commentaires sentinelles. Les fichiers `app/*.js` sont la source ; le HTML est
+régénéré par `python tools/sync_app.py`, et la CI refuse une divergence entre les deux.
 
 | Fichier | Contenu |
 |---|---|
@@ -80,6 +93,19 @@ QC/         contrôle de parité JavaScript / Python
 Le détail complet, les contrôles physiques et les pièges de portage sont dans
 [`docs/RAPPORT_plateforme_HEO.md`](docs/RAPPORT_plateforme_HEO.md).
 
+## Développement
+
+```bash
+pip install -r requirements.txt     # pytest ; le code applicatif n'a aucune dépendance
+python -m pytest tests -q           # 16 tests : descripteurs, données, rendu, parité
+python src/features.py              # exemple : les descripteurs de (MgCoNiCuZn)O
+python tools/sync_app.py --check    # le HTML est-il à jour par rapport à app/*.js ?
+python tools/parity_check.py        # régénère QC/parity_check.txt (nécessite node ≥ 20)
+```
+
+Les conventions, et notamment la règle « on n'édite jamais le JavaScript inliné dans le
+HTML », sont dans [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Limites à lire avant usage
 
 - La probabilité affichée est celle d'une **famille structurale**, jamais d'une
@@ -93,6 +119,16 @@ Le détail complet, les contrôles physiques et les pièges de portage sont dans
   classifieur.
 - La confrontation expérimentale du paramètre de maille repose sur **un seul point
   indépendant**.
+- Les probabilités figées dans le jeu de contrôle (`app/heo_model.json`, champ `probe`),
+  produites par le modèle `scikit-learn` d'origine, se reproduisent à 9 × 10⁻⁸ près en
+  médiane mais s'écartent de plus de 10⁻³ sur 22 des 200 compositions, dont une change
+  de classe prédite. L'origine est connue — des seuils de coupure posés exactement sur
+  des valeurs d'entraînement, où un écart d'un *ulp* fait basculer quelques arbres — et
+  l'accord entre `features.py` et le moteur JavaScript reste à 10⁻¹⁶. C'est une marge à
+  garder en tête pour les compositions dont les deux premières classes sont proches.
+- `data/screening_all.csv.gz` (16 Mo) est versionné directement, sans Git LFS. Cela
+  reste supportable à cette taille ; une reprise en LFS s'imposera si le criblage
+  grossit.
 
 ## Licence
 
