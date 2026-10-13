@@ -16,6 +16,24 @@ const $ = id => document.getElementById(id);
 const fmt = (v, n=3) => (v===null||v===undefined||Number.isNaN(v)) ? "—"
   : Number(v).toLocaleString("fr-FR",{minimumFractionDigits:n, maximumFractionDigits:n});
 
+/* 58 of the 1133 database entries are arXiv preprints with no DOI; they reach the
+   payload as NaN. Rendering them as a doi.org link produced dead https://doi.org/NaN
+   references, so every DOI goes through hasDOI / refCell. */
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const hasDOI = d => d !== null && d !== undefined && d !== "" &&
+  !(typeof d === "number" && Number.isNaN(d)) && String(d).trim().toLowerCase() !== "nan";
+const refCell = d => hasDOI(d)
+  ? `<a href="https://doi.org/${encodeURI(String(d).trim())}" target="_blank" rel="noopener noreferrer">${esc(d)}</a>`
+  : `<span class="nodoi" title="notice sans DOI — préprint arXiv ou référence interne">sans DOI</span>`;
+
+/* number of compositions enumerated in the screening; CANDS is the exported subset */
+const SCREEN_TOTAL = 734208;
+/* phase labels in the database: 416 single-phase vs 54 multi-phase reports */
+const PHASE_CAVEAT = "La colonne « phase » reproduit ce que rapporte la littérature, "
+  + "qui compte 416 lots monophasés contre 54 multiphasés : l'absence de phase secondaire "
+  + "rapportée n'est pas une preuve de monophasage.";
+
 /* ---------- picker ---------- */
 function buildPicker(){
   const used = new Set();
@@ -164,10 +182,11 @@ function render(){
 
   const nb=neighbours(els);
   $("nbrs").innerHTML = `<tr><th>cations</th><th>structure</th><th class="n">partagés</th><th>phase</th><th>référence</th></tr>` +
-    nb.map(r2=>`<tr><td>${r2.c.replace(/-/g,"·")}</td><td>${PROTO_FR[r2.p]||r2.p}</td>
+    (nb.map(r2=>`<tr><td>${r2.c.replace(/-/g,"·")}</td><td>${PROTO_FR[r2.p]||r2.p}</td>
       <td class="n">${r2.shared}/${els.length}</td><td>${r2.s==="single"?"monophasé":r2.s==="multi"?"multiphasé":"—"}</td>
-      <td><a href="https://doi.org/${r2.d}" target="_blank" rel="noopener">${r2.d}</a></td></tr>`).join("")
-    || `<tr><td colspan="5">Aucun système partageant au moins 3 cations.</td></tr>`;
+      <td>${refCell(r2.d)}</td></tr>`).join("")
+    || `<tr><td colspan="5">Aucun système partageant au moins 3 cations.</td></tr>`)
+    + `<tr><td colspan="5" class="caveat">${PHASE_CAVEAT}</td></tr>`;
 }
 
 /* ---------- candidates ---------- */
@@ -181,12 +200,17 @@ function renderCands(){
     && (!noco||!c.c.split("-").includes("Co"))
     && (!nore||!c.c.split("-").some(e=>(ELEM[e].Z>=57&&ELEM[e].Z<=71)||e==="Y"||e==="Sc")));
   rows.sort((a,b)=>(a[sortKey]>b[sortKey]?1:a[sortKey]<b[sortKey]?-1:0)*sortDir);
-  $("screencount").textContent = rows.length.toLocaleString("fr-FR")+" candidats sur "+CANDS.length.toLocaleString("fr-FR")+" criblés";
+  const MAXROWS = 400, nf2 = n => n.toLocaleString("fr-FR");
+  $("screencount").textContent =
+    `${nf2(rows.length)} candidats retenus sur ${nf2(CANDS.length)} exportés `
+    + `(sous-ensemble du criblage de ${nf2(SCREEN_TOTAL)} compositions, au plus 700 par prototype ; `
+    + `le criblage intégral est dans screening_all.csv.gz)`
+    + (rows.length > MAXROWS ? ` — seules les ${nf2(MAXROWS)} premières lignes du tri courant sont affichées.` : "");
   const head=[["c","composition"],["t","prototype"],["p","probabilité"],["a","a (Å)"],
               ["gt","facteur t"],["dr","δr"],["sc","S/R"],["ad","distance au connu"]];
   $("cands").innerHTML = `<tr>`+head.map(([k,l])=>
     `<th class="sortable ${["p","a","gt","dr","sc","ad"].includes(k)?"n":""}" data-k="${k}">${l}${sortKey===k?(sortDir>0?" ▲":" ▼"):""}</th>`).join("")+`</tr>`+
-    rows.slice(0,400).map(c=>`<tr data-c="${c.c}" style="cursor:pointer">
+    rows.slice(0,MAXROWS).map(c=>`<tr data-c="${c.c}" style="cursor:pointer">
       <td>${c.c.replace(/-/g,"·")}</td><td style="color:${PROTO_COL[c.t]}">${PROTO_FR[c.t]}</td>
       <td class="n">${(100*c.p).toFixed(0)} %</td><td class="n">${c.a?fmt(c.a,3):"—"}</td>
       <td class="n">${fmt(c.gt,3)}</td><td class="n">${fmt(c.dr,3)}</td>

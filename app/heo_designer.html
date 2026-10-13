@@ -61,6 +61,8 @@ th{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 a{color:#14557f}
 .note{font-size:11.5px;color:var(--ink2);margin-top:9px;line-height:1.45}
+.nodoi{color:#9aa0a6;font-style:italic}
+td.caveat{font-size:11.5px;color:var(--ink2);line-height:1.45;border-bottom:none;padding-top:8px}
 .warnbox{background:#fdf3f2;border:1px solid #f0d2ce;border-radius:6px;padding:9px 11px;font-size:12px;
   color:#7d2a21;margin-bottom:11px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -193,6 +195,7 @@ const ELEM=PAYLOAD.ELEM, PROPS=PAYLOAD.PROPS, ONEHOT=PAYLOAD.ONEHOT, MODEL=PAYLO
       DESC_FR=PAYLOAD.DESC_FR, DESC_DEC=PAYLOAD.DESC_DEC;
 const METHOD_HTML = "\n<h2 style=\"font-size:12px\">M\u00e9thode, performances et limites</h2>\n<h3>Ce que fait cet outil</h3>\n<p>Il pr\u00e9dit, pour un ensemble de cations choisis, <b>la famille structurale la plus probable</b> et\nle <b>diffractogramme de poudre attendu</b> si cette famille se forme. Il indique aussi si la\ncomposition a d\u00e9j\u00e0 \u00e9t\u00e9 publi\u00e9e dans le corpus r\u00e9colt\u00e9 et si elle se trouve dans le domaine o\u00f9 le\nmod\u00e8le a vu des exemples comparables.</p>\n<h3>Ce qu'il ne fait pas</h3>\n<ul>\n<li>Il <b>ne pr\u00e9dit aucune activit\u00e9 \u00e9lectrocatalytique ou photocatalytique</b>. Les valeurs publi\u00e9es\n(surpotentiel \u00e0 10 mA/cm\u00b2, pente de Tafel, constante apparente de d\u00e9gradation) d\u00e9pendent de la charge\nd'\u00e9lectrode, du substrat, du liant, de l'\u00e9lectrolyte, de la normalisation et de la correction iR :\nagr\u00e9g\u00e9es entre laboratoires, elles mesurent le protocole autant que le mat\u00e9riau. Sur les\n1133 \u00e9chantillons de la base, un gap optique n'est rapport\u00e9 que 12 fois et une surface BET 14 fois.</li>\n<li>Il <b>ne pr\u00e9dit pas la voie de synth\u00e8se</b> qui m\u00e8ne au monophas\u00e9, ni la morphologie, ni la\ntaille de particule \u2014 d\u00e9termin\u00e9es par le proc\u00e9d\u00e9, pas par la composition.</li>\n<li>Il <b>ne dit pas si le compos\u00e9 sera monophas\u00e9</b> de fa\u00e7on fiable : 416 \u00e9chantillons seulement\nsont annot\u00e9s \u00ab monophas\u00e9 \u00bb et 54 \u00ab multiphas\u00e9 \u00bb, parce que personne ne publie les essais rat\u00e9s.</li>\n<li>La surface d'un HEO en fonctionnement n'a pas la composition du volume. Sous r\u00e9action de\nd\u00e9gagement d'oxyg\u00e8ne, la phase active r\u00e9elle est souvent un (oxy)hydroxyde reconstruit.</li>\n</ul>\n<h3>Base de donn\u00e9es</h3>\n<p>2189 notices r\u00e9colt\u00e9es via EuropePMC, Crossref et arXiv, filtr\u00e9es par expression exacte.\nExtraction structur\u00e9e par mod\u00e8le de langue (un appel par r\u00e9sum\u00e9 pour les 952 notices avec r\u00e9sum\u00e9\ncomplet, par lots de dix titres pour les 1237 autres), avec sch\u00e9ma JSON impos\u00e9 et phrase source\nconserv\u00e9e pour chaque \u00e9chantillon. Apr\u00e8s normalisation des formules, harmonisation du vocabulaire de\nphase et exigence d'au moins 5 cations principaux : <b>1133 \u00e9chantillons, 926 publications,\n559 syst\u00e8mes cationiques distincts, 54 cations</b>.</p>\n<p>Audit manuel de 10 enregistrements contre le texte source : ensemble de cations correct dans 8 cas,\nlabel de phase dans 10 cas sur 10, prototype structural dans 6 cas sur 7 renseign\u00e9s, mais\n<b>fractions st\u0153chiom\u00e9triques correctes dans 7 cas sur 10 seulement</b>. En cons\u00e9quence les\ndescripteurs du mod\u00e8le sont calcul\u00e9s en <b>pond\u00e9ration \u00e9quimolaire</b> ; les fractions extraites sont\nconserv\u00e9es dans la base mais pas utilis\u00e9es pour l'apprentissage. Quand vous saisissez vous-m\u00eame des\nfractions non \u00e9quimolaires dans l'onglet concepteur, le mod\u00e8le extrapole au-del\u00e0 de son r\u00e9gime\nd'entra\u00eenement.</p>\n<h3>Mod\u00e8le</h3>\n<p>Arbres de d\u00e9cision boost\u00e9s par histogramme (scikit-learn, 250 it\u00e9rations, 15 feuilles,\npond\u00e9ration des classes \u00e9quilibr\u00e9e) sur <b>134 descripteurs</b> : statistiques \u00e9l\u00e9mentaires pond\u00e9r\u00e9es\n(rayons de Shannon en coordinence IV, VI, VIII et XII, \u00e9lectron\u00e9gativit\u00e9, \u00e9tats d'oxydation,\ntemp\u00e9ratures de fusion, volumes molaires, \u00e9nergies d'ionisation), entropie configurationnelle,\nd\u00e9saccords de taille et d'\u00e9lectron\u00e9gativit\u00e9, s\u00e9paration des sites A et B par rayon d\u00e9croissant avec\nfacteur de tol\u00e9rance et facteur octa\u00e9drique, fractions de familles chimiques, et pr\u00e9sence des\n30 cations les plus fr\u00e9quents.</p>\n<p><b>Validation</b> : crois\u00e9e en 20 plis <i>group\u00e9s par syst\u00e8me cationique</i> \u2014 aucun syst\u00e8me\nchimique n'appara\u00eet \u00e0 la fois en apprentissage et en test, ce qui interdit au mod\u00e8le de reconna\u00eetre\nune composition d\u00e9j\u00e0 vue.</p>\n<div class=\"metric\">\n<span class=\"k\">exactitude, 6 classes structurales (892 \u00e9chantillons)</span><span class=\"v\">0.837</span>\n<span class=\"k\">F1 macro</span><span class=\"v\">0.734</span>\n<span class=\"k\">log-vraisemblance n\u00e9gative</span><span class=\"v\">7.882</span>\n<span class=\"k\">m\u00eame mod\u00e8le sur les 9 descripteurs classiques seuls</span><span class=\"v\">0.794</span>\n<span class=\"k\">r\u00e9gression logistique, m\u00eames descripteurs</span><span class=\"v\">0.793</span>\n<span class=\"k\">classe majoritaire (spinelle)</span><span class=\"v\">0.420</span>\n<span class=\"k\">p\u00e9rovskite ou non \u2014 ce mod\u00e8le</span><span class=\"v\">0.948</span>\n<span class=\"k\">p\u00e9rovskite ou non \u2014 facteur de Goldschmidt, bornes ajust\u00e9es</span><span class=\"v\">0.868</span>\n</div>\n<p style=\"margin-top:10px\">F1 par classe : p\u00e9rovskite 0.90, spinelle\n0.88, fluorine 0.81, rocksalt\n0.75, pyrochlore 0.64, lamellaire\n0.42. <b>La confusion dominante est rocksalt \u2194 spinelle</b> (37 + 21 cas) :\nles m\u00eames cations 3d donnent l'une ou l'autre structure selon la temp\u00e9rature de calcination et la\nst\u0153chiom\u00e9trie en oxyg\u00e8ne \u2014 information absente de 92 % des r\u00e9sum\u00e9s, donc hors de port\u00e9e du mod\u00e8le.\nLes classes bixbyite (7) et rutile (6) ont \u00e9t\u00e9 \u00e9cart\u00e9es, trop peu peupl\u00e9es.</p>\n<p>Probabilit\u00e9s calibr\u00e9es par mise \u00e0 l'\u00e9chelle de temp\u00e9rature (T = 1.74) ajust\u00e9e sur les\npr\u00e9dictions hors \u00e9chantillon : erreur de calibration 0.100 \u2192 0.023. Une\nannonce \u00e0 95 % correspond \u00e0 94 % d'exactitude observ\u00e9e ; une annonce \u00e0 66 % \u00e0 57 % seulement.</p>\n<h3>Domaine d'applicabilit\u00e9</h3>\n<p>Distance moyenne aux 5 plus proches voisins du jeu d'entra\u00eenement dans l'espace standardis\u00e9 de\n20 descripteurs interpr\u00e9tables ; seuil au 95<sup>e</sup> centile de cette distance sur\nl'entra\u00eenement (2.84). Au-del\u00e0, l'interface refuse d'interpr\u00e9ter la probabilit\u00e9 :\nce n'est pas une pr\u00e9diction prudente, c'est une absence de pr\u00e9diction.</p>\n<h3>Param\u00e8tre de maille et diffractogramme</h3>\n<p>Pas de r\u00e9gresseur appris : le param\u00e8tre de maille n'est rapport\u00e9 que <b>5 fois sur 1133</b>\n\u00e9chantillons. \u00c0 la place, un mod\u00e8le g\u00e9om\u00e9trique sur rayons de Shannon, recal\u00e9 par prototype sur un\ncompos\u00e9 de r\u00e9f\u00e9rence (MgO, CeO<sub>2</sub>, SrTiO<sub>3</sub>, MgAl<sub>2</sub>O<sub>4</sub>,\nY<sub>2</sub>O<sub>3</sub>, Y<sub>2</sub>Ti<sub>2</sub>O<sub>7</sub>). Le biais syst\u00e9matique du mod\u00e8le spinelle (+3,3 % sur 3 valeurs\nexp\u00e9rimentales de la litt\u00e9rature) a ensuite \u00e9t\u00e9 corrig\u00e9, ce qui ram\u00e8ne l'\u00e9cart absolu moyen \u00e0\n<b>1.9 %</b> sur ces 5 valeurs. <b>Test ind\u00e9pendant</b> : sur (FeCoNiCrMn)<sub>3</sub>O<sub>4</sub>\ncalcin\u00e9 \u00e0 900 \u00b0C, mesur\u00e9 \u00e0 a = 8,328 \u00c5 et non utilis\u00e9 pour le recalage, le mod\u00e8le pr\u00e9dit 8,486 \u00c5\n(+1,9 %) et la bonne famille structurale (spinelle, 68 %). Le diffractogramme est calcul\u00e9 \u00e0 partir des facteurs de structure exacts\ndes prototypes (facteurs de diffusion atomique \u00e0 quatre gaussiennes, facteur de Lorentz-polarisation),\nvalid\u00e9s contre <code>pymatgen</code> sur les six compos\u00e9s de r\u00e9f\u00e9rence. Occupations suppos\u00e9es\nal\u00e9atoires sur tous les sites cationiques, sauf p\u00e9rovskite et pyrochlore o\u00f9 les cations sont r\u00e9partis\nentre sites A et B par rayon ionique d\u00e9croissant.</p>\n<h3>Criblage</h3>\n<p>734 208 compositions \u00e9valu\u00e9es : les 658 008 quinaires \u00e9quimolaires des 40 cations document\u00e9s au\nmoins 20 fois, plus 76 200 s\u00e9naires obtenus en ajoutant un cation aux 3000 meilleurs quinaires.\n218 987 sont \u00e0 la fois absents de la base et dans le domaine d'applicabilit\u00e9. <b>Deux mises en garde</b> :\nla probabilit\u00e9 affich\u00e9e est celle d'une <i>famille structurale</i>, pas d'une performance ; et le haut\ndu classement est occup\u00e9 par des familles chimiques quasi identiques (variantes Ba-Sr-terre rare-Cr),\ndonc lisez la liste par famille et non ligne \u00e0 ligne.</p>\n<h3>Reproductibilit\u00e9</h3>\n<p>Le mod\u00e8le embarqu\u00e9 dans cette page est l'export exact du mod\u00e8le scikit-learn entra\u00een\u00e9 ; les\ndescripteurs sont recalcul\u00e9s en JavaScript et la parit\u00e9 num\u00e9rique avec le code Python a \u00e9t\u00e9 v\u00e9rifi\u00e9e\nsur 200 compositions tir\u00e9es au hasard (\u00e9cart maximal de probabilit\u00e9 <b>5,6 \u00d7 10<sup>-16</sup></b>).</p>\n";
 
+/* === BEGIN app/heo_engine.js — generated by tools/sync_app.py, edit app/heo_engine.js === */
 /* HEO designer — prediction engine.
    Mirrors features.py (descriptors) and the scikit-learn HistGradientBoosting
    raw-prediction path. Numerical parity with Python is checked in parity_check.txt. */
@@ -441,7 +444,9 @@ function predict(frac) {
     desc: Object.fromEntries(REPORT_FEATS.map(n => [n, x[FEATNAMES.indexOf(n)]])),
   };
 }
+/* === END app/heo_engine.js === */
 
+/* === BEGIN app/heo_ui.js — generated by tools/sync_app.py, edit app/heo_ui.js === */
 /* HEO designer — user interface */
 const PROTO_FR = {spinel:"spinelle", perovskite:"pérovskite", rocksalt:"rocksalt (NaCl)",
   fluorite:"fluorine", pyrochlore:"pyrochlore", layered:"lamellaire"};
@@ -459,6 +464,24 @@ let sel = {};   // element -> fraction
 const $ = id => document.getElementById(id);
 const fmt = (v, n=3) => (v===null||v===undefined||Number.isNaN(v)) ? "—"
   : Number(v).toLocaleString("fr-FR",{minimumFractionDigits:n, maximumFractionDigits:n});
+
+/* 58 of the 1133 database entries are arXiv preprints with no DOI; they reach the
+   payload as NaN. Rendering them as a doi.org link produced dead https://doi.org/NaN
+   references, so every DOI goes through hasDOI / refCell. */
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const hasDOI = d => d !== null && d !== undefined && d !== "" &&
+  !(typeof d === "number" && Number.isNaN(d)) && String(d).trim().toLowerCase() !== "nan";
+const refCell = d => hasDOI(d)
+  ? `<a href="https://doi.org/${encodeURI(String(d).trim())}" target="_blank" rel="noopener noreferrer">${esc(d)}</a>`
+  : `<span class="nodoi" title="notice sans DOI — préprint arXiv ou référence interne">sans DOI</span>`;
+
+/* number of compositions enumerated in the screening; CANDS is the exported subset */
+const SCREEN_TOTAL = 734208;
+/* phase labels in the database: 416 single-phase vs 54 multi-phase reports */
+const PHASE_CAVEAT = "La colonne « phase » reproduit ce que rapporte la littérature, "
+  + "qui compte 416 lots monophasés contre 54 multiphasés : l'absence de phase secondaire "
+  + "rapportée n'est pas une preuve de monophasage.";
 
 /* ---------- picker ---------- */
 function buildPicker(){
@@ -608,10 +631,11 @@ function render(){
 
   const nb=neighbours(els);
   $("nbrs").innerHTML = `<tr><th>cations</th><th>structure</th><th class="n">partagés</th><th>phase</th><th>référence</th></tr>` +
-    nb.map(r2=>`<tr><td>${r2.c.replace(/-/g,"·")}</td><td>${PROTO_FR[r2.p]||r2.p}</td>
+    (nb.map(r2=>`<tr><td>${r2.c.replace(/-/g,"·")}</td><td>${PROTO_FR[r2.p]||r2.p}</td>
       <td class="n">${r2.shared}/${els.length}</td><td>${r2.s==="single"?"monophasé":r2.s==="multi"?"multiphasé":"—"}</td>
-      <td><a href="https://doi.org/${r2.d}" target="_blank" rel="noopener">${r2.d}</a></td></tr>`).join("")
-    || `<tr><td colspan="5">Aucun système partageant au moins 3 cations.</td></tr>`;
+      <td>${refCell(r2.d)}</td></tr>`).join("")
+    || `<tr><td colspan="5">Aucun système partageant au moins 3 cations.</td></tr>`)
+    + `<tr><td colspan="5" class="caveat">${PHASE_CAVEAT}</td></tr>`;
 }
 
 /* ---------- candidates ---------- */
@@ -625,12 +649,17 @@ function renderCands(){
     && (!noco||!c.c.split("-").includes("Co"))
     && (!nore||!c.c.split("-").some(e=>(ELEM[e].Z>=57&&ELEM[e].Z<=71)||e==="Y"||e==="Sc")));
   rows.sort((a,b)=>(a[sortKey]>b[sortKey]?1:a[sortKey]<b[sortKey]?-1:0)*sortDir);
-  $("screencount").textContent = rows.length.toLocaleString("fr-FR")+" candidats sur "+CANDS.length.toLocaleString("fr-FR")+" criblés";
+  const MAXROWS = 400, nf2 = n => n.toLocaleString("fr-FR");
+  $("screencount").textContent =
+    `${nf2(rows.length)} candidats retenus sur ${nf2(CANDS.length)} exportés `
+    + `(sous-ensemble du criblage de ${nf2(SCREEN_TOTAL)} compositions, au plus 700 par prototype ; `
+    + `le criblage intégral est dans screening_all.csv.gz)`
+    + (rows.length > MAXROWS ? ` — seules les ${nf2(MAXROWS)} premières lignes du tri courant sont affichées.` : "");
   const head=[["c","composition"],["t","prototype"],["p","probabilité"],["a","a (Å)"],
               ["gt","facteur t"],["dr","δr"],["sc","S/R"],["ad","distance au connu"]];
   $("cands").innerHTML = `<tr>`+head.map(([k,l])=>
     `<th class="sortable ${["p","a","gt","dr","sc","ad"].includes(k)?"n":""}" data-k="${k}">${l}${sortKey===k?(sortDir>0?" ▲":" ▼"):""}</th>`).join("")+`</tr>`+
-    rows.slice(0,400).map(c=>`<tr data-c="${c.c}" style="cursor:pointer">
+    rows.slice(0,MAXROWS).map(c=>`<tr data-c="${c.c}" style="cursor:pointer">
       <td>${c.c.replace(/-/g,"·")}</td><td style="color:${PROTO_COL[c.t]}">${PROTO_FR[c.t]}</td>
       <td class="n">${(100*c.p).toFixed(0)} %</td><td class="n">${c.a?fmt(c.a,3):"—"}</td>
       <td class="n">${fmt(c.gt,3)}</td><td class="n">${fmt(c.dr,3)}</td>
@@ -663,6 +692,7 @@ $("ex2").onclick=()=>loadEx(["Cr","Mn","Fe","Co","Ni"]);
 $("ex3").onclick=()=>loadEx(["La","Sr","Pr","Ba","Ce","Co"]);
 renderCands();
 loadEx(["Mg","Co","Ni","Cu","Zn"]);
+/* === END app/heo_ui.js === */
 
 </script>
 </body>

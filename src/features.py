@@ -8,7 +8,12 @@ Input  : frac = {element_symbol: cation_site_fraction}  (fractions sum to 1)
 Output : (names, values) with values in the fixed order given by names
 """
 import json
+import os
 from math import log, sqrt
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_ELEMENTS = os.path.join(_ROOT, "data", "reference", "element_properties.json")
+DEFAULT_MODEL = os.path.join(_ROOT, "app", "heo_model.json")
 
 R_OXYGEN_VI = 1.40      # Shannon radius of O2- in coordination VI
 R_OXYGEN_IV = 1.38
@@ -112,5 +117,30 @@ def featurize(frac, E, onehot_elements):
     return names, vals
 
 
-def load_elements(path="element_properties.json"):
-    return json.load(open(path))
+def load_elements(path=None):
+    """Load the elemental property table.
+
+    Defaults to ``data/reference/element_properties.json`` resolved relative to this
+    file, so the function works from any working directory and from an installed copy.
+    """
+    return json.load(open(path or DEFAULT_ELEMENTS, encoding="utf-8"))
+
+
+def load_onehot(path=None):
+    """Load the 30 one-hot cation symbols, in the exact order used by the model."""
+    return json.load(open(path or DEFAULT_MODEL, encoding="utf-8"))["onehot"]
+
+
+def equimolar(*elements):
+    """Convenience constructor: ``equimolar("Mg", "Co", "Ni", "Cu", "Zn")``."""
+    els = list(elements[0]) if len(elements) == 1 and not isinstance(elements[0], str) \
+        else list(elements)
+    return {e: 1.0 / len(els) for e in els}
+
+
+if __name__ == "__main__":
+    E, onehot = load_elements(), load_onehot()
+    names, vals = featurize(equimolar("Mg", "Co", "Ni", "Cu", "Zn"), E, onehot)
+    print(f"(MgCoNiCuZn)O — {len(vals)} descriptors")
+    for n in ("s_config", "n_cat", "delta_r", "goldschmidt_t", "octahedral_factor", "mean_ox"):
+        print(f"  {n:<20s} {vals[names.index(n)]:.6f}")
