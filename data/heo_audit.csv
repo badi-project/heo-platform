@@ -1,0 +1,11 @@
+doi,cation_set,fractions,phase_label,prototype,verdict
+10.1063/5.0290764,ok,ok,n.a.,ok,correct
+10.1016/j.jhazmat.2026.143068,ok,ok,n.a.,n.a.,correct
+10.1021/acs.inorgchem.4c04165,ERROR: Ta omitted,ok,ok,weak: 'other' instead of rutile,partial
+10.1007/s40145-020-0368-7,ok,"ERROR: Nb given 0.50, should be 0.25",n.a.,acceptable (defect fluorite),partial
+10.1002/smtd.202301322,ok,ok,n.a.,n.a.,correct
+10.1088/1674-1056/ae8977,ERROR: x=0 end-member is not an HEO,ERROR,ok,ok,false positive sample
+10.1002/smll.202402241,ok,ok,ok,ok,correct
+10.1002/adma.202512257,ok,ERROR: A/B ratio misweighted,ok,ok,partial
+10.1002/adma.202500928,ok,ok,n.a.,n.a.,correct
+10.55549/epstem.1068552,ok,ok,ok,ok,correct

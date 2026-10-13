@@ -1,0 +1,8 @@
+compositions testees : 200
+longueur du vecteur de descripteurs : 134 / attendu 134
+ecart maximal de probabilite JS vs Python : 5.551e-16
+(MgCoNiCuZn)O -> rocksalt 84.6% | a = 4.156 A | 5 pics | 37.45(111) 43.51(200) 63.23(220) 75.85(311)
+(CrMnFeCoNi)3O4 -> spinel 68.1% | a = 8.763 A | pic principal 33.90(311)
+(LaSrPrBaCe)CoO3 -> perovskite 97.0% | a = 3.856 A | t = 0.977
+domaine (MgCoNiCuZn)O : distance 0.000 seuil 2.837 -> dans le domaine : true
+composition exotique Na-K-Te-Ag-Pb : distance 5.74 -> dans le domaine : false
