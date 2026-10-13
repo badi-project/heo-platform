@@ -6,9 +6,10 @@ ecart maximal de probabilite JS vs Python : 1.110e-16 (tolerance 1e-12)
 comparaison informative avec les probabilites figees du probe (issues du modele scikit-learn d'origine, tolerance indicative 1e-08) :
   ecart median 9.096e-08, ecart maximal 7.674e-02
   22 compositions sur 200 au-dela de 1e-3, 1 changement(s) de classe predite
-  ces ecarts viennent de seuils de coupure poses exactement sur des valeurs
-  d'entrainement : un ecart d'un ulp fait basculer quelques arbres. Ils ne sont
-  pas bloquants ; la garantie verifiee en integration continue est l'accord
-  Python / JavaScript ci-dessus.
+  ces chiffres sont identiques sous macOS et sous Linux : il ne s'agit pas de
+  bruit de plateforme mais d'une difference reelle entre le modele exporte et
+  l'instantane scikit-learn d'origine, dont la chaine d'entrainement n'est pas
+  dans le depot. Non bloquant : la garantie verifiee en integration continue
+  est l'accord Python / JavaScript ci-dessus.
 
 genere par tools/parity_check.py

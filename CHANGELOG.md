@@ -31,7 +31,10 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
   fichiers source. La divergence silencieuse entre les deux copies est maintenant
   détectée par la CI.
 - **`tools/parity_check.py`** : le contrôle de parité, jusqu'ici figé dans un fichier
-  texte, est régénérable et exécuté à chaque commit.
+  texte, est régénérable et exécuté à chaque commit. Il a mis au jour un écart reproductible
+  entre le modèle exporté et les probabilités figées du jeu de contrôle (22 compositions
+  sur 200 au-delà de 10⁻³, un changement de classe) ; il est documenté dans les limites du
+  README et n'est pas bloquant, l'accord Python / JavaScript restant à 10⁻¹⁶.
 - `CONTRIBUTING.md`, modèles d'issue et de *pull request*, ce journal.
 
 ### Modifié

@@ -122,10 +122,12 @@ HTML », sont dans [CONTRIBUTING.md](CONTRIBUTING.md).
 - Les probabilités figées dans le jeu de contrôle (`app/heo_model.json`, champ `probe`),
   produites par le modèle `scikit-learn` d'origine, se reproduisent à 9 × 10⁻⁸ près en
   médiane mais s'écartent de plus de 10⁻³ sur 22 des 200 compositions, dont une change
-  de classe prédite. L'origine est connue — des seuils de coupure posés exactement sur
-  des valeurs d'entraînement, où un écart d'un *ulp* fait basculer quelques arbres — et
-  l'accord entre `features.py` et le moteur JavaScript reste à 10⁻¹⁶. C'est une marge à
-  garder en tête pour les compositions dont les deux premières classes sont proches.
+  de classe prédite. Ces chiffres sont identiques sous macOS et sous Linux, donc il ne
+  s'agit pas de bruit de plateforme : le modèle exporté et l'instantané `scikit-learn`
+  diffèrent réellement sur ces cas, et la chaîne d'entraînement qui trancherait n'est
+  pas dans le dépôt. L'accord entre `features.py` et le moteur JavaScript, lui, reste à
+  10⁻¹⁶ : l'application est cohérente avec ce qu'elle embarque. Marge à garder en tête
+  pour les compositions dont les deux premières classes sont proches.
 - `data/screening_all.csv.gz` (16 Mo) est versionné directement, sans Git LFS. Cela
   reste supportable à cette taille ; une reprise en LFS s'imposera si le criblage
   grossit.
