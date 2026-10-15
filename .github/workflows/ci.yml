@@ -12,7 +12,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13"]
+        # 3.10/3.11 lock in the fix for a real regression: src/features.py used to
+        # rely on CPython's built-in sum() for Neumaier-compensated summation, a
+        # behavior only guaranteed from 3.12 on. Under 3.11 that silently drifted
+        # ~1e-13 from the JavaScript engine, enough to flip tree splits and swing a
+        # predicted probability by tens of points. features.py now does the
+        # compensated sum itself, so parity must hold on every supported version.
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
