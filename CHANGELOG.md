@@ -6,6 +6,18 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ### Corrigé
 
+- **Parité Python / JavaScript rompue sous CPython < 3.12.** `src/features.py`
+  s'appuyait sur `sum()` de CPython pour la sommation compensée de Neumaier — une
+  garantie qui n'existe que depuis la 3.12. Sous 3.11 (toujours le défaut sur de
+  nombreux systèmes), les moyennes pondérées dérivaient de ~10⁻¹³ par rapport au
+  moteur JavaScript, suffisant pour faire basculer des dizaines d'arbres sur 1500 et
+  changer une probabilité prédite de plusieurs dizaines de points — exactement le
+  mode de défaillance déjà décrit au §8 du rapport, mais côté Python cette fois.
+  `tests/test_app.py::test_python_javascript_parity` échouait silencieusement dès
+  qu'on l'exécutait sous 3.11. `features.py` implémente maintenant lui-même la
+  sommation compensée (`nsum`/`wsum`, miroir exact de `heo_engine.js`), si bien que
+  la parité ne dépend plus de la version de l'interpréteur. La matrice CI couvre
+  désormais 3.10 à 3.13 pour verrouiller la régression.
 - **Liens DOI morts dans l'interface.** 58 des 1 133 entrées de la base sont des
   préprints arXiv sans DOI ; le tableau « systèmes voisins » affichait pour elles un
   lien `https://doi.org/NaN`. Elles sont désormais rendues « sans DOI ».

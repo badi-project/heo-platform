@@ -82,3 +82,18 @@ def test_family_fractions_sum_to_one():
     d, _, _ = vec(features.equimolar("La", "Sr", "Co", "Fe", "Mn"))
     fams = [v for k, v in d.items() if k.startswith("frac_")]
     assert sum(fams) == pytest.approx(1.0, abs=1e-12)
+
+
+def test_nsum_is_exact_regardless_of_interpreter_sum():
+    """Regression: plain sum() only compensates floats on CPython >= 3.12
+    (bpo-100425), so features.py used to give different descriptors on 3.11 than
+    on 3.12+ — close enough that py_compile and the type checker said nothing, but
+    far enough (~1e-13) to flip dozens of the exported model's tree splits and
+    swing a predicted probability by tens of points (see tools/parity_check.py).
+    nsum must not rely on that interpreter-version-dependent guarantee.
+    """
+    # classic Kahan/Neumaier torture case: naive left-to-right summation loses
+    # the +1 and -1 entirely to rounding.
+    values = [1.0, 1e16, 1.0, -1e16]
+    assert features.nsum(values) == pytest.approx(2.0, abs=1e-9)
+    assert features.wsum([1.0, 1.0], [1e16, -1e16]) == pytest.approx(0.0, abs=1e-6)

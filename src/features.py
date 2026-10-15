@@ -23,9 +23,34 @@ PROPS = ["r_shannon_VI", "r_shannon_IV", "r_shannon_VIII", "r_shannon_XII", "X",
          "ie1", "electron_affinity", "molar_volume", "e_density"]
 
 
+def nsum(values):
+    """Neumaier-compensated summation, matching app/heo_engine.js's ``nsum`` term
+    for term.
+
+    CPython's built-in ``sum()`` only gained this compensation for floats in 3.12
+    (https://github.com/python/cpython/issues/100425). Calling plain ``sum()`` here
+    made this module's numerical output depend on the interpreter's minor version:
+    under 3.11 a single weighted mean could drift ~1e-13 from the JavaScript engine,
+    which is enough to flip dozens of the model's 1500 tree splits and swing a
+    predicted probability by tens of points (see tools/parity_check.py). Doing the
+    same compensated sum explicitly, in Python, keeps parity independent of which
+    CPython minor version runs this file.
+    """
+    s = c = 0.0
+    for x in values:
+        t = s + x
+        c += (s - t) + x if abs(s) >= abs(x) else (x - t) + s
+        s = t
+    return s + c
+
+
+def wsum(vals, ws):
+    return nsum([v * w for v, w in zip(vals, ws)])
+
+
 def _wstats(vals, ws):
-    m = sum(v * w for v, w in zip(vals, ws))
-    var = sum(w * (v - m) ** 2 for v, w in zip(vals, ws))
+    m = wsum(vals, ws)
+    var = wsum(ws, [(v - m) ** 2 for v in vals])
     return m, sqrt(max(var, 0.0)), min(vals), max(vals), max(vals) - min(vals)
 
 
@@ -47,7 +72,7 @@ def ab_split(frac, E):
             cum += take
         else:
             B[e] = x
-    sa, sb = sum(A.values()) or 1.0, sum(B.values()) or 1.0
+    sa, sb = nsum(A.values()) or 1.0, nsum(B.values()) or 1.0
     return {k: v / sa for k, v in A.items()}, {k: v / sb for k, v in B.items()}
 
 
@@ -63,29 +88,32 @@ def featurize(frac, E, onehot_elements):
             names.append(f"{p}_{stat}"); vals.append(v)
 
     # configurational entropy (units of R)
-    names.append("s_config"); vals.append(-sum(w * log(w) for w in ws if w > 0))
+    pos = [w for w in ws if w > 0]
+    names.append("s_config"); vals.append(-wsum([log(w) for w in pos], pos))
     names.append("n_cat"); vals.append(float(len(els)))
 
     # Hume-Rothery style size mismatch on the octahedral radius
     r6 = [E[e]["r_shannon_VI"] for e in els]
-    r6m = sum(v * w for v, w in zip(r6, ws))
-    names.append("delta_r"); vals.append(sqrt(sum(w * (1 - v / r6m) ** 2 for v, w in zip(r6, ws))))
+    r6m = wsum(r6, ws)
+    names.append("delta_r"); vals.append(sqrt(wsum([(1 - v / r6m) ** 2 for v in r6], ws)))
 
     X = [E[e]["X"] for e in els]
-    Xm = sum(v * w for v, w in zip(X, ws))
+    Xm = wsum(X, ws)
     names.append("delta_X_rel")
-    vals.append(sqrt(sum(w * (v - Xm) ** 2 for v, w in zip(X, ws))) / Xm)
+    vals.append(sqrt(wsum([(v - Xm) ** 2 for v in X], ws)) / Xm)
 
     ox = [E[e]["ox"] for e in els]
-    names.append("mean_ox"); vals.append(sum(v * w for v, w in zip(ox, ws)))
+    oxm = wsum(ox, ws)
+    names.append("mean_ox"); vals.append(oxm)
     names.append("ox_spread"); vals.append(float(max(ox) - min(ox)))
-    names.append("redox_flex"); vals.append(sum(E[e]["n_ox"] * frac[e] for e in els))
+    names.append("redox_flex"); vals.append(wsum([E[e]["n_ox"] for e in els], ws))
     # oxygen stoichiometry implied by charge balance: M O_(mean_ox/2)
-    names.append("o_per_cation"); vals.append(sum(v * w for v, w in zip(ox, ws)) / 2.0)
+    names.append("o_per_cation"); vals.append(oxm / 2.0)
 
     A, B = ab_split(frac, E)
-    rA = sum(E[e]["r_shannon_XII"] * x for e, x in A.items())
-    rB = sum(E[e]["r_shannon_VI"] * x for e, x in B.items())
+    ka, kb = list(A), list(B)
+    rA = wsum([E[e]["r_shannon_XII"] for e in ka], [A[e] for e in ka])
+    rB = wsum([E[e]["r_shannon_VI"] for e in kb], [B[e] for e in kb])
     names.append("r_A"); vals.append(rA)
     names.append("r_B"); vals.append(rB)
     names.append("rA_over_rB"); vals.append(rA / rB)

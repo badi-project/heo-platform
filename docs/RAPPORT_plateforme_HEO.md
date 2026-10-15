@@ -232,10 +232,22 @@ reproduira ce portage :
    accumulateur naïf en JavaScript s'écarte d'un *ulp*, ce qui suffisait à faire basculer
    **89 arbres sur 1500** et à transformer une prédiction à 80 % en quasi-égalité. Le
    portage réimplémente l'algorithme de CPython.
+4. le même angle mort, non vu au moment du portage JS : `features.py` continuait de
+   s'appuyer sur `sum()` de CPython sans jamais vérifier *depuis quelle version*
+   celui-ci compense. Sous 3.11 — toujours le défaut sur de nombreux systèmes —
+   `sum()` n'est pas compensé, donc `features.py` lui-même s'écartait du moteur
+   JavaScript, par le même mécanisme que le point 3 mais dans l'autre sens. Un
+   contributeur exécutant la suite de tests sous 3.11 voyait
+   `test_python_javascript_parity` échouer sans explication évidente. Correction :
+   `features.py` implémente désormais sa propre sommation compensée (`nsum`/`wsum`),
+   si bien que la parité ne dépend plus de la version de l'interpréteur ; la matrice
+   CI couvre 3.10 à 3.13 pour le garantir.
 
 La leçon générale : un modèle à arbres entraîné sur des descripteurs dont certains ne
 prennent que quelques valeurs distinctes place ses seuils *sur* les valeurs des données.
-Tout portage doit alors être bit-exact, pas seulement « proche ».
+Tout portage doit alors être bit-exact, pas seulement « proche » — et « bit-exact » doit
+être vérifié dans toutes les versions d'interpréteur réellement utilisées, pas seulement
+celle du poste de développement.
 
 ## 9. Comment réentraîner quand de nouvelles manips arrivent
 
