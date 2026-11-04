@@ -4,20 +4,33 @@
 dépendance réseau, à ouvrir par double-clic. Il contient la base de données, le modèle
 entraîné, le calcul des descripteurs et la simulation de diffractogramme.
 
+> **Versions.** Les §2 à §8 décrivent la construction de la v1.0 et en gardent les
+> chiffres (1133 échantillons, descripteurs équimolaires), parce que les décisions et les
+> pièges qu'ils documentent restent valables. La v1.1 a relu la stœchiométrie dans les
+> formules écrites (1074 échantillons) et réentraîné le modèle : ses chiffres sont dans le
+> tableau ci-dessous, le `README` et `QC/training_report.txt`. Les §11 à §13 décrivent les
+> trois prolongements calculés et prédictifs ajoutés ensuite.
+
 ---
 
 ## 1. Ce que la plateforme prédit, et ce qu'elle ne prédit pas
 
 | Sortie | Statut | Performance mesurée |
 |---|---|---|
-| Famille structurale (6 classes) | **opérationnel** | exactitude 83,7 %, F1 macro 0,734 |
-| Pérovskite ou non | **opérationnel** | exactitude 94,8 % (Goldschmidt : 86,8 %) |
-| Paramètre de maille | **opérationnel, ± 2 %** | écart absolu moyen 1,9 % ; test indépendant +1,9 % |
+| Famille structurale (6 classes) | **opérationnel** | v1.1 : exactitude 91,6 %, F1 macro 0,848 (v1.0 : 83,7 %) |
+| — systèmes publiés après l'entraînement | **opérationnel** | 85,9 % sur 192 systèmes de 2025-2027 |
+| Pérovskite ou non | **opérationnel** | v1.1 : 98,5 % (Goldschmidt optimisé : 94,6 %) |
+| Rocksalt ou spinelle, cation inconnu du modèle | **complément, hors domaine** | 78,6 % → 81,8 % avec le calcul CHGNet ; aucun gain dans le domaine — §11.3 |
+| Monophasage des rocksalt (Sivak et al.) | **démonstration, 8 systèmes** | 7 / 8 en un-contre-tous — §11.1 |
+| Paramètre de maille des spinelles | **opérationnel, ± 0,5 %** | 0,53 % sur 4 spinelles HEO mesurés — §11.4 |
+| Paramètre de maille, autres familles | **opérationnel, ± 2 %** | écart absolu moyen 1,9 % |
+| Énergie de lacune d'oxygène | **descripteur validé, activité non prédite** | suit la réductibilité mesurée de 9 oxydes binaires (corrélation de rang 0,93) — §12.2 |
+| Proposition de synthèses informatives | **opérationnel** | 27 % de synthèses en moins que le hasard sur un banc rétrospectif (critère 25 %) — §13 |
 | Diffractogramme de poudre simulé | **opérationnel** | positions et intensités validées contre `pymatgen` |
 | Nouveauté de la combinaison | **opérationnel** | sur 927 publications récoltées |
 | Domaine d'applicabilité | **opérationnel** | seuil au 95ᵉ centile des distances d'entraînement |
 | Monophasé ou multiphasé | **peu fiable** | 416 positifs contre 54 négatifs — biais de publication |
-| Activité électrocatalytique | **non implémenté, délibérément** | voir §6 |
+| Activité électrocatalytique | **non implémenté, délibérément** | voir §6 et §12.1 |
 | Activité photocatalytique | **non implémenté, délibérément** | voir §6 |
 | Morphologie, surface spécifique, voie de synthèse | **hors de portée** | déterminées par le procédé |
 
@@ -160,6 +173,10 @@ C'est une validation à un seul point, et elle doit être lue comme telle. Mais 
 indépendante, et la cohérence entre l'incertitude annoncée et l'erreur observée est le
 seul argument sérieux qu'un tel modèle puisse produire à ce stade.
 
+**Depuis l'étape 1** (§11.4), la maille des spinelles est calculée par potentiel appris,
+calibré sur 17 spinelles binaires : l'échantillon interne tombe à +0,24 %, et la
+confrontation porte sur quatre spinelles HEO mesurés au lieu d'un.
+
 ## 6. Pourquoi aucune propriété catalytique n'est prédite
 
 Ce n'est pas un manque de temps, c'est une décision. Sur les 1133 échantillons, un gap
@@ -177,7 +194,8 @@ La voie praticable est celle qu'emploie la littérature récente : ne pas appren
 surpotentiel, mais un **descripteur physique calculable** qui corrèle avec l'activité —
 typiquement l'énergie de formation des lacunes d'oxygène, obtenue en DFT ou par potentiel
 interatomique appris. C'est le prolongement naturel de ce travail, et il demande du calcul,
-pas de la fouille de littérature.
+pas de la fouille de littérature. Les deux points sont traités au §12 : la variance des
+surpotentiels publiés y est mesurée, et l'énergie de lacune calculée.
 
 ## 7. Criblage
 
@@ -255,27 +273,329 @@ Le point important : **des résultats produits en interne valent plus que dix ar
 sont à protocole constant. Y compris les échecs — un lot multiphasé est une étiquette
 négative, et la base en manque cruellement.
 
-1. Ajouter des lignes à `heo_database.csv` en respectant les colonnes `cations`, `n_cat`,
-   `phase` (`single`/`multi`), `proto`, `a_ang`, `T_C`, `route`, `doi` (mettre une
-   référence interne de cahier de laboratoire si non publié).
-2. Recalculer les descripteurs avec `features.py` (seule source de vérité du vecteur de
-   descripteurs : le JavaScript n'en est qu'un miroir vérifié).
-3. Réentraîner avec validation groupée par système cationique — **ne jamais** utiliser de
-   découpage aléatoire.
-4. Réexporter le modèle avec des seuils non arrondis et **refaire tourner le contrôle de
-   parité** avant de rediffuser la page.
+Depuis la v1.1, la procédure est outillée :
 
-## 10. Les trois prolongements qui rapporteraient le plus
+1. Copier `data/lab_results_template.csv` en `data/lab_results.csv` et ajouter une ligne
+   par synthèse : identifiant de cahier, date, formule telle qu'on l'écrirait dans un
+   article, famille observée, `single` / `multi`, température et atmosphère de
+   calcination, paramètre de maille mesuré. Les lots ratés aussi.
+2. `python tools/clean_database.py` : les lignes internes passent par le même lecteur de
+   formules que la littérature et entrent dans la base avec `tier = lab`.
+3. `python tools/train_model.py`, `tools/screen.py`, `tools/build_app.py`,
+   `tools/parity_check.py` : réentraînement avec validation groupée par système cationique
+   (**jamais** de découpage aléatoire), export bit-exact, contrôle de parité.
+4. `python tools/active_learning.py` : nouvelles propositions de synthèse, tenant compte de
+   ce qui vient d'être appris.
+
+## 10. Les trois prolongements qui rapporteraient le plus — état
 
 1. **Textes intégraux plutôt que résumés.** La température de calcination, le paramètre de
    maille et la surface BET sont dans les sections expérimentales, jamais dans les résumés.
    C'est ce qui débloquerait à la fois la confusion rocksalt ↔ spinelle et un vrai
-   régresseur de maille.
-2. **Descripteur physique calculé** (énergie de formation des lacunes d'oxygène) par
-   potentiel interatomique appris, pour approcher l'activité sans apprendre des
-   surpotentiels incomparables.
-3. **Boucle d'apprentissage actif** : synthétiser les 3 candidats les plus *informatifs*
-   plutôt que les mieux classés, et réinjecter les résultats — y compris négatifs.
+   régresseur de maille. *Toujours ouvert* : le §11.3 montre que la température, quand
+   le résumé la donne, apporte bien l'information manquante.
+2. **Descripteur physique calculé** par potentiel interatomique appris. *Fait* : §11
+   (thermodynamique de phase, maille) et §12 (lacunes d'oxygène).
+3. **Boucle d'apprentissage actif.** *Faite* : §13, branchée sur `data/lab_results.csv`
+   (§9).
+
+Chacune des trois étapes ci-dessous a été menée de la même façon : critère d'acceptation
+écrit **avant** le calcul, confrontation à des mesures, itération tant que le critère
+n'était pas atteint, et — quand il ne l'a pas été — le dire et ne pas utiliser le résultat
+dans la page.
+
+## 11. Thermodynamique calculée par potentiel appris (étape 1)
+
+Le classifieur apprend ce que la littérature *rapporte* ; il ne sait rien de la
+température ni de la pression d'oxygène, qui décident pourtant entre rocksalt et
+spinelle. L'étape 1 ajoute des grandeurs physiques calculées à partir de la seule
+composition avec **CHGNet** (Deng et al., *Nat. Mach. Intell.* 2023 ; modèle
+pré-entraîné v0.3.0 sur les trajectoires GGA/GGA+U du Materials Project), un potentiel
+interatomique universel qui remplace la DFT : quelques minutes par supercellule sur deux
+cœurs au lieu de jours. Les énergies sont dans le référentiel compatible MP2020
+(référence oxygène −4,948 eV/atome) ; l'oxygène gazeux est décrit par les tables
+NIST-JANAF. Code : `thermo/`, rapports : `QC/thermo_*.txt`.
+
+### 11.1 Monophasage des rocksalt : le descripteur de Sivak et al.
+
+Sivak et al. (*PRL* 2025) séparent les rocksalt monophasés des multiphasés par deux
+grandeurs : l'enthalpie de mélange par rapport aux oxydes AO de référence, et l'écart-type
+σ des longueurs de liaison cation–oxygène. Les huit compositions qu'ils ont synthétisées
+(quatre monophasées, quatre multiphasées) ont été recalculées avec CHGNet : cellules de
+60 cations (120 atomes), trois décorations aléatoires perturbées de 0,05 Å.
+
+| | Ce travail (CHGNet) | Référence (DFT) |
+|---|---|---|
+| (MgCoNiCuZn)O, ΔH_mix | **63 meV/atome** | 91 meV/atome |
+| — mesure calorimétrique (Sereda et al. 2025) | 36 meV/atome | 36 meV/atome |
+| issues expérimentales séparées (seuils lus sur les monophasés) | 8 / 8 | 8 / 8 |
+| — en un-contre-tous (seuils lus sur les *autres* monophasés) | 7 / 8 | 7 / 8 |
+| σ, écart absolu moyen à la référence | 0,012 Å | — |
+
+Le critère initial demandait un accord en valeur absolue avec les enthalpies DFT de la
+référence ; il n'a pas été atteint (décalage moyen −29 meV/atome, dépendant des cations
+Co et Ni). L'hypothèse d'une référence mal relaxée a été testée et écartée ; la mesure
+calorimétrique tranche : le décalage va **vers l'expérience**. Le critère a donc été
+reformulé, explicitement, sur l'issue expérimentale et sur la calorimétrie.
+
+**À lire avec prudence** : « 8 / 8 » est une séparation, pas une prédiction, puisque les
+seuils sont lus sur les monophasés eux-mêmes — c'est la procédure de la référence. En
+un-contre-tous, la composition manquée est (MgCoNiCuZn)O, précisément celle qui fixe le
+seuil d'enthalpie ; les valeurs de la référence ont exactement la même limite. Huit
+compositions ne suffisent pas à fixer un seuil généralisable. La page affiche ces
+grandeurs pour les huit systèmes calculés seulement.
+
+### 11.2 CHGNet connaît-il l'énergie d'oxydation des cations ?
+
+Avant d'utiliser une enthalpie d'oxydation, il faut savoir si le potentiel la reproduit.
+Six couples redox binaires, mesures NIST-JANAF et Jacob et al. :
+
+| Réaction (eV par O gagné) | CHGNet | Mesure | Écart |
+|---|---|---|---|
+| 3 CoO + O → Co₃O₄ | −1,84 | −2,04 | +0,20 |
+| 3 FeO + O → Fe₃O₄ | −2,47 | −3,16 | +0,69 |
+| 2 Fe₃O₄ + O → 3 Fe₂O₃ | −1,76 | −2,43 | +0,67 |
+| Cu₂O + O → 2 CuO | −1,78 | −1,47 | −0,32 |
+| 2 Mn₃O₄ + O → 3 Mn₂O₃ | −1,84 | −1,16 | −0,68 |
+| 3 MnO + O → Mn₃O₄ | −2,45 | −2,39 | −0,06 |
+
+Brut, l'écart absolu moyen est de 0,44 eV/O et l'ordre des couples n'est pas respecté
+(corrélation de rang 0,37) : **le potentiel ne peut pas être utilisé tel quel** pour une
+grandeur redox. Une correction par élément, en eV par électron de l'étape M²⁺ → M³⁺
+(Co −0,10 ; Fe −0,35 ; Mn +0,03), est ajustée sur les trois réactions MO → M₃O₄ — celles
+qui correspondent au passage rocksalt → spinelle — et contrôlée hors échantillon sur
+Fe₃O₄ → Fe₂O₃ : +0,67 → −0,02 eV/O. Les électrons transférés sont comptés sur chaque
+cation à partir des moments magnétiques prédits par CHGNet. L'erreur de Mn₃O₄ → Mn₂O₃
+n'est pas corrigée : elle porte sur la phase bixbyite, absente des spinelles HEO, pas sur
+l'élément (MnO → Mn₃O₄ : −0,06).
+
+### 11.3 Rocksalt ou spinelle dans l'air : l'enthalpie d'oxydation
+
+Pour chaque système rocksalt ou spinelle de la base dont tous les cations sont parmi
+Mg Ca Mn Fe Co Ni Cu Zn Cr Al Ga Li Ti V, on calcule l'enthalpie de la réaction
+3 MO + O → M₃O₄ par atome d'oxygène gagné : même composition cationique, 60 cations dans
+les deux structures, distribution des cations entre sites tétraédriques et octaédriques
+de la spinelle échantillonnée par Monte-Carlo à 1173 K, correction redox du §11.2. Les
+spinelles désordonnées ont demandé une relaxation isotrope : le filtre de cellule
+standard faisait converger la maille vers un volume inférieur de 18 % à une énergie plus
+*haute*. Les étiquettes de la base ne servent jamais au calcul, seulement au jugement.
+
+80 systèmes sur 118 ont été calculés, par ordre d'information : tous ceux rapportés dans
+les deux structures, puis les rocksalt, puis les spinelles par nombre d'entrées ; les 38
+restants sont des spinelles rapportées une seule fois (le calcul reprend là où il s'est
+arrêté). Les 14 cations sont couverts. Le protocole rapide employé partout a été comparé,
+sur trois systèmes, à deux tirages d'un protocole serré (relaxation deux fois plus
+stricte, Monte-Carlo 2,5 fois plus long, autres décorations aléatoires) : écart moyen
+0,03 eV/O, négligeable devant les 1,9 eV/O qui séparent les médianes rocksalt et
+spinelle.
+
+| Question | Résultat |
+|---|---|
+| Le descripteur sépare-t-il les systèmes rapportés rocksalt et spinelle ? | **oui** : AUC 0,95 par système (9 rocksalt, 71 spinelle), 0,92 par entrée ; médianes −1,23 et −3,11 eV/O, systèmes rapportés dans les deux structures −2,33 |
+| **Critère fixé avant le calcul** : réduit-il les confusions du classifieur en validation groupée ? | **non** : exactitude 0,930 avec ou sans ΔH_ox (413 entrées rocksalt / spinelle, 10 plis) |
+| Aide-t-il quand un cation est inconnu du modèle ? | en moyenne : 0,786 → 0,818 (12 cations retirés tour à tour, aiguillage par domaine d'applicabilité) ; gains Zn 0,51 → 0,84, Mg 0,82 → 0,86, Al 0,93 → 0,98 ; pertes Li 0,94 → 0,56, Cu 0,80 → 0,78 |
+| La température de synthèse apporte-t-elle l'information manquante ? | oui, sur 39 entrées : 0,923 → 0,949, coefficient positif (la chaleur favorise le rocksalt) |
+
+**Pourquoi le critère n'est pas atteint.** ΔH_ox est une fonction lisse de la
+composition ; là où la base contient des exemples, les arbres l'ont déjà apprise à partir
+des 134 descripteurs. Ce qui manque au classifieur n'est pas une meilleure fonction de la
+composition, c'est la température et la pression d'oxygène — la dernière ligne du tableau
+le confirme. Le résultat n'est donc pas utilisé pour modifier le classifieur.
+
+**Où il sert.** Hors des données : sans aucun système contenant du Zn à l'entraînement,
+le modèle statistique tombe au hasard (0,51) sur la famille (MgCoNiCuZn)O et ses
+variantes, le calcul en retrouve 0,84. Le gain moyen est réel mais inégal, et il
+s'inverse pour Li : Li⁺ est monovalent, la réaction 3 MO + O → M₃O₄ ne décrit pas sa
+chimie. Cette exclusion a été décidée *après* le test ; elle ne sert qu'à restreindre ce
+que la page affiche (Li y est « hors du calcul »), jamais à améliorer un score.
+
+**Lecture physique.** La bascule ajustée, ΔH_ox = −2,07 eV/O, se lit sur une échelle
+indépendante : le potentiel chimique de l'oxygène de l'air vaut −1,44 eV/O à 900 °C et
+−1,58 eV/O à 1000 °C (NIST-JANAF), et l'entropie de configuration que garde le rocksalt
+quand une spinelle ordonnée la perd vaut au plus 3 kT ln 5 ≈ 0,5 eV/O. La bascule
+attendue tombe donc entre −1,4 et −2,1 eV/O : l'ordre de grandeur est celui de la
+thermodynamique, pas d'un ajustement arbitraire.
+
+**Dans la page.** Un modèle additif par cation résume les calculs (erreur un-contre-tous
+0,19 eV/O, R² 0,92 ; prédire la moyenne ferait 0,89 eV/O), puis une régression logistique
+donne la probabilité que la littérature rapporte un rocksalt. Les poids par cation sont
+lisibles : parmi les métaux de transition, la propension à l'oxydation suit
+Fe > Mn > Co > Ni > Cu, l'ordre de la facilité du passage M²⁺ → M³⁺ ; les cations
+qui n'existent pas à l'état 2+ dans un rocksalt (Ti, Al, V, Ga, Cr) poussent fortement
+vers la spinelle.
+
+### 11.4 Paramètre de maille des spinelles
+
+Le potentiel surestime systématiquement les mailles (tendance connue des fonctionnelles
+GGA). Calibration a_exp = k · a_CHGNet sur **17 spinelles binaires** de maille et
+d'inversion connues (8,05 à 8,50 Å) : k = 0,9845, soit une surestimation de 1,57 % ;
+après calibration, erreur en un-contre-tous **0,40 %** (maximum 0,84 %). Pour les
+spinelles HEO, la distribution des cations entre sites tétraédriques et octaédriques
+n'est pas supposée aléatoire : elle est échantillonnée par Monte-Carlo à 1173 K avec
+l'énergie CHGNet, puis la maille est relaxée.
+
+| Spinelle HEO | Mesuré | CHGNet calibré | Écart | v1.0 (géométrique) |
+|---|---|---|---|---|
+| (CoCrFeMnNi)₃O₄, échantillon interne | 8,328 Å | 8,348 Å | **+0,24 %** | +5,2 % |
+| Al-Co-Cu-Fe-Mn-Ni | 8,270 Å | 8,235 Å | −0,42 % | — |
+| Al-Cu-Fe-Ni-Zn | 8,245 Å | 8,219 Å | −0,32 % | — |
+| Co-Cu-Fe-Mn-Ni | 8,360 Å | 8,264 Å | −1,15 % | — |
+
+Écart absolu moyen sur les quatre spinelles HEO mesurés : **0,53 %**, contre 1,9 % pour
+le modèle géométrique de la v1.0 après correction de biais. Les quatre points n'entrent
+pas dans la calibration. Une précaution honnête : ils couvrent un intervalle étroit
+(8,25-8,36 Å), si bien que la référence triviale « moyenne des autres spinelles HEO »
+fait déjà 0,70 % ; la preuve que le calcul suit la chimie vient surtout des 17 binaires,
+qui couvrent un intervalle cinq fois plus large. Dans la page, un modèle additif par
+cation résume ces calculs (erreur un-contre-tous 0,14 % par rapport au calcul direct ;
+0,50 % sur les quatre spinelles HEO mesurés) et remplace le modèle géométrique pour les
+spinelles dont tous les cations sont couverts ; la tolérance de position des pics du
+diffractogramme simulé suit l'incertitude annoncée.
+
+## 12. Réductibilité et électrocatalyse (étape 2)
+
+### 12.1 Les surtensions publiées ne peuvent pas entraîner un prédicteur
+
+Le §6 l'affirmait ; c'est maintenant mesuré (`thermo/analyze_oer_literature.py`). Sur les
+138 entrées « OER » de la base, 36 donnent un surpotentiel à 10 mA/cm² lisible dans la
+phrase de performance (24 systèmes cationiques, médiane 282 mV). Quatre systèmes sont
+rapportés au moins deux fois par des laboratoires différents ; (CoCrFeMnNi)₃O₄ l'est dix
+fois, **de 204 à 366 mV**. La corrélation intraclasse — la part de la variance des
+valeurs publiées qu'expliquerait un modèle *parfait* de la composition — vaut
+**0,00 [IC 95 % 0,00-0,16]** : l'écart-type à composition égale (89 mV) n'est pas plus
+petit que l'écart entre systèmes. Le reste est l'électrode et le protocole, absents des
+résumés. Entraîner un régresseur sur ces valeurs reviendrait à apprendre ce bruit.
+
+### 12.2 Énergie de formation d'une lacune d'oxygène
+
+Puisque l'activité publiée n'est pas apprenable, la voie retenue est un descripteur
+physique calculé à partir de la seule composition : l'énergie qu'il faut pour retirer un
+atome d'oxygène du réseau,
+
+E_vac = E(cellule avec une lacune) − E(cellule parfaite) + μ_O,
+
+qui mesure la réductibilité de l'oxyde, grandeur reliée dans la littérature à la
+concentration de lacunes et à l'activité OER des oxydes de métaux de transition. La
+correction redox du §11.2 est appliquée aux cations que la lacune réduit (identifiés,
+comme au §11.2, par leurs moments magnétiques). Code : `thermo/run_vacancy.py`.
+
+**Validation (critère fixé avant le calcul : corrélation de rang ≥ 0,70 avec la
+réductibilité mesurée de neuf oxydes binaires)** :
+
+| Oxyde | E_vac brute | corrigée | Réduction mesurée (eV/O) | Réaction |
+|---|---|---|---|---|
+| CuO | 2,34 | 2,34 | 1,47 | 2 CuO → Cu₂O + O |
+| Cu₂O | 2,92 | 2,92 | 1,77 | Cu₂O → 2 Cu + O |
+| Co₃O₄ | 2,34 | 2,34 | 2,04 | Co₃O₄ → 3 CoO + O |
+| Mn₃O₄ | 2,98 | 2,95 | 2,39 | Mn₃O₄ → 3 MnO + O |
+| Fe₂O₃ | 2,67 | 3,36 | 2,43 | 3 Fe₂O₃ → 2 Fe₃O₄ + O |
+| CoO | 3,68 | 3,68 | 2,46 | CoO → Co + O |
+| FeO | 4,15 | 4,15 | 2,82 | FeO → Fe + O |
+| Fe₃O₄ | 3,05 | 4,09 | 3,16 | Fe₃O₄ → 3 FeO + O |
+| MnO | 4,62 | 4,62 | 3,99 | MnO → Mn + O |
+
+Corrélation de rang **0,93** après correction (p = 0,0002), 0,83 brute : **critère
+atteint**. Trois réserves. Les valeurs absolues ne sont pas comparables — une lacune
+isolée dans un réseau parfait coûte plus cher que la transformation de phase complète,
+d'où E_vac > ΔH_red partout ; seul l'ordre est jugé. Le comptage des électrons par
+moments magnétiques est imparfait : il attribue trois électrons au lieu de deux à la
+lacune de Fe₃O₄ (surcorrection de 0,35 eV) et aucun à celle de Co₃O₄ ; la corrélation
+brute, sans aucune correction, passe néanmoins le critère. Enfin, neuf oxydes de quatre
+éléments sont un échantillon étroit.
+
+**Spinelles HEO.** 14 compositions ont été calculées : l'échantillon interne
+(CoCrFeMnNi)₃O₄, ses substitutions, et les spinelles de la base pour lesquelles un η₁₀
+est publié. Chaque valeur est la moyenne sur 8 sites oxygène d'une cellule de 60 cations
+recuite par Monte-Carlo à 1173 K. La dispersion entre sites, de 0,15 à 0,6 eV, est
+elle-même une information : le site le plus facile est celui que l'électrolyte attaquera
+d'abord.
+
+| Substitution dans (CoCrFeMnNi)₃O₄ | E_vac (eV) | Maille prédite | P(rocksalt), §11.3 |
+|---|---|---|---|
+| aucune (référence) | 3,00 ± 0,10 | 8,338 Å | 0,12 |
+| Cr → Al | 2,85 ± 0,18 | 8,243 Å | 0,05 |
+| Cr → Ga | 2,76 ± 0,09 | 8,317 Å | 0,07 |
+| Cr → Mg | 2,40 ± 0,05 | 8,314 Å | 0,49 |
+| Cr → Cu | 2,08 ± 0,11 | 8,286 Å | 0,66 |
+| Cr → Zn | 2,03 ± 0,05 | 8,316 Å | 0,40 |
+
+(± : erreur-type sur les 8 sites ; Cu substitué à Co, Fe, Mn et Ni donne 2,39, 2,16, 1,96
+et 2,74 eV.)
+
+**Contrôle physique, prédiction écrite avant les résultats Al et Ga.** Remplacer Cr³⁺
+par un cation divalent oblige d'autres cations, surtout Mn, à passer à l'état 3+, donc à
+devenir réductibles : la lacune doit devenir plus facile. Un cation trivalent non
+réductible (Al³⁺, Ga³⁺) ne change pas ce bilan. Attendu : E_vac(Al, Ga) > E_vac(Cu,
+Zn, Mg). **Vérifié** (2,76 eV au plus bas contre 2,40 eV au plus haut). Les cations
+réduits identifiés par les moments magnétiques sont bien majoritairement des Mn.
+
+**Ce que le calcul ne dit pas : l'activité.** Sur les 7 systèmes à la fois calculés et
+dotés d'un η₁₀ publié, la corrélation de rang vaut −0,89 (p = 0,01). Elle va dans le
+sens « lacune plus *difficile*, électrode plus active », contraire à la lecture naïve
+« plus de lacunes, plus d'activité ». Ce n'est **pas** une validation, dans un sens ni
+dans l'autre. Cinq de ces sept systèmes n'ont qu'une mesure, d'un seul laboratoire ; à
+composition égale, l'écart entre laboratoires est de 89 mV (§12.1). Et le tableau
+ci-dessus montre un facteur de confusion : les substitutions qui facilitent la lacune
+rapprochent aussi la composition de la frontière rocksalt, donc des phases secondaires.
+Une explication possible de la corrélation publiée, non testée.
+
+**L'expérience qui tranche** — et que le laboratoire peut faire avec ce qu'il a déjà.
+Les six compositions du tableau sont synthétisées par la voie de l'échantillon interne
+(même précurseur, même calcination). Avant toute électrochimie, chaque lot est vérifié
+en diffraction : spinelle monophasée, à la maille prédite à ± 0,5 % près. Cette étape
+est elle-même un test du §11 pour Cr → Mg, Cu, Zn, qui sont à la frontière. η₁₀, pente
+de Tafel et capacité de double couche sont ensuite mesurés **avec un seul protocole
+d'électrode** : même charge, même substrat, même liant, même correction de chute
+ohmique, activité normalisée à la surface électrochimique. Si l'activité varie de façon
+monotone avec E_vac, quel qu'en soit le sens, le descripteur a une valeur prédictive.
+Sinon, il n'en a pas pour ces spinelles, et la page cessera de l'afficher.
+
+## 13. Boucle d'apprentissage actif (étape 3)
+
+La question d'un laboratoire n'est pas « quelle composition a la plus forte
+probabilité ? » — celles-là n'apprennent rien — mais « quelle synthèse m'apprendra le
+plus ? ». `tools/active_learning.py` répond en deux temps.
+
+**Banc d'essai rétrospectif.** La base est rejouée comme si chaque système cationique
+devait être synthétisé pour connaître sa famille : on part de 20 systèmes, on en
+« synthétise » 10 de plus à chaque tour selon une stratégie, et l'on mesure l'exactitude
+sur 25 % des systèmes tenus à l'écart. Critère fixé avant le calcul : une stratégie
+informée atteint l'exactitude finale du tirage au hasard (à 1 point près) avec au moins
+25 % de synthèses en moins, en moyenne sur 10 découpages, et plus économiquement que le
+hasard sur une majorité d'entre eux.
+
+| Stratégie | Exactitude à 60 systèmes | à 120 | à 200 | Systèmes pour la cible |
+|---|---|---|---|---|
+| hasard | 0,813 | 0,897 | 0,908 | 132 ± 59 |
+| incertitude (entropie de la prédiction) | 0,843 | 0,904 | 0,915 | 99 ± 40 |
+| diversité (le plus éloigné du déjà fait) | 0,813 | 0,886 | 0,913 | 116 ± 51 |
+| hybride (incertitude × éloignement) | 0,827 | 0,909 | 0,910 | 97 ± 42 |
+
+Meilleure stratégie : hybride, **27 % de synthèses en moins**, plus économique que le
+hasard sur 7 découpages sur 10 (une égalité) : **critère atteint, de justesse**.
+L'intervalle de confiance à 95 % de l'économie (bootstrap apparié sur les 10 découpages) va de 11 à 39 % : elle est nettement positive, mais le seuil de 25 % est dans l'intervalle. La meilleure des trois stratégies est choisie après coup, ce qui flatte un peu
+le résultat ; l'incertitude seule fait 25 %. Le gain est réel mais modeste, et il se
+concentre au début : c'est quand on sait peu qu'il vaut le plus de choisir.
+
+**Propositions.** Parmi les 391 compositions équimolaires inédites à 5 ou 6 cations
+d'un laboratoire d'oxydes 3d (Mg Al Cr Mn Fe Co Ni Cu Zn Ga), 388 sont dans le domaine
+d'applicabilité. Ne sont proposées que celles sur lesquelles le modèle hésite vraiment
+(entropie ≥ 0,3) et deux propositions ne partagent jamais quatre cations. Il en reste
+quatre, toutes à la frontière rocksalt / spinelle :
+
+| Composition | Classifieur | Calcul CHGNet (§11.3) | Ce que la synthèse tranche |
+|---|---|---|---|
+| Cu-Ga-Mg-Mn-Zn | rocksalt 0,53 / spinelle 0,47 | ΔH_ox −2,68 eV/O, rocksalt 0,18 | le calcul prédit une spinelle |
+| Co-Cu-Mg-Mn-Ni | spinelle 0,56 / rocksalt 0,44 | ΔH_ox −1,27 eV/O, rocksalt 0,88 | le calcul prédit un rocksalt |
+| Cr-Cu-Fe-Mg-Ni-Zn | rocksalt 0,62 / spinelle 0,38 | ΔH_ox −2,23 eV/O, rocksalt 0,40 | frontière dans les deux modèles |
+| Co-Ga-Mg-Ni-Zn | spinelle 0,67 / rocksalt 0,33 | ΔH_ox −2,33 eV/O, rocksalt 0,34 | les deux penchent spinelle |
+
+Ce sont des **prédictions enregistrées avant l'expérience** : dans deux cas sur quatre le
+calcul physique tranche là où le classifieur hésite, et dans les deux sens. Synthétisées
+à température et atmosphère connues, ces quatre compositions jugeront le §11.3 mieux que
+toute validation croisée. Un lot multiphasé est aussi informatif qu'un monophasé, à
+condition d'être saisi dans `data/lab_results.csv` (§9) : la base passe alors par le même
+nettoyage, le modèle est réentraîné, et la boucle repropose.
 
 ---
 
@@ -297,3 +617,8 @@ négative, et la base en manque cruellement.
 | `xrd_prototypes.json` | réflexions et facteurs de diffusion des 6 prototypes |
 | `lattice_model.json` | constantes du modèle géométrique de maille |
 | `parity_check.txt` | résultat du contrôle de parité JavaScript / Python |
+| `thermo/` | calculs CHGNet et analyses des étapes 1 et 2 (voir `thermo/README.md`) |
+| `data/thermo/` | résultats bruts des calculs, références thermochimiques sourcées, substituts pour la page |
+| `QC/thermo_*.txt`, `QC/oer_literature_variance.txt`, `QC/active_learning.txt` | rapports des étapes 1 à 3 |
+| `data/next_experiments.csv` | synthèses proposées par la boucle active |
+| `data/lab_results_template.csv` | gabarit des résultats internes (§9) |
