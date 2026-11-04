@@ -5,9 +5,10 @@ The web page recomputes the 134 descriptors and traverses the exported boosted t
 in JavaScript. This script scores the 200 probe compositions shipped in
 app/heo_model.json twice — once with src/features.py plus a Python traversal of the
 exported trees, once with app/heo_engine.js under node — and fails if the two sides
-disagree by more than the tolerance. It also reports, for information only, the gap to
-the probabilities frozen in the probe set by the original scikit-learn model; that gap
-is dominated by split thresholds sitting exactly on training values and is not a gate.
+disagree by more than the tolerance. It also fails if the exported trees do not
+reproduce the probabilities frozen in the probe by scikit-learn at export time
+(tools/train_model.py), and if the JavaScript formula parser (FX in heo_engine.js)
+reads any database formula differently from src/formula.py.
 
     python tools/parity_check.py            # rewrite QC/parity_check.txt
     python tools/parity_check.py --check    # verify only, exit 1 on mismatch
@@ -24,9 +25,10 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 import features  # noqa: E402
+import formula  # noqa: E402
 
 TOL_JS = 1e-12      # Python vs JavaScript, same algorithm in two languages
-TOL_FROZEN = 1e-8   # vs the probabilities stored in the probe set (9 decimals)
+TOL_FROZEN = 1e-9   # exported trees vs the scikit-learn probabilities frozen in the probe
 
 
 def tree_value(nodes, x):
@@ -79,6 +81,35 @@ def js_side():
     return json.loads(out.stdout)
 
 
+def formula_cases():
+    """Every formula of the database plus the notations of tests/test_formula.py."""
+    import csv
+    with open(os.path.join(ROOT, "data", "heo_database.csv"), encoding="utf-8") as fh:
+        texts = [r["formula_text"] for r in csv.DictReader(fh)]
+    extra = ["(Mg, Co, Ni, Cu, Zn)_{1-x}Li_xO", "LaBO3 (B = Sc, Al, Cr, Ni, Fe)",
+             "(XCoNiCuZn)O (X = Li, Na, Mg)", "10La2O3-20TiO2-10Nb2O5-20WO3-20ZrO2",
+             "La₁₋ₓ(Nd, Sm, Gd, Y)ₓ/₄CoO₃", "HEO (MgCoNiCuZn oxide with Rh nanoparticles)",
+             "(FeCoNiMnCu)Ox/13X", "Mn2–xAlxZn0.2Ni0.6Mg0.2O4", "TiZrNbHfTaO<sub>x</sub>",
+             "Co-rich (CoCrFeM nNi)", "spinel oxide", ""]
+    return texts + extra
+
+
+def formula_parity(elements):
+    texts = formula_cases()
+    py = [formula.cation_fractions(t, elements) for t in texts]
+    out = subprocess.run(["node", os.path.join(ROOT, "tools", "parity_js.mjs"), "formulas"],
+                         input=json.dumps(texts), capture_output=True, text=True, check=True)
+    js = json.loads(out.stdout)
+    worst, bad = 0.0, []
+    for t, a, b in zip(texts, py, js):
+        if set(a) != set(b):
+            bad.append(t)
+            continue
+        for k in a:
+            worst = max(worst, abs(a[k] - b[k]))
+    return len(texts), bad, worst
+
+
 def max_abs(a, b):
     return max(abs(u - v) for ra, rb in zip(a, b) for u, v in zip(ra, rb))
 
@@ -89,6 +120,7 @@ def main(check=False):
 
     py_probs, py_feats = python_side(bundle, elements)
     js = js_side()
+    n_formulas, formula_mismatch, d_formula = formula_parity(elements)
     d_probs = max_abs(py_probs, js["probs"])
     d_feats = max_abs(py_feats, js["feats"])
     # the probe stores probabilities in display order (classes_order), the model emits
@@ -107,17 +139,12 @@ def main(check=False):
         f"longueur du vecteur de descripteurs : {len(py_feats[0])} / attendu {len(bundle['featnames'])}",
         f"ecart maximal de descripteur JS vs Python : {d_feats:.3e} (tolerance {TOL_JS:.0e})",
         f"ecart maximal de probabilite JS vs Python : {d_probs:.3e} (tolerance {TOL_JS:.0e})",
-        "",
-        "comparaison informative avec les probabilites figees du probe "
-        f"(issues du modele scikit-learn d'origine, tolerance indicative {TOL_FROZEN:.0e}) :",
-        f"  ecart median {per_case[len(per_case) // 2]:.3e}, ecart maximal {d_frozen:.3e}",
-        f"  {n_frozen_off} compositions sur {len(per_case)} au-dela de 1e-3, "
+        f"probabilites figees du probe (modele scikit-learn exporte par tools/train_model.py) :",
+        f"  ecart maximal {d_frozen:.3e} (tolerance {TOL_FROZEN:.0e}), "
         f"{flips} changement(s) de classe predite",
-        "  ces chiffres sont identiques sous macOS et sous Linux : il ne s'agit pas de",
-        "  bruit de plateforme mais d'une difference reelle entre le modele exporte et",
-        "  l'instantane scikit-learn d'origine, dont la chaine d'entrainement n'est pas",
-        "  dans le depot. Non bloquant : la garantie verifiee en integration continue",
-        "  est l'accord Python / JavaScript ci-dessus.",
+        f"analyseur de formules, {n_formulas} formules (base + cas de test) : "
+        f"{len(formula_mismatch)} ensemble(s) de cations differents, "
+        f"ecart maximal de fraction {d_formula:.3e} (tolerance {TOL_JS:.0e})",
         "",
         "genere par tools/parity_check.py",
     ]
@@ -125,6 +152,10 @@ def main(check=False):
     failures = [msg for ok, msg in (
         (d_feats <= TOL_JS, f"descriptors differ by {d_feats:.3e}"),
         (d_probs <= TOL_JS, f"probabilities differ by {d_probs:.3e}"),
+        (d_frozen <= TOL_FROZEN, f"exported model differs from its frozen probe by "
+                                 f"{d_frozen:.3e}: rerun tools/train_model.py"),
+        (not formula_mismatch, "formula parser differs on: " + "; ".join(formula_mismatch[:5])),
+        (d_formula <= TOL_JS, f"formula fractions differ by {d_formula:.3e}"),
     ) if not ok]
 
     path = os.path.join(ROOT, "QC", "parity_check.txt")
