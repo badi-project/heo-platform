@@ -1,0 +1,24 @@
+Etape 3 - boucle active : rejouer la base comme si chaque systeme devait etre synthetise
+depart 20 systemes, 10 de plus par tour, test sur 25 % des systemes tenus a l'ecart, 10 decoupages
+
+strategie     exactitude a 60 syst.   a 120   a 200  systemes pour la cible
+random                        0.813   0.897   0.908              132 ± 59
+uncertainty                   0.843   0.904   0.915               99 ± 40
+diversity                     0.813   0.886   0.913              116 ± 51
+hybrid                        0.827   0.909   0.910               97 ± 42
+
+cible = exactitude finale du tirage au hasard (moins 1 point), meme decoupage
+economie de la meilleure strategie : IC 95 % 11 a 39 % (bootstrap apparie sur les 10 decoupages) ; la meilleure des trois strategies informees est choisie apres coup, ce qui flatte un peu le resultat
+meilleure strategie : hybrid, 27 % de syntheses en moins que le hasard pour la meme exactitude (critere : >= 25 %) ; plus economique que le hasard sur 7 decoupages sur 10 (1 egalites) -> atteint
+
+Propositions : 391 compositions equimolaires inedites a 5-6 cations parmi Mg Al Cr Mn Fe Co Ni Cu Zn Ga, 388 dans le domaine d'applicabilite ;
+les plus informatives (entropie >= 0,3 sur la famille, pas deux propositions partageant quatre cations) :
+  Cu-Ga-Mg-Mn-Zn             entropie 0.70 (rocksalt 0.53 / spinel 0.47), dH_ox ~ -2.68 eV/O, P(rocksalt) thermo 0.18
+  Co-Cu-Mg-Mn-Ni             entropie 0.69 (spinel 0.56 / rocksalt 0.44), dH_ox ~ -1.27 eV/O, P(rocksalt) thermo 0.88
+  Cr-Cu-Fe-Mg-Ni-Zn          entropie 0.66 (rocksalt 0.62 / spinel 0.38), dH_ox ~ -2.23 eV/O, P(rocksalt) thermo 0.40
+  Co-Ga-Mg-Ni-Zn             entropie 0.64 (spinel 0.67 / rocksalt 0.33), dH_ox ~ -2.33 eV/O, P(rocksalt) thermo 0.34
+lecture : chaque synthese tranche une question que le modele ne sait pas trancher ; un lot multiphase est aussi informatif qu'un monophase, a condition d'etre saisi dans data/lab_results.csv avec T et atmosphere
+
+liste complete : data/next_experiments.csv
+
+genere par tools/active_learning.py

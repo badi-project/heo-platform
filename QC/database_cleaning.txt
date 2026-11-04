@@ -1,0 +1,18 @@
+entrees en entree : 1133
+entrees conservees : 1074
+  stoechiometrie lue dans la formule : 1072
+  ensemble attesté, repli equimolaire : 2
+entrees ecartees : 59
+  cations non attestes dans le texte source : 29
+  stoechiometrie illisible pour une structure a plusieurs sites : 17
+  formule lisible a moins de cinq cations : 10
+  rejet manuel apres audit : 2
+  composition non equimolaire non chiffree : 1
+corrections par rapport a l'ensemble du modele de langue :
+  ensemble de cations corrige : 142
+    dont cations ajoutes (site oublie) : 121
+    dont cations retires (dopant, non atteste) : 25
+systemes cationiques distincts : 539
+cations distincts : 54
+
+genere par tools/clean_database.py

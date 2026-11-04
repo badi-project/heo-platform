@@ -1,0 +1,57 @@
+Etape 1b - l'enthalpie d'oxydation calculee departage-t-elle rocksalt et spinelle ?
+80 systemes de la base calcules (cations Mg Ca Mn Fe Co Ni Cu Zn Cr Al Ga Li Ti V) ; dH_ox en eV par O gagne, 3 MO (rocksalt) + O -> M3O4 (spinelle)
+
+dH_ox brut    : AUC rocksalt/spinelle 0.951 par systeme (9 rocksalt majoritaires sur 80), 0.933 par entree
+dH_ox corrige : AUC rocksalt/spinelle 0.953 par systeme (9 rocksalt majoritaires sur 80), 0.923 par entree
+
+valeurs (eV/O, corrigees) par etiquette majoritaire :
+  rocksalt  n =   9  mediane -1.23, quartiles -1.68 / -0.77
+  spinelle  n =  71  mediane -3.11, quartiles -3.70 / -2.46
+  les deux   n =  19  mediane -2.33
+
+Bruit du protocole (raw dH_ox, eV/O) : protocole rapide contre deux tirages d'un protocole serre (fmax 0.05, 400 pas, 200 pas de Monte-Carlo) :
+  Co-Cr-Fe-Mn-Ni     rapide -2.771 ; serre -2.760, -2.768 ; ecart -0.007
+  Co-Cu-Fe-Ni-Zn     rapide -1.549 ; serre -1.584, -1.592 ; ecart +0.040
+  Co-Cu-Mg-Ni-Zn     rapide -0.925 ; serre -0.995, -0.922 ; ecart +0.033
+  ecart moyen rapide / serre 0.027 eV/O, a comparer a l'ecart des medianes rocksalt / spinelle
+
+Classifieur rocksalt / spinelle, 413 entrees (120 rocksalt), validation croisee groupee par systeme (10 plis) :
+  composition (134 descripteurs)   exactitude 0.930 ; rocksalt -> spinelle  18, spinelle -> rocksalt  11
+  composition + dH_ox              exactitude 0.930 ; rocksalt -> spinelle  18, spinelle -> rocksalt  11
+  dH_ox seul (logistique)          exactitude 0.891 ; rocksalt -> spinelle  17, spinelle -> rocksalt  28
+  aiguillage (domaine d'applicabilite) exactitude 0.918 ; rocksalt -> spinelle  18, spinelle -> rocksalt  16
+
+Cation inconnu du modele (tous les systemes qui le contiennent retires) :
+  sans Al  ( 44 entrees) : composition 0.932, + dH_ox 0.932, dH_ox seul 0.977, aiguillage 0.977
+  sans Co  (373 entrees) : composition 0.737, + dH_ox 0.737, dH_ox seul 0.713, aiguillage 0.732
+  sans Cr  (193 entrees) : composition 0.933, + dH_ox 0.922, dH_ox seul 0.943, aiguillage 0.927
+  sans Cu  (197 entrees) : composition 0.797, + dH_ox 0.797, dH_ox seul 0.670, aiguillage 0.777
+  sans Fe  (283 entrees) : composition 0.908, + dH_ox 0.908, dH_ox seul 0.912, aiguillage 0.908
+  sans Ga  (  8 entrees) : composition 1.000, + dH_ox 1.000, dH_ox seul 1.000, aiguillage 1.000
+  sans Li  ( 16 entrees) : composition 0.938, + dH_ox 0.938, dH_ox seul 0.562, aiguillage 0.562
+  sans Mg  (159 entrees) : composition 0.818, + dH_ox 0.818, dH_ox seul 0.862, aiguillage 0.862
+  sans Mn  (252 entrees) : composition 0.905, + dH_ox 0.913, dH_ox seul 0.901, aiguillage 0.905
+  sans Ni  (383 entrees) : composition 0.700, + dH_ox 0.700, dH_ox seul 0.747, aiguillage 0.700
+  sans Ti  ( 12 entrees) : composition 1.000, + dH_ox 1.000, dH_ox seul 1.000, aiguillage 1.000
+  sans Zn  (220 entrees) : composition 0.509, + dH_ox 0.509, dH_ox seul 0.714, aiguillage 0.836
+  ensemble : composition 0.786, composition + dH_ox 0.786, dH_ox seul 0.802, aiguillage 0.818
+
+Entrees dont le resume donne la temperature de synthese : 39 (12 rocksalt), validation groupee 5 plis :
+  dH_ox                exactitude 0.923
+  dH_ox + T synthese   exactitude 0.949
+  coefficient de la temperature (par 1000 C, ajustement complet) : +0.84 (positif = la chaleur favorise le rocksalt)
+
+Substitut additif dH_ox ~ somme x_i h_i (un contre tous, par systeme) : erreur absolue moyenne 0.190 eV/O, R2 0.92 (reference 'moyenne' 0.891 ; 80 systemes notes sur 80)
+  Li non couvert par la page : monovalent : la reaction 3 MO + O -> M3O4 ne s'applique pas
+  propension a l'oxydation par cation h_i (eV/O ; negatif = s'oxyde) : Ti -9.88, Al -7.36, V -6.63, Ga -6.51, Cr -5.38, Fe -4.06, Mn -3.33, Zn -2.13, Ca -1.75, Mg -1.41, Co -1.21, Ni -0.41, Cu +0.01, Li +2.98
+  P(rocksalt) = 1 / (1 + exp(-(5.12 + 2.48 dH_ox))) ; bascule a dH_ox = -2.07 eV/O (classes equilibrees)
+  lecture physique a 900 C dans l'air : Delta mu_O = -1.44 eV/O ; avec l'entropie de configuration maximale du rocksalt (3 kT ln 5 = 0.49) la bascule attendue est entre -1.93 et -1.44 eV/O
+  lecture physique a 1000 C dans l'air : Delta mu_O = -1.58 eV/O ; avec l'entropie de configuration maximale du rocksalt (3 kT ln 5 = 0.53) la bascule attendue est entre -2.11 et -1.58 eV/O
+Substitut additif du parametre de maille spinelle (CHGNet) : erreur un-contre-tous 0.012 A (0.14 %), R2 0.97 (reference 'moyenne' 0.069 A ; 80 systemes notes)
+  Co-Cr-Fe-Mn-Ni         mesure 8.3280  substitut calibre 8.3380 (+0.12 %)
+  Al-Co-Cu-Fe-Mn-Ni      mesure 8.2697  substitut calibre 8.2280 (-0.50 %)
+  Al-Cu-Fe-Ni-Zn         mesure 8.2453  substitut calibre 8.2053 (-0.49 %)
+  Co-Cu-Fe-Mn-Ni         mesure 8.3602  substitut calibre 8.2859 (-0.89 %)
+  ecart absolu moyen sur les spinelles HEO mesures : 0.50 %
+
+genere par thermo/analyze_rocksalt_spinel.py

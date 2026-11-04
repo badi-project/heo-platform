@@ -1,0 +1,21 @@
+Etape 1a - descripteurs rocksalt de Sivak et al. (PRL 2025) recalcules avec CHGNet
+cellules de 60 cations (120 atomes), 3 decorations aleatoires perturbees de 0,05 A
+
+systeme                 exp.     dH ici  dH Sivak     sigma ici sigma Sivak  prediction
+Co-Cu-Mg-Ni-Zn        single   63.2±1.1      90.6    0.078±0.008       0.087      single
+Co-Mg-Ni-Zn           single   48.8±1.3      78.7    0.020±0.001       0.020      single
+Co-Cu-Mg-Ni           single   46.6±2.8      77.2    0.076±0.017       0.099      single
+Co-Fe-Mg-Mn-Ni        single   25.7±1.0      61.6    0.036±0.003       0.036      single
+Co-Cu-Mg-Zn            multi   74.1±1.2      92.6    0.098±0.005       0.116       multi
+Cu-Mg-Ni-Zn            multi   82.0±0.4      96.7    0.088±0.007       0.102       multi
+Co-Cu-Ni-Zn            multi   56.3±1.2      99.6    0.092±0.005       0.116       multi
+Ca-Co-Cu-Mg-Ni-Zn      multi   64.8±4.3      95.9    0.130±0.006       0.142       multi
+
+seuils (procedure de la reference : plus grandes valeurs parmi les monophases) : dH_mix <= 63.2 meV/atome, sigma <= 0.078 A
+1. (MgCoNiCuZn)O : 63 meV/atome ici, 91 dans la reference, 36 mesure par calorimetrie (Sereda et al. 2025) -> ecart a la mesure +27 ici contre +55 dans la reference
+2. issues experimentales retrouvees : 8 / 8 (les 4 multiphases sont hors des seuils fixes par les 4 monophases)
+   les seuils sont lus sur les monophases eux-memes : c'est une separation, pas une prediction ; en un-contre-tous (seuils lus sur les autres monophases) : 7 / 8, manque : Co-Cu-Mg-Ni-Zn
+3. sigma : ecart moyen a la reference -0.012 A, ecart absolu moyen 0.012 A
+correlation de rang des dH_mix avec la reference : 0.74 ; l'ecart est un decalage dependant des cations (Co, Ni surtout), pas un bruit
+
+genere par thermo/run_rocksalt_benchmark.py

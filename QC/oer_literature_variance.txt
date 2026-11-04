@@ -1,0 +1,18 @@
+Etape 2 - les surtensions OER publiees peuvent-elles entrainer un predicteur ?
+entrees 'oer' de la base : 138 ; eta_10 lisible dans la phrase de performance : 36 (24 systemes cationiques)
+eta_10 publies : mediane 282 mV, etendue 165-518 mV
+systemes rapportes au moins deux fois : 4 (16 valeurs)
+  ecart-type a composition egale (meme systeme, autres labos) : 89 mV
+  ecart-type entre systemes : 0 mV
+  correlation intraclasse (part de variance due a la composition) : 0.00 [IC 95 % 0.00-0.16]
+
+exemples (meme systeme cationique, valeurs publiees en mV) :
+  Co-Cr-Fe-Mn-Ni           204, 219, 260, 263, 282, 287, 309, 323, 341, 366
+  Co-Cr-Cu-Fe-Ni           270, 518
+  Co-Cr-Fe-La-Mn-Ni        165, 450
+  Co-Cu-Fe-Ni-Zn           322, 322
+
+lecture : une correlation intraclasse de x signifie qu'un modele parfait de la composition n'expliquerait au mieux que x de la variance des valeurs publiees ;
+le reste est l'electrode et le protocole, absents des resumes.
+
+genere par thermo/analyze_oer_literature.py
