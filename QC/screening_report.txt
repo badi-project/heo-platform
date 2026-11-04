@@ -1,0 +1,17 @@
+vivier : 40 cations documentes au moins 20 fois
+compositions criblees : 739222 (658008 quinaires equimolaires, 81214 senaires issues des 3000 meilleurs quinaires)
+dans le domaine d'applicabilite : 274712 (37 %)
+dans le domaine et absentes de la base : 274514
+dans le domaine, p >= 0,7 : 169396
+famille predite, toutes compositions : spinel 13 %, perovskite 51 %, rocksalt 0 %, fluorite 26 %, pyrochlore 9 %, layered 1 %
+famille predite, dans le domaine : spinel 9 %, perovskite 53 %, rocksalt 0 %, fluorite 29 %, pyrochlore 9 %, layered 0 %
+candidats exportes : 3786 (au plus 700 par famille)
+meilleur candidat non publie par famille :
+  spinel      Al-Co-Fe-Mn-Ti         p = 0.997  a = 8.183 A
+  perovskite  Ba-Ca-Co-Dy-Ni-Sc      p = 0.996  a = 4.035 A
+  rocksalt    Cu-Li-Mg-Ni-Zn         p = 0.964  a = 4.228 A
+  fluorite    Ce-Er-Hf-La-Sc         p = 0.996  a = 5.404 A
+  pyrochlore  Gd-Hf-Pr-Ta-Yb         p = 0.962  a = 10.304 A
+  layered     Cu-Li-Mn-Na-Ti         p = 0.928  a = -
+
+genere par tools/screen.py

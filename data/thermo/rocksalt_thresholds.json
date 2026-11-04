@@ -1,0 +1,6 @@
+{
+ "dH_mix_meV_atom": 63.190333333333335,
+ "sigma_A": 0.07827666666666666,
+ "rule": "largest values among the experimentally single-phase compositions",
+ "source": "thermo/run_rocksalt_benchmark.py"
+}

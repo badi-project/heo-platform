@@ -39,5 +39,11 @@ jobs:
       - name: Inlined JavaScript is in sync with app/*.js
         run: python tools/sync_app.py --check
 
-      - name: Python / JavaScript numerical parity
+      - name: Database is the output of the cleaning script
+        run: python tools/clean_database.py --check
+
+      - name: Page payload is up to date with data and model
+        run: python tools/build_app.py --check
+
+      - name: Python / JavaScript numerical parity (descriptors, model, formula parser)
         run: python tools/parity_check.py --check

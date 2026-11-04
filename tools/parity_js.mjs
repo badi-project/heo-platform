@@ -1,7 +1,9 @@
 /* Node driver for the JavaScript side of the Python/JS parity check.
    Loads app/heo_engine.js in a bare context with the globals the browser page
    supplies from its inlined payload, scores the 200 probe compositions shipped in
-   app/heo_model.json, and prints {probs, feats} as JSON on stdout.
+   app/heo_model.json, and prints {probs, feats} as JSON on stdout. With the argument
+   "formulas" it instead parses the formula strings given as a JSON list on stdin with
+   FX.cationFractions and prints the cation fractions.
    Called by tools/parity_check.py; not used by the page itself. */
 import { readFileSync } from "node:fs";
 import { createContext, runInContext } from "node:vm";
@@ -24,8 +26,15 @@ runInContext(
      return { feats: x, probs: softmax(rawPredict(MODEL, x), MODEL.temperature) }; };`,
   ctx);
 
-const out = bundle.probe.map(p => ctx.score(p.frac));
-process.stdout.write(JSON.stringify({
-  probs: out.map(o => o.probs),
-  feats: out.map(o => o.feats),
-}));
+if (process.argv[2] === "formulas") {
+  /* formula-parser parity: a JSON list of formula strings on stdin */
+  const formulas = JSON.parse(readFileSync(0, "utf8"));
+  runInContext("globalThis.fx = t => FX.cationFractions(t);", ctx);
+  process.stdout.write(JSON.stringify(formulas.map(t => ctx.fx(t))));
+} else {
+  const out = bundle.probe.map(p => ctx.score(p.frac));
+  process.stdout.write(JSON.stringify({
+    probs: out.map(o => o.probs),
+    feats: out.map(o => o.feats),
+  }));
+}

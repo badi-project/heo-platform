@@ -1,0 +1,5 @@
+system,family_entropy,top_two_families,ad_distance,dH_ox_surrogate_eV_per_O,p_rocksalt_thermo
+Cu-Ga-Mg-Mn-Zn,0.695,rocksalt 0.53 / spinel 0.47,2.43,-2.68,0.18
+Co-Cu-Mg-Mn-Ni,0.687,spinel 0.56 / rocksalt 0.44,1.02,-1.27,0.88
+Cr-Cu-Fe-Mg-Ni-Zn,0.664,rocksalt 0.62 / spinel 0.38,0.76,-2.23,0.40
+Co-Ga-Mg-Ni-Zn,0.638,spinel 0.67 / rocksalt 0.33,2.23,-2.33,0.34

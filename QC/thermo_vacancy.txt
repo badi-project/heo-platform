@@ -1,0 +1,48 @@
+Etape 2 - energie de formation de lacune d'oxygene (CHGNet)
+
+1. Validation : la lacune suit-elle la reductibilite mesuree ?
+oxyde    E_vac brute  corrigee  dH_red mesure   reaction
+Co3O4           2.34      2.34           2.04   Co3O4 -> 3 CoO + O
+CoO             3.68      3.68           2.46   CoO -> Co + O
+Fe2O3           2.67      3.36           2.43   3 Fe2O3 -> 2 Fe3O4 + O
+Fe3O4           3.05      4.09           3.16   Fe3O4 -> 3 FeO + O
+FeO             4.15      4.15           2.82   FeO -> Fe + O
+CuO             2.34      2.34           1.47   2 CuO -> Cu2O + O
+Cu2O            2.92      2.92           1.77   Cu2O -> 2 Cu + O
+Mn3O4           2.98      2.95           2.39   Mn3O4 -> 3 MnO + O
+MnO             4.62      4.62           3.99   MnO -> Mn + O
+correlation de rang (Spearman) : 0.93 corrigee (p = 0.000), 0.83 brute ; critere fixe avant calcul : >= 0,70
+
+2. Spinelles HEO (8 sites O par composition, eV) :
+systeme                     moyenne    min   e-t   eta10 publies (mV)
+Co-Cu-Fe-Mg-Ni-Zn              1.35   0.99  0.32   420
+Co-Cr-Cu-Fe-Ni                 1.96   1.52  0.24   270, 518
+Co-Fe-Mn-Ni-Zn                 2.03   1.81  0.15   -
+Co-Cu-Fe-Mn-Ni                 2.08   1.73  0.32   290
+Al-Co-Cr-Cu-Fe-Ni-Zn           2.10   1.16  0.50   266
+Co-Fe-Mg-Mn-Zn                 2.16   1.90  0.27   240
+Co-Cr-Cu-Mn-Ni                 2.16   1.74  0.34   -
+Cr-Cu-Fe-Mn-Ni                 2.39   1.59  0.44   -
+Co-Fe-Mg-Mn-Ni                 2.40   2.24  0.15   -
+Co-Cr-Cu-Fe-Mn                 2.74   2.19  0.61   -
+Co-Fe-Ga-Mn-Ni                 2.76   2.43  0.26   -
+Al-Co-Fe-Mn-Ni                 2.85   2.33  0.50   -
+Co-Cr-Fe-Mn-Ni                 3.00   2.60  0.28   204, 219, 263, 260, 366, 309, 282, 287, 341, 323
+Al-Co-Cr-Fe-Ni                 3.38   2.61  0.35   230
+
+3. Substitutions de (CoCrFeMnNi)3O4 (reference 3.00 ± 0.10 eV, erreur-type sur 8 sites) :
+  Cr -> Cu   2.08 ± 0.11 eV
+  Cr -> Zn   2.03 ± 0.05 eV
+  Cr -> Mg   2.40 ± 0.05 eV
+  Cr -> Al   2.85 ± 0.18 eV
+  Cr -> Ga   2.76 ± 0.09 eV
+  Co -> Cu   2.39 ± 0.16 eV
+  Fe -> Cu   2.16 ± 0.12 eV
+  Mn -> Cu   1.96 ± 0.08 eV
+  Ni -> Cu   2.74 ± 0.21 eV
+  attendu avant calcul : remplacer Cr3+ par un cation divalent (Cu, Zn, Mg) force d'autres cations a l'etat 3+, donc reductibles -> E_vac baisse ; par un trivalent non reductible (Al, Ga), non -> E_vac(Al, Ga) > E_vac(Cu, Zn, Mg) : verifie (2.76 contre 2.40 eV)
+
+observation (pas une validation) : correlation E_vac / eta10 publie (mediane par systeme), 7 systemes : rho = -0.89 (p = 0.01) ; une lacune plus difficile va avec un eta10 plus bas (plus actif)
+  5 des 7 systemes n'ont qu'une mesure, d'un seul laboratoire ; a composition egale, l'ecart-type entre laboratoires est de 89 mV et la correlation intraclasse vaut 0.00 [IC 95 % 0.00-0.16] (QC/oer_literature_variance.txt) : le sens de la relation est a etablir a protocole constant
+
+genere par thermo/run_vacancy.py

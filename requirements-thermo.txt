@@ -1,0 +1,11 @@
+# Step 1 (thermo/): thermodynamic descriptors from the CHGNet universal potential.
+# CPU is enough; ~5 GB of RAM per 120-atom relaxation.
+# On Python >= 3.13, nvidia-ml-py3 (a CHGNet dependency) does not build: install
+# CHGNet with --no-deps, then nvidia-ml-py, and provide a one-line nvidia_smi shim
+# (`from pynvml import *`) — see thermo/README.md.
+torch>=2.2
+chgnet==0.4.2          # pretrained model v0.3.0, the one used by Sivak et al. (2025)
+pymatgen>=2024.1
+ase>=3.23
+nvidia-ml-py
+numpy==2.5.3

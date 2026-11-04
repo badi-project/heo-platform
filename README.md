@@ -4,137 +4,196 @@
 
 Chaîne complète allant de la récolte de littérature à une application de design
 autonome : extraction d'une base de données d'oxydes à haute entropie (HEO) à partir
-de 2 189 notices bibliographiques, calcul de 134 descripteurs compositionnels,
-classifieur de famille structurale validé par groupes chimiques, modèle géométrique de
-paramètre de maille, simulation de diffractogramme de poudre, et criblage de
-734 208 compositions.
+de 2 189 notices bibliographiques, stœchiométrie relue dans les formules écrites,
+134 descripteurs compositionnels, classifieur de famille structurale validé par groupes
+chimiques et dans le temps, modèle géométrique de paramètre de maille, simulation de
+diffractogramme de poudre, et criblage de 739 222 compositions.
 
-## Résultats principaux
+## Résultats principaux (v1.1)
 
 | Sortie | Statut | Performance mesurée |
 |---|---|---|
-| Famille structurale (6 classes) | opérationnel | exactitude 83,7 %, F1 macro 0,734 |
-| Pérovskite ou non | opérationnel | 94,8 % (règle de Goldschmidt optimisée : 86,8 %) |
-| Paramètre de maille | opérationnel, ± 2 % | écart absolu moyen 1,9 % |
+| Famille structurale (6 classes) | opérationnel | exactitude 91,6 %, F1 macro 0,848 (validation groupée par système) |
+| — sur des systèmes publiés après l'entraînement | opérationnel | 85,9 % sur 192 systèmes inédits de 2025-2027 (présence des cations seule : 70,8 %) |
+| — sur des familles chimiques entières retirées | opérationnel | 89,5 % (système publié le plus proche : 54,0 %) |
+| Pérovskite ou non | opérationnel | 98,5 % (règle de Goldschmidt optimisée sur la base : 94,6 %) |
+| Calibration des probabilités | opérationnel | erreur 0,070 → 0,019 (température ajustée sur d'autres systèmes) |
+| Paramètre de maille des spinelles (CHGNet) | opérationnel, ± 0,5 % | 0,53 % sur 4 spinelles HEO mesurés ; échantillon interne +0,24 % |
+| Paramètre de maille, autres familles | opérationnel, ± 2 % | écart absolu moyen 1,9 % |
+| Rocksalt ou spinelle, cation inconnu du modèle | complément, hors domaine | 78,6 % → 81,8 % avec l'enthalpie d'oxydation calculée ; aucun gain dans le domaine |
+| Monophasage des rocksalt (Sivak et al.) | démonstration, 8 systèmes | 7 / 8 en un-contre-tous |
+| Énergie de lacune d'oxygène | descripteur validé, activité non prédite | suit la réductibilité mesurée de 9 oxydes binaires (corrélation de rang 0,93) ; §12 du rapport |
+| Choix des prochaines synthèses | opérationnel | 27 % de synthèses en moins que le hasard (banc rétrospectif, critère 25 %) ; 4 propositions à la frontière rocksalt / spinelle |
 | Diffractogramme simulé | opérationnel | positions et intensités validées contre `pymatgen` |
 | Domaine d'applicabilité | opérationnel | seuil au 95ᵉ centile des distances d'entraînement |
-| Monophasé / multiphasé | peu fiable | 416 positifs contre 54 négatifs (biais de publication) |
-| Propriétés catalytiques | non implémenté, délibérément | voir §6 du rapport |
+| Monophasé / multiphasé | peu fiable | 406 positifs contre 49 négatifs (biais de publication) |
+| Propriétés catalytiques | non implémenté, délibérément | les surpotentiels publiés ne sont pas apprenables (corrélation intraclasse 0,00) — §6 et §12 du rapport |
 
-Base curée : **1 133 échantillons**, 926 publications identifiées par DOI, 559 systèmes
-cationiques distincts, 54 cations. Criblage : **219 242** compositions dans le domaine
-d'applicabilité, dont **218 987** absentes de la base.
+La confusion dominante reste **rocksalt ↔ spinelle** (23 rocksalt prédits spinelle,
+13 l'inverse) : les mêmes cations 3d donnent l'une ou l'autre structure selon la
+température et la pression d'oxygène, information que la composition seule ne porte
+pas.
+
+Base curée : **1 074 échantillons**, 869 publications identifiées par DOI, 539 systèmes
+cationiques distincts, 54 cations. Criblage : **274 712** compositions dans le domaine
+d'applicabilité, dont **274 514** absentes de la base.
 
 ![Validation du classifieur](figures/fig4_validation.png)
+
+### Ce que la v1.1 a corrigé
+
+La v1.0 calculait tous les descripteurs sur un mélange équimolaire de l'ensemble de
+cations choisi par le modèle de langue d'extraction. Cet ensemble perdait régulièrement
+un site cristallographique entier — (Na₀.₂Bi₀.₂Ba₀.₂Sr₀.₂Ca₀.₂)TiO₃ était stocké sans Ti,
+38 pérovskites sur 240 n'avaient aucun cation de site B — et certaines entrées « titre
+seul » portaient des cations que le titre ne nomme pas.
+
+La v1.1 relit la stœchiométrie dans la formule écrite (`src/formula.py`, miroir
+JavaScript vérifié sur les 1 086 formules de la base et des tests) :
+
+- 142 ensembles de cations corrigés, dont 121 où un site oublié est restitué ;
+- 59 entrées écartées, chacune avec sa raison (`QC/database_cleaning.txt`) : cations
+  non attestés dans le texte source, stœchiométrie illisible pour une structure à
+  plusieurs sites, moins de cinq cations dans la formule lisible, rejets manuels ;
+- deux audits manuels de la stœchiométrie relue (`QC/audit_stoechiometrie.csv`,
+  n = 50 ; `QC/audit_stoechiometrie_2.csv`, n = 60 dont 40 parmi les formules les plus
+  difficiles) : 0 erreur résiduelle significative, 3 lectures ambiguës telles
+  qu'écrites ;
+- la chaîne d'entraînement est dans le dépôt (`tools/train_model.py`) et régénère le
+  modèle publié au bit près ;
+- les résumés d'éditeurs ont été retirés de `data/heo_corpus.jsonl` (seules leurs
+  longueurs restent).
+
+**La stœchiométrie écrite ne « souffle » pas la réponse** : un modèle qui ne voit que
+les fractions triées, sans aucune identité chimique, plafonne à 25,6 % ; restreint aux
+458 compositions équimolaires (aucun indice de stœchiométrie), le modèle complet garde
+91,5 % d'exactitude.
+
+### Couche physique et boucle de décision (étapes 1 à 3)
+
+Le classifieur dit ce que la littérature *rapporte*. Trois prolongements ajoutent ce
+qu'elle ne peut pas dire, chacun jugé sur des mesures avec un critère écrit avant le
+calcul (rapport, §11 à §13) :
+
+1. **Thermodynamique calculée** (`thermo/`, potentiel interatomique universel CHGNet) :
+   enthalpie d'oxydation rocksalt → spinelle sur 80 systèmes de la base (AUC 0,95 entre
+   systèmes rapportés rocksalt et spinelle), maille des spinelles calibrée sur 17
+   binaires, descripteur de monophasage de Sivak et al. Le critère initial — améliorer
+   le classifieur dans son domaine — **n'est pas atteint** : le calcul ne sert qu'hors du
+   domaine, où il évite par exemple de tomber au hasard quand Zn est inconnu du modèle.
+2. **Réductibilité** : la variance des surpotentiels OER publiés est mesurée (la
+   composition en explique 0 % [0-16 %]) ; à la place, l'énergie de formation d'une lacune d'oxygène est calculée : elle suit la réductibilité mesurée de 9 oxydes binaires (corrélation de rang 0,93, critère 0,70) et classe les substitutions de (CoCrFeMnNi)₃O₄ dans l'ordre attendu de leur chimie redox. Elle reste à confronter à des mesures OER à protocole constant — une série de substitutions est proposée pour cela.
+3. **Apprentissage actif** (`tools/active_learning.py`) : rejouée sur la base, la sélection des synthèses les plus informatives atteint la même exactitude avec 27 % de synthèses en moins que le hasard — critère atteint de justesse. Quatre compositions inédites sont proposées, à la frontière rocksalt / spinelle, chacune avec la prédiction du classifieur et celle du calcul (`data/next_experiments.csv`). Les résultats
+   de laboratoire, échecs compris, entrent par `data/lab_results.csv`.
+
+La page affiche ces résultats dans une carte « Thermodynamique calculée ».
 
 ## Application
 
 `app/heo_designer.html` est un fichier unique sans dépendance réseau : il embarque la
-base, le modèle exporté, le calcul des descripteurs et la simulation DRX. Ouvrir par
-double-clic, ou cloner puis servir le dossier `app/` :
+base, le modèle exporté, le calcul des descripteurs, la lecture des formules et la
+simulation DRX. Ouvrir par double-clic, ou cloner puis servir le dossier `app/` :
 
 ```bash
 git clone https://github.com/badi-project/heo-platform.git
 cd heo-platform/app && python -m http.server 8000   # puis http://localhost:8000/heo_designer.html
 ```
 
-Le portage JavaScript des descripteurs est vérifié contre `features.py` sur les
-200 compositions du jeu de contrôle : écart maximal de probabilité 1,1 × 10⁻¹⁶
-(`QC/parity_check.txt`, régénéré par `tools/parity_check.py` et vérifié à chaque commit).
+On y saisit une formule comme dans un article — `La(CrMnFeCoNi)O3`,
+`(Na0.2Bi0.2Ba0.2Sr0.2Ca0.2)TiO3`, `(FeCoNiCrMn)3O4` — ou l'on choisit les cations.
 
-L'onglet « Candidats criblés » montre les **3 589 candidats exportés** — un
-sous-ensemble plafonné à 700 par prototype, pour que les pérovskites n'écrasent pas la
-liste. Le criblage intégral des 734 208 compositions est dans
+Le portage JavaScript des descripteurs, du modèle et de la lecture des formules est
+vérifié contre Python à chaque commit : écart maximal de probabilité 1,1 × 10⁻¹⁶, 0 écart
+sur les 1 086 formules (`QC/parity_check.txt`).
+
+L'onglet « Candidats criblés » montre les **3 786 candidats exportés** — un
+sous-ensemble plafonné à 700 par prototype. Le criblage intégral est dans
 `data/screening_all.csv.gz`, pas dans l'application.
 
 ## Organisation du dépôt
 
 ```
 app/        application autonome (HTML + JS + modèle exporté)
-src/        features.py — spécification des 134 descripteurs (source de vérité)
-data/       base curée, descripteurs, candidats, criblage complet, corpus brut
+src/        features.py — les 134 descripteurs ; formula.py — lecture des formules
+data/       base brute v1.0 et base curée, descripteurs, candidats, criblage, corpus
 data/reference/  tables élémentaires, prototypes DRX, constantes du modèle de maille
 figures/    fig1 à fig6
 docs/       rapport méthodologique et note de faisabilité
-tools/      sync_app.py (ré-inline les JS dans le HTML), parity_check.py
+thermo/     calculs par potentiel interatomique appris (CHGNet) et leurs analyses
+data/thermo/  résultats de ces calculs et références thermochimiques sourcées
+tools/      chaîne de production (voir ci-dessous), apprentissage actif et contrôles
 tests/      suite pytest exécutée en intégration continue
-QC/         résultat du contrôle de parité JavaScript / Python
+QC/         rapports régénérés : nettoyage, entraînement, criblage, parité, audits
 ```
-
-`app/heo_designer.html` **inline** des copies de `heo_engine.js` et `heo_ui.js` entre
-commentaires sentinelles. Les fichiers `app/*.js` sont la source ; le HTML est
-régénéré par `python tools/sync_app.py`, et la CI refuse une divergence entre les deux.
 
 | Fichier | Contenu |
 |---|---|
-| `data/heo_database.csv` | 1 133 échantillons curés, avec DOI et phrase source |
+| `data/heo_database_raw.csv` | base v1.0 telle que publiée, jamais modifiée (entrée du nettoyage) |
+| `data/heo_database.csv` | 1 074 échantillons curés, fractions relues, DOI et phrase source |
 | `data/heo_features.csv` | matrice des 134 descripteurs |
-| `data/heo_candidats.csv` | 3 589 candidats non publiés, avec voisin publié le plus proche |
-| `data/screening_all.csv.gz` | les 734 208 compositions criblées |
-| `data/heo_corpus.jsonl` | 2 189 notices récoltées (EuropePMC, Crossref, arXiv) |
+| `data/heo_candidats.csv` | 3 786 candidats non publiés, avec voisin publié le plus proche |
+| `data/screening_all.csv.gz` | les 739 222 compositions criblées |
+| `data/heo_corpus.jsonl` | 2 189 notices récoltées (EuropePMC, Crossref, arXiv), sans résumé |
 | `data/heo_extracted.jsonl` | sortie brute d'extraction, avant curation |
-| `data/heo_audit.csv` | audit manuel champ par champ (n = 10) |
-| `app/heo_model.json` | export du modèle et jeu de contrôle de parité |
+| `app/heo_model.json` | modèle exporté, métriques, domaine d'applicabilité, jeu de contrôle |
+
+## Chaîne de production
+
+```bash
+pip install -r requirements-train.txt   # numpy, scikit-learn, matplotlib (versions figées)
+python tools/clean_database.py          # base brute -> base curée (QC/database_cleaning.txt)
+python tools/train_model.py             # descripteurs, validations, export (QC/training_report.txt)
+python tools/screen.py                  # criblage (QC/screening_report.txt)
+python tools/make_figures.py            # figures 4 et 5
+python tools/build_app.py               # données et textes de la page, puis ré-inlining du JS
+python tools/parity_check.py            # parité Python / JavaScript (nécessite node >= 20)
+python -m pytest tests -q
+```
+
+Les calculs CHGNet (`pip install -r requirements-thermo.txt`, plusieurs heures sur deux
+cœurs) et leur ordre d'exécution sont décrits dans [`thermo/README.md`](thermo/README.md) ;
+leurs résultats sont versionnés dans `data/thermo/`, si bien que la chaîne ci-dessus et
+les tests n'ont pas besoin de les relancer.
+
+Chaque étape a un mode `--check` exécuté par la CI : la base, la page et les contrôles
+publiés doivent être exactement la sortie de la chaîne.
 
 ## Méthode, en bref
 
 - **Corpus** : EuropePMC (561), Crossref (1 527), arXiv (101), filtrage par expression
   exacte sur titre et résumé, déduplication par DOI.
 - **Extraction** : modèle de langue sous schéma JSON imposé, phrase source conservée.
-- **Curation** : normalisation des formules, harmonisation du vocabulaire de phase,
-  minimum de cinq cations principaux. Les fractions stœchiométriques extraites sont
-  conservées mais **écartées de l'apprentissage** (exactitude 7/10 à l'audit) ; les
-  descripteurs sont calculés en pondération équimolaire.
-- **Modèle** : arbres de décision boostés par histogramme, 250 itérations, 15 feuilles.
-  **Validation croisée en 20 plis groupés par système cationique** — aucun système
-  chimique n'apparaît à la fois en apprentissage et en test. Probabilités calibrées par
-  mise à l'échelle de température (T = 1,74 ; erreur de calibration 0,100 → 0,023).
+- **Curation** : stœchiométrie relue dans la formule écrite (groupes, fractions,
+  variables, placeholders, composites), au moins cinq cations à ≥ 1 % de la somme
+  cationique.
+- **Modèle** : arbres de décision boostés par histogramme, 250 itérations, 15 feuilles,
+  pondération équilibrée des classes. Trois validations : 20 plis groupés par système
+  cationique ; temporelle (≤ 2024 → 2025-2027) ; chimie inédite (20 familles de systèmes
+  retirées tour à tour). Probabilités calibrées par mise à l'échelle de température.
 
 Le détail complet, les contrôles physiques et les pièges de portage sont dans
 [`docs/RAPPORT_plateforme_HEO.md`](docs/RAPPORT_plateforme_HEO.md).
 
-## Développement
-
-```bash
-pip install -r requirements.txt     # pytest ; le code applicatif n'a aucune dépendance
-python -m pytest tests -q           # 16 tests : descripteurs, données, rendu, parité
-python src/features.py              # exemple : les descripteurs de (MgCoNiCuZn)O
-python tools/sync_app.py --check    # le HTML est-il à jour par rapport à app/*.js ?
-python tools/parity_check.py        # régénère QC/parity_check.txt (nécessite node ≥ 20)
-```
-
-Les conventions, et notamment la règle « on n'édite jamais le JavaScript inliné dans le
-HTML », sont dans [CONTRIBUTING.md](CONTRIBUTING.md).
-
 ## Limites à lire avant usage
 
 - La probabilité affichée est celle d'une **famille structurale**, jamais d'une
-  performance catalytique.
-- 69 % des compositions énumérées sont prédites pérovskite : l'énumération combinatoire
-  sur un vivier riche en terres rares et alcalino-terreux produit massivement des
-  compositions à gros cations. La liste de candidats se lit par famille chimique, pas
-  ligne à ligne.
-- La confusion dominante rocksalt ↔ spinelle reflète une information absente des
-  résumés (température de calcination, stœchiométrie en oxygène), pas un défaut du
-  classifieur.
-- La confrontation expérimentale du paramètre de maille repose sur **un seul point
-  indépendant**.
-- Les probabilités figées dans le jeu de contrôle (`app/heo_model.json`, champ `probe`),
-  produites par le modèle `scikit-learn` d'origine, se reproduisent à 9 × 10⁻⁸ près en
-  médiane mais s'écartent de plus de 10⁻³ sur 22 des 200 compositions, dont une change
-  de classe prédite. Ces chiffres sont identiques sous macOS et sous Linux, donc il ne
-  s'agit pas de bruit de plateforme : le modèle exporté et l'instantané `scikit-learn`
-  diffèrent réellement sur ces cas, et la chaîne d'entraînement qui trancherait n'est
-  pas dans le dépôt. L'accord entre `features.py` et le moteur JavaScript, lui, reste à
-  10⁻¹⁶ : l'application est cohérente avec ce qu'elle embarque. Marge à garder en tête
-  pour les compositions dont les deux premières classes sont proches.
-- `data/screening_all.csv.gz` (16 Mo) est versionné directement, sans Git LFS. Cela
-  reste supportable à cette taille ; une reprise en LFS s'imposera si le criblage
-  grossit.
+  performance catalytique ni d'un monophasage.
+- 53 % des compositions énumérées dans le domaine sont prédites pérovskite :
+  l'énumération combinatoire sur un vivier riche en terres rares et alcalino-terreux
+  produit massivement des compositions à gros cations. La liste de candidats se lit par
+  famille chimique, pas ligne à ligne.
+- Une formule décrivant une série (`(M0.2La0.2…)CrO3 (M = Dy, Ho, Er)`) est lue sur sa
+  première variante ; les variables x, y, z valent 0,1.
+- La maille des spinelles HEO est confrontée à **quatre** mesures indépendantes
+  (8,25-8,36 Å) ; sur un intervalle aussi étroit, prédire la moyenne ferait déjà 0,7 %.
+  La preuve que le calcul suit la chimie vient des 17 spinelles binaires (0,40 %).
+- Les grandeurs calculées (`thermo/`) viennent d'un potentiel appris, pas de la DFT ;
+  ses erreurs redox brutes atteignent 0,7 eV/O et ne sont corrigées que pour Co, Fe et
+  Mn (rapport, §11.2).
 
 ## Licence
 
-Code (`src/`, `app/`) : MIT, voir [LICENSE](LICENSE).
+Code (`src/`, `app/`, `tools/`) : MIT, voir [LICENSE](LICENSE).
 Données (`data/`) et figures : CC BY 4.0. Les notices bibliographiques sources restent
-soumises aux conditions de leurs éditeurs respectifs ; seules les métadonnées et les
-valeurs extraites sont redistribuées ici.
+soumises aux conditions de leurs éditeurs respectifs ; seules les métadonnées (titre,
+revue, année, DOI) et les valeurs extraites sont redistribuées ici.

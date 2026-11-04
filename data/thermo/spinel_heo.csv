@@ -1,0 +1,9 @@
+system,seed,a_exp_A,a_chgnet_A,E_eV,mc_acceptance,tetrahedral_occupancy,seconds
+Co-Cr-Fe-Mn-Ni,0,8.328,8.4869,-1114.76367,0.200,Co:9 Cr:0 Fe:3 Mn:2 Ni:6,94
+Co-Cr-Fe-Mn-Ni,1,8.328,8.4721,-1114.75378,0.200,Co:7 Cr:0 Fe:5 Mn:4 Ni:4,97
+Al-Co-Cu-Fe-Mn-Ni,0,8.2697,8.3675,-1022.06030,0.125,Al:3 Co:3 Cu:8 Fe:1 Mn:2 Ni:3,97
+Al-Co-Cu-Fe-Mn-Ni,1,8.2697,8.3616,-1022.96594,0.083,Al:3 Co:6 Cu:7 Fe:1 Mn:1 Ni:2,87
+Al-Cu-Fe-Ni-Zn,0,8.2453,8.3461,-920.18109,0.150,Al:5 Cu:4 Fe:1 Ni:0 Zn:10,85
+Al-Cu-Fe-Ni-Zn,1,8.2453,8.3505,-920.73059,0.158,Al:3 Cu:2 Fe:4 Ni:1 Zn:10,86
+Co-Cu-Fe-Mn-Ni,0,8.3602,8.4047,-1004.90436,0.225,Co:6 Cu:9 Fe:1 Mn:1 Ni:3,86
+Co-Cu-Fe-Mn-Ni,1,8.3602,8.3829,-1005.63708,0.217,Co:3 Cu:11 Fe:4 Mn:0 Ni:2,117

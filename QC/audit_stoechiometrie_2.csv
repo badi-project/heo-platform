@@ -1,0 +1,61 @@
+n,famille,doi,formule_ecrite,fractions_v1_1,drapeaux,verdict,note
+1,perovskite,10.1039/d1nr08316c,Ba(MnNbTiZrTa)O3,Ba:0.500 Mn:0.100 Nb:0.100 Ta:0.100 Ti:0.100 Zr:0.100,ambiguous_group,correct,
+2,unk,10.1021/jacs.3c13367,Pt-(LaCeSmYErGdYb)O,Ce:0.143 Er:0.143 Gd:0.143 La:0.143 Sm:0.143 Y:0.143 Yb:0.143,minor_component_dropped,correct,Pt support metallique ecarte
+3,spinel,10.1016/j.electacta.2023.142459,Lix(CoCrFeMnNi)O4-y,Co:0.182 Cr:0.182 Fe:0.182 Li:0.091 Mn:0.182 Ni:0.182,ambiguous_group;variable,acceptable,"quantite de Li non chiffree, x nominal"
+4,other,10.1016/j.heliyon.2023.e13607,La₂O₃+TiO₂+Nb₂O₅+WO₃+Ga₂O₃,Ga:0.250 La:0.250 Nb:0.250 Ti:0.125 W:0.125,oxide_sum,acceptable,oxydes supposes equimolaires
+5,spinel,10.26599/jac.2024.9220895,La-doped (Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)3O4,Co:0.200 Cr:0.200 Fe:0.200 Mn:0.200 Ni:0.200,dopant_dropped,correct,dopant ecarte
+6,unk,10.1016/j.watres.2025.123957,(FeCoNiMnCu)Ox/13X,Co:0.200 Cu:0.200 Fe:0.200 Mn:0.200 Ni:0.200,variable,correct,zeolithe support ecartee
+7,spinel,10.1016/j.apsusc.2023.159226,Cu-(Ga0.2Cr0.2Mn0.2Ni0.2Zn0.2)3O4,Cr:0.200 Ga:0.200 Mn:0.200 Ni:0.200 Zn:0.200,minor_component_dropped,correct,Cu composant minoritaire
+8,perovskite,10.1016/j.ceramint.2023.09.042,Sr(Ti0.2Zr0.2Y0.2Sn0.2Hf0.2)O3-σ + Sc3+ doping,Hf:0.100 Sn:0.100 Sr:0.500 Ti:0.100 Y:0.100 Zr:0.100,composite_main_phase,correct,
+9,perovskite,10.1063/5.0206254,"PrBO3 (B = Sc, Al, Cr, Ni, Fe)",Al:0.100 Cr:0.100 Fe:0.100 Ni:0.100 Pr:0.500 Sc:0.100,ambiguous_group;placeholder_mixed_site,correct,
+10,spinel,10.1016/j.ceramint.2026.05.216,Mg-Cu-Zn-Ni-Fe-O,Cu:0.200 Fe:0.200 Mg:0.200 Ni:0.200 Zn:0.200,element_list,correct,
+11,perovskite,10.1016/j.ceramint.2022.09.079,"(La0.25Sr0.25Ba0.25Na0.25)(Ti0.5Me0.5)O3-δ (Me=Sn, Zr, Hf)",Ba:0.125 La:0.125 Na:0.125 Sn:0.250 Sr:0.125 Ti:0.250,placeholder_variant,correct,serie : variante Me = Sn retenue
+12,unk,10.1016/j.jeurceramsoc.2023.10.026,"REPO4 (RE = Ho, Tm, Yb, Lu, Dy, Er, Y)",Dy:0.143 Er:0.143 Ho:0.143 Lu:0.143 Tm:0.143 Y:0.143 Yb:0.143,placeholder_mixed_site,correct,
+13,perovskite,10.1063/5.0321365,La(CuMnFeCoNi)O3,Co:0.100 Cu:0.100 Fe:0.100 La:0.500 Mn:0.100 Ni:0.100,ambiguous_group,correct,
+14,spinel,10.1016/j.cjph.2023.10.041,(MgNiCoCu)(1-x)/4ZnxFe2O4,Co:0.075 Cu:0.075 Fe:0.667 Mg:0.075 Ni:0.075 Zn:0.033,ambiguous_group;per_element_multiplier;variable,correct,"x nominal 0,1"
+15,spinel,10.21203/rs.3.rs-7687221/v1,Zn-doped Co–Fe–Cr–Mn–Ni spinel,Co:0.200 Cr:0.200 Fe:0.200 Mn:0.200 Ni:0.200,dopant_dropped;element_list,corrige,v1.1 initiale : Zn compte a parts egales ; regle X-doped ajoutee
+16,perovskite,10.1016/j.ijhydene.2025.04.090,Na-modified La(CrMnFeCoNi)1/5O3,Co:0.100 Cr:0.100 Fe:0.100 La:0.500 Mn:0.100 Ni:0.100,ambiguous_group;dopant_dropped;per_element_multiplier,correct,
+17,perovskite,10.1039/d5ta01956g,(LaPrSr)(FeCoNi)O3,Co:0.167 Fe:0.167 La:0.167 Ni:0.167 Pr:0.167 Sr:0.167,ambiguous_group,correct,
+18,spinel,10.3390/molecules28083468,(FeCoNiCrZn)xOy,Co:0.200 Cr:0.200 Fe:0.200 Ni:0.200 Zn:0.200,variable,correct,
+19,spinel,10.1039/d6sc05480c,FeCoNiMnZnCrOx,Co:0.167 Cr:0.167 Fe:0.167 Mn:0.167 Ni:0.167 Zn:0.167,variable,correct,
+20,perovskite,10.1021/acsami.6c08923,"Sr(Mn,Ni,Co,Mo)O₃",Co:0.125 Mn:0.125 Mo:0.125 Ni:0.125 Sr:0.500,ambiguous_group,correct,
+21,rocksalt,10.3791/57746,(Mg0.25(1-x)CoxNi0.25(1-x)Cu0.25(1-x)Zn0.25(1-x))O,Co:0.100 Cu:0.225 Mg:0.225 Ni:0.225 Zn:0.225,variable,correct,"x nominal 0,1"
+22,unk,10.1016/j.ijhydene.2026.153647,FeCoNiMoWO with Ir doping,Co:0.200 Fe:0.200 Mo:0.200 Ni:0.200 W:0.200,minor_component_dropped,correct,dopant ecarte
+23,spinel,10.1021/acsami.5c14624,MnCoNiCuZnO_x,Co:0.200 Cu:0.200 Mn:0.200 Ni:0.200 Zn:0.200,variable,correct,
+24,spinel,10.1088/1742-6596/3222/1/012027,(CoxCrxFexMnxNix)3O4,Co:0.200 Cr:0.200 Fe:0.200 Mn:0.200 Ni:0.200,variable,correct,
+25,unk,10.1016/j.scriptamat.2023.115840,Mg-Co-Ni-Cu-Zn-O,Co:0.200 Cu:0.200 Mg:0.200 Ni:0.200 Zn:0.200,element_list,correct,
+26,spinel,10.1016/j.mtsust.2025.101293,IrMnFeCoNiOx,Co:0.200 Fe:0.200 Ir:0.200 Mn:0.200 Ni:0.200,variable,correct,
+27,unk,10.3390/ma19071402,IrNiMnFeCoCuVO_x,Co:0.143 Cu:0.143 Fe:0.143 Ir:0.143 Mn:0.143 Ni:0.143 V:0.143,variable,correct,
+28,spinel,10.1038/s41467-026-70982-3,Co-Fe-Cr-Mn-Ni-Mg spinel,Co:0.167 Cr:0.167 Fe:0.167 Mg:0.167 Mn:0.167 Ni:0.167,element_list,correct,
+29,other,10.1021/jacs.4c15979,BiCuFeCeWPtOx-PMA,Bi:0.167 Ce:0.167 Cu:0.167 Fe:0.167 Pt:0.167 W:0.167,variable,correct,support PMA ecarte
+30,spinel,10.1021/acsnano.3c05478,Ag(CuZn)(AlCr)2O4,Ag:0.250 Al:0.250 Cr:0.250 Cu:0.125 Zn:0.125,ambiguous_group,acceptable,formule ambigue telle qu'ecrite (4 cations pour O4)
+31,spinel,10.1016/j.jeurceramsoc.2024.116686,"(Mn0.2Co0.2Ni0.2Cu0.2X0.2)Fe2O4 (X=Fe, Mg)",Co:0.067 Cu:0.067 Fe:0.733 Mn:0.067 Ni:0.067,placeholder_variant,correct,serie : variante X = Fe
+32,rutile,10.1038/s41467-024-53896-w,Ti/V/Cr/Nb/Mo/W/Al/Cu oxide,Al:0.125 Cr:0.125 Cu:0.125 Mo:0.125 Nb:0.125 Ti:0.125 V:0.125 W:0.125,element_list,correct,
+33,unk,10.1016/j.vacuum.2019.108850,Al–Cr–Nb–Ta–Ti oxide,Al:0.200 Cr:0.200 Nb:0.200 Ta:0.200 Ti:0.200,element_list,correct,
+34,unk,10.1021/acsnano.6c09072,"Ca,Ti,Sr,Ta,Nb oxide",Ca:0.200 Nb:0.200 Sr:0.200 Ta:0.200 Ti:0.200,element_list,correct,
+35,unk,10.1021/acs.inorgchem.4c00778,FeCoNiMoWO<sub><i>x</i></sub>,Co:0.200 Fe:0.200 Mo:0.200 Ni:0.200 W:0.200,variable,correct,
+36,unk,10.1002/smtd.202301322,AlNiFeCrMnVOx,Al:0.167 Cr:0.167 Fe:0.167 Mn:0.167 Ni:0.167 V:0.167,variable,correct,
+37,spinel,10.1002/chem.202303779,Co-Fe-Cr-Mo-Mn spinel,Co:0.200 Cr:0.200 Fe:0.200 Mn:0.200 Mo:0.200,element_list,correct,
+38,unk,10.1016/j.biortech.2025.133741,NiLaMgAlCaCeOx,Al:0.167 Ca:0.167 Ce:0.167 La:0.167 Mg:0.167 Ni:0.167,variable,correct,
+39,unk,10.1021/acs.inorgchem.3c00541,"B₂⁵Mo₃O₈ (B = Mn, Fe, Co, Ni, Zn)",Co:0.080 Fe:0.080 Mn:0.080 Mo:0.600 Ni:0.080 Zn:0.080,ambiguous_group;placeholder_mixed_site,correct,M2Mo3O8
+40,unk,10.1039/c6ta03249d,(MgCoNiCuZn)₁₋ₓ₋ᵧGaᵧAₓO (A = Na),Co:0.160 Cu:0.160 Ga:0.100 Mg:0.160 Na:0.100 Ni:0.160 Zn:0.160,ambiguous_group;placeholder_variant;variable,correct,"x = y = 0,1 nominal"
+41,unk,10.1016/j.jallcom.2026.190587,FeCoNiGaMo,Co:0.200 Fe:0.200 Ga:0.200 Mo:0.200 Ni:0.200,,correct,
+42,unk,10.1002/adfm.202503977,(FeCoNiCrMn)₂O₃,Co:0.200 Cr:0.200 Fe:0.200 Mn:0.200 Ni:0.200,,correct,
+43,perovskite,10.1039/d5sc04541j,S-LaNiFeCoCrMnO₃,Co:0.100 Cr:0.100 Fe:0.100 La:0.500 Mn:0.100 Ni:0.100,abo3_bare_sequence,corrige,v1.1 initiale : La dilue a 1/6 ; lecture ABO3 sans parentheses ajoutee
+44,unk,10.1002/eem2.70230,FeZnCuCoNi,Co:0.200 Cu:0.200 Fe:0.200 Ni:0.200 Zn:0.200,,correct,
+45,spinel,10.1021/jacs.2c06768,"(Cr, Mn, Fe, Co, Ni)₃O₄",Co:0.200 Cr:0.200 Fe:0.200 Mn:0.200 Ni:0.200,,correct,
+46,unk,10.1002/adma.202508717,Na₀.₉₅Li₀.₀₆Ni₀.₂₅Cu₀.₀₅Fe₀.₁Co₀.₀₅Mn₀.₄₄Ti₀.₀₅O₂,Co:0.026 Cu:0.026 Fe:0.051 Li:0.031 Mn:0.226 Na:0.487 Ni:0.128 Ti:0.026,,correct,
+47,rocksalt,10.1016/j.jallcom.2024.174029,(Mg0.2Fe0.2Co0.2Cu0.2Zn0.2)O,Co:0.200 Cu:0.200 Fe:0.200 Mg:0.200 Zn:0.200,,correct,
+48,spinel,10.1007/s10562-025-04973-2,(Fe0.2Co0.2Ni0.2Cu0.2Mn0.2)Fe2O4,Co:0.067 Cu:0.067 Fe:0.733 Mn:0.067 Ni:0.067,,correct,
+49,unk,10.1039/d5cc03895b,FeNiCoMnSn,Co:0.200 Fe:0.200 Mn:0.200 Ni:0.200 Sn:0.200,,correct,
+50,layered,10.1002/cssc.202502186,Na0.91Ca0.02(Ni0.3Li0.05Fe0.1Mn0.4Ti0.1Mg0.05)O2,Ca:0.010 Fe:0.052 Li:0.026 Mg:0.026 Mn:0.207 Na:0.472 Ni:0.155 Ti:0.052,,correct,
+51,perovskite,10.3390/ma18153569,Ce0.2Ba0.2Sr0.2La0.2Ca0.2CoO3-δ,Ba:0.100 Ca:0.100 Ce:0.100 Co:0.500 La:0.100 Sr:0.100,,correct,
+52,spinel,10.3390/inorganics12070198,(Cr0.2Mn0.2Co0.2Ni0.2Zn0.2)3O4,Co:0.200 Cr:0.200 Mn:0.200 Ni:0.200 Zn:0.200,,correct,
+53,perovskite,10.3390/ma18153569,Ce0.0Y0.2Ba0.2Sr0.2La0.2Ca0.2CoO3-δ,Ba:0.100 Ca:0.100 Co:0.500 La:0.100 Sr:0.100 Y:0.100,,correct,Ce0.0 ecarte
+54,spinel,10.1016/j.cej.2024.158269,(FeNiCuCrMn)3O4,Cr:0.200 Cu:0.200 Fe:0.200 Mn:0.200 Ni:0.200,,correct,
+55,other,10.1021/acs.nanolett.6c02503,RuIrMnCoGd,Co:0.200 Gd:0.200 Ir:0.200 Mn:0.200 Ru:0.200,,correct,
+56,spinel,10.1016/j.est.2024.113185,(FeCoCrNiMn)3O4,Co:0.200 Cr:0.200 Fe:0.200 Mn:0.200 Ni:0.200,,correct,
+57,spinel,10.1021/acsomega.5c12933,(CoCrFeMnNi)3O4,Co:0.200 Cr:0.200 Fe:0.200 Mn:0.200 Ni:0.200,,correct,
+58,rocksalt,10.3390/ceramics8040136,"(Co,Cu,Mg,Ni,Zn)O",Co:0.200 Cu:0.200 Mg:0.200 Ni:0.200 Zn:0.200,,correct,
+59,spinel,10.3390/catal15090827,(MnFeNiCoCd)3O4,Cd:0.200 Co:0.200 Fe:0.200 Mn:0.200 Ni:0.200,,correct,
+60,pyrochlore,10.2298/pac2302113m,(La1/7Sm1/7Nd1/7Pr1/7Y1/7Gd1/7Yb1/7)2(Sn1/3Hf1/3Zr1/3)2O7,Gd:0.071 Hf:0.167 La:0.071 Nd:0.071 Pr:0.071 Sm:0.071 Sn:0.167 Y:0.071 Yb:0.071 Zr:0.167,,correct,

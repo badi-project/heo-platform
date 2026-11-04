@@ -1,0 +1,13 @@
+{
+ "eV_per_electron": {
+  "Co": -0.0977,
+  "Fe": -0.3452,
+  "Mn": 0.0308
+ },
+ "fitted_on": {
+  "Co": "3 CoO + O -> Co3O4",
+  "Fe": "3 FeO + O -> Fe3O4",
+  "Mn": "3 MnO + O -> Mn3O4"
+ },
+ "source": "thermo/run_redox_validation.py"
+}

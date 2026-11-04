@@ -1,0 +1,51 @@
+n,famille,doi,formule_ecrite,fractions_v1_1,verdict_v1_1,note,ensemble_v1_0,v1_0_equimolaire_correct
+1,spinel,10.1039/d5sc10185a,(CoCuMgCrFe)₃O₄,Co:0.200 Cr:0.200 Cu:0.200 Fe:0.200 Mg:0.200,correct,,Co-Cr-Cu-Fe-Mg,oui
+2,spinel,10.1016/j.jmat.2024.02.003,(FeCoNiCrMn)3O4,Co:0.200 Cr:0.200 Fe:0.200 Mn:0.200 Ni:0.200,correct,,Co-Cr-Fe-Mn-Ni,oui
+3,spinel,10.1021/acsomega.5c00902,(FeNiCoCuZn)₃O₄,Co:0.200 Cu:0.200 Fe:0.200 Ni:0.200 Zn:0.200,correct,,Co-Cu-Fe-Ni-Zn,oui
+4,spinel,10.1016/j.jece.2026.122026,(CoFeNiCuZn)3O4,Co:0.200 Cu:0.200 Fe:0.200 Ni:0.200 Zn:0.200,correct,,Co-Cu-Fe-Ni-Zn,oui
+5,spinel,10.1016/j.jelechem.2024.118922,(Mg0.2X0.2Zn0.2Ni0.2Fe0.2)3O4 (X = Cr),Cr:0.200 Fe:0.200 Mg:0.200 Ni:0.200 Zn:0.200,correct,,Cr-Fe-Mg-Ni-Zn,oui
+6,spinel,10.3390/polym15081842,(La₀.₁₄Ce₀.₁₄Mn₀.₁₄Zr₀.₁₄Cu₀.₁₄Ca₀.₁₄Ni₀.₁₄)Fe₂O₄,Ca:0.047 Ce:0.047 Cu:0.047 Fe:0.671 La:0.047 Mn:0.047 Ni:0.047 Zr:0.047,correct,,Ca-Ce-Cu-Fe-La-Mn-Ni-Zr,non
+7,spinel,10.1002/adma.202302979,"(Cr, Mn, Fe, Co, Ni)3O4",Co:0.200 Cr:0.200 Fe:0.200 Mn:0.200 Ni:0.200,correct,,Co-Cr-Fe-Mn-Ni,oui
+8,spinel,10.3390/batteries9020115,(TiFeCoNiZn)3O4,Co:0.200 Fe:0.200 Ni:0.200 Ti:0.200 Zn:0.200,correct,,Co-Fe-Ni-Ti-Zn,oui
+9,spinel,10.1021/acsmaterialsau.6c00118,Cr-Mn-Fe-Cu-Ni oxide,Cr:0.200 Cu:0.200 Fe:0.200 Mn:0.200 Ni:0.200,correct,,Cr-Cu-Fe-Mn-Ni,oui
+10,spinel,10.1063/5.0161401,(MgMnFeCoNi)Al2O4,Al:0.667 Co:0.067 Fe:0.067 Mg:0.067 Mn:0.067 Ni:0.067,correct,,Co-Fe-Mg-Mn-Ni,non
+11,spinel,10.1016/j.electacta.2024.145004,(Cr0.2Mn0.2Co0.2Ni0.2Zn0.2)3O4,Co:0.200 Cr:0.200 Mn:0.200 Ni:0.200 Zn:0.200,correct,,Co-Cr-Mn-Ni-Zn,oui
+12,spinel,10.1002/smll.202304585,(Mn₀.₂Fe₀.₂Co₀.₂Ni₀.₂Zn₀.₂)₃O₄,Co:0.200 Fe:0.200 Mn:0.200 Ni:0.200 Zn:0.200,correct,,Co-Fe-Mn-Ni-Zn,oui
+13,perovskite,10.1002/smll.75685,La(Co0.4Fe0.2Ni0.2Cr0.2)O3−δ,Co:0.200 Cr:0.100 Fe:0.100 La:0.500 Ni:0.100,correct,,Co-Cr-Fe-La-Ni,non
+14,perovskite,10.1039/d5ta06570d,Pr0.2La0.2Sm0.2Nd0.2Gd0.2BaCo2O5+δ,Ba:0.250 Co:0.500 Gd:0.050 La:0.050 Nd:0.050 Pr:0.050 Sm:0.050,correct,,Gd-La-Nd-Pr-Sm,non
+15,perovskite,10.1007/s12034-025-03524-0,(Eu0.2Gd0.2Tb0.2Dy0.2Ho0.2)CrO3,Cr:0.500 Dy:0.100 Eu:0.100 Gd:0.100 Ho:0.100 Tb:0.100,correct,,Cr-Dy-Eu-Gd-Ho-Tb,non
+16,perovskite,10.1021/acs.langmuir.5c03358,(Y0.2La0.2Tb0.2Dy0.2Ho0.2)MnO3,Dy:0.100 Ho:0.100 La:0.100 Mn:0.500 Tb:0.100 Y:0.100,correct,,Dy-Ho-La-Mn-Tb-Y,non
+17,perovskite,10.1088/1361-6463/aeacee,(Dy0.2Ho0.2Sm0.2Er0.2Tm0.2)Fe1O3,Dy:0.100 Er:0.100 Fe:0.500 Ho:0.100 Sm:0.100 Tm:0.100,correct,,Dy-Er-Ho-Sm-Tm,non
+18,perovskite,10.1039/d4tc00993b,La(CrMnFeCoNi)O3,Co:0.100 Cr:0.100 Fe:0.100 La:0.500 Mn:0.100 Ni:0.100,correct,,Co-Cr-Fe-La-Mn-Ni,non
+19,perovskite,10.1002/advs.76945,(Gd0.2Tb0.2Dy0.2Ho0.2Er0.2)FeO3,Dy:0.100 Er:0.100 Fe:0.500 Gd:0.100 Ho:0.100 Tb:0.100,correct,,Dy-Er-Fe-Gd-Ho-Tb,non
+20,perovskite,10.1016/j.ceramint.2026.08.222,(La0.25Eu0.25Nd0.25Gd0.25)1-xDyxCrO3,Cr:0.500 Dy:0.050 Eu:0.113 Gd:0.113 La:0.113 Nd:0.113,correct,,Dy-Eu-Gd-La-Nd,non
+21,perovskite,10.1088/1742-6596/3250/1/012016,La(Cr0.2Mn0.2Fe0.2Co0.2Ni0.2)O3,Co:0.100 Cr:0.100 Fe:0.100 La:0.500 Mn:0.100 Ni:0.100,correct,,Co-Cr-Fe-Mn-Ni,non
+22,perovskite,10.1021/acsnano.2c08096,LaCr0.2Mn0.2Fe0.2Co0.2Ni0.2O3-δ,Co:0.100 Cr:0.100 Fe:0.100 La:0.500 Mn:0.100 Ni:0.100,correct,,Co-Cr-Fe-La-Mn-Ni,non
+23,perovskite,10.1063/5.0247786,Ba(Ti0.2Zr0.2Sn0.2Hf0.2Ce0.2)O3,Ba:0.500 Ce:0.100 Hf:0.100 Sn:0.100 Ti:0.100 Zr:0.100,correct,,Ba-Ce-Hf-Sn-Ti-Zr,non
+24,perovskite,10.1002/anie.3805070,Ag-LaSrAgFeCoOx,Ag:0.200 Co:0.200 Fe:0.200 La:0.200 Sr:0.200,correct,,Ag-Co-Fe-La-Sr,oui
+25,rocksalt,10.1038/s41467-022-30674-0,Mg0.2Co0.2Ni0.2Cu0.2Zn0.2O,Co:0.200 Cu:0.200 Mg:0.200 Ni:0.200 Zn:0.200,correct,,Co-Cu-Mg-Ni-Zn,oui
+26,rocksalt,10.1016/j.jmrt.2026.02.044,(CrMnFeCoNi)O,Co:0.200 Cr:0.200 Fe:0.200 Mn:0.200 Ni:0.200,correct,,Co-Cr-Fe-Mn-Ni,oui
+27,rocksalt,10.1016/j.jelechem.2022.116737,(Mg0.2Fe0.2Co0.2Ni0.2Cu0.2)O,Co:0.200 Cu:0.200 Fe:0.200 Mg:0.200 Ni:0.200,correct,,Co-Cu-Fe-Mg-Ni,oui
+28,rocksalt,10.1002/adma.73998,(ScMgCoNiCuZn)O,Co:0.167 Cu:0.167 Mg:0.167 Ni:0.167 Sc:0.167 Zn:0.167,correct,,Co-Cu-Mg-Ni-Sc-Zn,oui
+29,rocksalt,10.1017/s1431927621010011,"(Co,Cu,Mg,Ni,Zn)O",Co:0.200 Cu:0.200 Mg:0.200 Ni:0.200 Zn:0.200,correct,,Co-Cu-Mg-Ni-Zn,oui
+30,rocksalt,10.1039/d1nr07000b,"LTM (Li, Fe, Co, Ni, Cu, Zn)",Co:0.167 Cu:0.167 Fe:0.167 Li:0.167 Ni:0.167 Zn:0.167,correct,,Co-Cu-Fe-Li-Ni-Zn,oui
+31,fluorite,10.1002/adsu.202200067,Ce₀.₂Zr₀.₂La₀.₂Pr₀.₂Y₀.₂O₂,Ce:0.200 La:0.200 Pr:0.200 Y:0.200 Zr:0.200,correct,,Ce-La-Pr-Y-Zr,oui
+32,fluorite,10.1021/acsami.0c17446,"High entropy oxide with Ce + 4 other metals (Al, Fe, La, Mn, Nd, Pr, Sm, Y, Zr)",Al:0.111 Fe:0.111 La:0.111 Mn:0.111 Nd:0.111 Pr:0.111 Sm:0.111 Y:0.111 Zr:0.111,erreur,serie de composes decrite en prose (Ce + 4 metaux parmi 9) : irrecuperable,Al-Ce-Fe-La-Mn-Nd-Pr-Sm-Y-Zr,n.a.
+33,fluorite,10.3390/coatings16010079,(Gd0.2Dy0.2Ho0.2Er0.2Yb0.2)2Zr2O7,Dy:0.100 Er:0.100 Gd:0.100 Ho:0.100 Yb:0.100 Zr:0.500,correct,,Dy-Er-Gd-Ho-Yb,non
+34,fluorite,10.3390/coatings13050917,HfZrCeY(Mg)O at 18.4 mol.% MgO,Ce:0.200 Hf:0.200 Mg:0.200 Y:0.200 Zr:0.200,correct,,Ce-Hf-Mg-Y-Zr,oui
+35,fluorite,10.1016/j.surfin.2024.104815,(CeGdHfPrZr)O2,Ce:0.200 Gd:0.200 Hf:0.200 Pr:0.200 Zr:0.200,correct,,Ce-Gd-Hf-Pr-Zr,oui
+36,fluorite,10.3390/catal16080689,CeSmLaPrYOx,Ce:0.200 La:0.200 Pr:0.200 Sm:0.200 Y:0.200,correct,,Ce-La-Pr-Sm-Y,oui
+37,pyrochlore,10.1016/j.jallcom.2021.160773,Dy2(Ti0.2Zr0.2Hf0.2Ge0.2Sn0.2)2O7,Dy:0.500 Ge:0.100 Hf:0.100 Sn:0.100 Ti:0.100 Zr:0.100,correct,,Dy-Ge-Hf-Sn-Ti-Zr,non
+38,pyrochlore,10.1007/s40145-022-0582-6,(La0.2Nd0.2Sm0.2Eu0.2Gd0.2)2Zr2O7,Eu:0.100 Gd:0.100 La:0.100 Nd:0.100 Sm:0.100 Zr:0.500,correct,,Eu-Gd-La-Nd-Sm-Zr,non
+39,pyrochlore,10.1016/j.jeurceramsoc.2023.01.029,(La0.2Nd0.2Sm0.2Eu0.2Gd0.2)2Zr2O7,Eu:0.100 Gd:0.100 La:0.100 Nd:0.100 Sm:0.100 Zr:0.500,correct,,Eu-Gd-La-Nd-Sm-Zr,non
+40,pyrochlore,10.1016/j.ceramint.2024.07.327,La2(TiZrSnHfGe)2O7,Ge:0.100 Hf:0.100 La:0.500 Sn:0.100 Ti:0.100 Zr:0.100,correct,,Ge-Hf-La-Sn-Ti-Zr,non
+41,pyrochlore,10.1088/2053-1591/adee80,(La0.25Ce0.25Nd0.25Gd0.25)2Hf2O7,Ce:0.125 Gd:0.125 Hf:0.500 La:0.125 Nd:0.125,correct,,Ce-Gd-Hf-La-Nd,non
+42,layered,10.1016/j.jallcom.2024.173687,(Lu₁/₈Yb₁/₈Sc₁/₈Er₁/₈Y₁/₈Ho₁/₈Dy₁/₈Tb₁/₈)₂Si₂O₇,Dy:0.062 Er:0.062 Ho:0.062 Lu:0.062 Sc:0.062 Si:0.500 Tb:0.062 Y:0.062 Yb:0.062,correct,,Dy-Er-Ho-Lu-Sc-Tb-Y-Yb,non
+43,layered,10.1038/s41467-026-72948-x,(La₀.₇₆Sr₀.₂₄)₃(Fe₀.₂₂Co₀.₂₁Ni₀.₁₈Cu₀.₁₇Mn₀.₂₂)₂O₇,Co:0.084 Cu:0.068 Fe:0.088 La:0.456 Mn:0.088 Ni:0.072 Sr:0.144,correct,,Co-Cu-Fe-Mn-Ni,non
+44,layered,10.1021/acs.nanolett.4c00551,Li₁.₄₇Mn₀.₅₇Al₀.₁₃Fe₀.₀₉₅Co₀.₁₀₅Ni₀.₀₉₅O₂.₄₉,Al:0.053 Co:0.043 Fe:0.039 Li:0.596 Mn:0.231 Ni:0.039,correct,,Al-Co-Fe-Mn-Ni,non
+45,layered,10.1088/2752-5724/ac8ab9,Na₀.₆₇(Mn₀.₄₅Ni₀.₁₈Co₀.₂₄Ti₀.₁Mg₀.₀₃)O₂,Co:0.144 Mg:0.018 Mn:0.269 Na:0.401 Ni:0.108 Ti:0.060,correct,,Co-Mg-Mn-Ni-Ti,non
+46,other,10.1016/j.jeurceramsoc.2021.07.049,Al2O3/(Y0.2Er0.2Yb0.2Ho0.2Lu0.2)3Al5O12,Al:0.625 Er:0.075 Ho:0.075 Lu:0.075 Y:0.075 Yb:0.075,correct,,Er-Ho-Lu-Y-Yb,non
+47,other,10.1021/acsami.3c02829,HEO (MgCoNiCuZn oxide with Rh nanoparticles),Co:0.200 Cu:0.200 Mg:0.200 Ni:0.200 Zn:0.200,correct apres audit,"Rh en nanoparticules compte comme cation : regle des mots additifs ajoutee (with, doped, ...)",Co-Cu-Mg-Ni-Rh-Zn,non
+48,other,10.1016/j.matchemphys.2022.126181,(Sm0.2Eu0.2Tb0.2Dy0.2Lu0.2)2Si2O7,Dy:0.100 Eu:0.100 Lu:0.100 Si:0.500 Sm:0.100 Tb:0.100,correct,,Dy-Eu-Lu-Sm-Tb,non
+49,unk,10.1007/s44210-024-00044-0,BiSrFeZrYO,Bi:0.200 Fe:0.200 Sr:0.200 Y:0.200 Zr:0.200,correct,,Bi-Fe-Sr-Y-Zr,oui
+50,unk,,Ti-Zr-Nb-Ta-Zn oxide,Nb:0.200 Ta:0.200 Ti:0.200 Zn:0.200 Zr:0.200,correct,,Nb-Ta-Ti-Zn-Zr,oui

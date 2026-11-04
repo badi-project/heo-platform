@@ -1,0 +1,20 @@
+Etape 1b - enthalpies d'oxydation de couples binaires : CHGNet contre experience
+reference experimentale : NIST-JANAF (Co, Fe, Cu), Jacob et al. (Mn), data/thermo/reference_thermo.csv
+
+reaction                     CHGNet   mesure   ecart  T air mesuree  T air (H CHGNet)
+3 CoO + O -> Co3O4            -1.84    -2.04   +0.20         1172 K            1062 K
+3 FeO + O -> Fe3O4            -2.47    -3.16   +0.69         stable            stable
+2 Fe3O4 + O -> 3 Fe2O3        -1.76    -2.43   +0.67         1658 K            1204 K
+Cu2O + O -> 2 CuO             -1.78    -1.47   -0.32         1305 K            stable
+2 Mn3O4 + O -> 3 Mn2O3        -1.84    -1.16   -0.68              -                 -
+3 MnO + O -> Mn3O4            -2.45    -2.39   -0.06              -                 -
+
+correction par element de l'etape M2+ -> M3+ (ajustee sur MO -> M3O4) : Co -0.098 eV/electron, Fe -0.345 eV/electron, Mn +0.031 eV/electron
+controle hors echantillon, 2 Fe3O4 + O -> 3 Fe2O3 : ecart brut +0.67 -> -0.02 eV/O apres correction du Fe
+Mn3O4 -> Mn2O3 (-0.68) n'est pas corrige : l'erreur porte sur la phase Mn2O3 (bixbyite), absente des spinelles HEO, pas sur l'element (MnO -> Mn3O4 : -0.06)
+
+enthalpies en eV par atome O gagne ; 'stable' : pas de transition dans l'intervalle tabule
+ecart absolu moyen : 0.44 eV/O ; ecart moyen +0.08 eV/O
+ordre des 6 couples : different (correlation de rang 0.37)
+
+genere par thermo/run_redox_validation.py

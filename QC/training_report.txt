@@ -1,0 +1,40 @@
+echantillons etiquetes (6 familles) : 850 sur 1074 ; systemes cationiques distincts : 408
+repartition : spinel 354, perovskite 228, rocksalt 126, fluorite 77, pyrochlore 38, layered 27
+scikit-learn 1.9.1, numpy 2.5.3, graine 0
+
+1. Validation croisee en 20 plis groupes par systeme cationique
+   arbres boostes, 134 descripteurs : exactitude 0.916, F1 macro 0.848, log-vraisemblance 0.581 -> 0.299 apres calibration (T = 2.834)
+   erreur de calibration (ECE, 10 classes) : 0.070 -> 0.029
+   ECE avec T ajustee sur l'autre moitie des systemes (sans fuite) : 0.019
+   F1 par famille : spinel 0.95, perovskite 0.97, rocksalt 0.85, fluorite 0.87, pyrochlore 0.68, layered 0.76
+   matrice de confusion (lignes = vrai, colonnes = predit, ordre spinel/perovskite/rocksalt/fluorite/pyrochlore/layered) :
+     spinel       341    1   12    0    0    0
+     perovskite     0  224    1    0    1    2
+     rocksalt      22    1  103    0    0    0
+     fluorite       2    0    0   66    9    0
+     pyrochlore     0    2    0    8   26    2
+     layered        1    5    0    0    2   19
+   references :
+     classe majoritaire (spinel) : exactitude 0.416
+     systeme publie le plus proche (Jaccard, sans apprentissage) : exactitude 0.738, F1 macro 0.699
+     arbres boostes, presence des 30 cations seulement : exactitude 0.845, F1 macro 0.720
+     arbres boostes, 9 descripteurs classiques : exactitude 0.907, F1 macro 0.816
+     arbres boostes, motif stoechiometrique seul (fractions triees, sans chimie) : exactitude 0.256, F1 macro 0.272
+     modele complet restreint aux 458 compositions equimolaires (aucun indice de stoechiometrie) : exactitude 0.915, F1 macro 0.601
+     regression logistique, 134 descripteurs : exactitude 0.894, F1 macro 0.800
+   perovskite ou non : modele 0.985 ; regle de Goldschmidt 0.878 <= t <= 1.061 optimisee sur toute la base 0.946
+
+2. Validation temporelle : apprentissage sur les articles <= 2024, test sur 2025-2027
+   456 echantillons d'apprentissage, 394 de test : exactitude 0.881, F1 macro 0.777
+   dont 192 systemes jamais vus avant 2025 : exactitude 0.859, F1 macro 0.728
+   reference presence des cations, memes systemes nouveaux : exactitude 0.708
+
+3. Chimie inedite : 20 groupes de systemes voisins (k-moyennes sur la presence des cations), chacun retire a son tour
+   arbres boostes, 134 descripteurs : exactitude 0.895, F1 macro 0.793
+   presence des cations seulement : exactitude 0.814, F1 macro 0.679
+   systeme publie le plus proche : exactitude 0.540, F1 macro 0.480
+
+4. Export : 23634 noeuds ; ecart maximal arbres exportes / scikit-learn sur le probe : 0.0e+00
+   domaine d'applicabilite : 20 descripteurs, k = 5, seuil 2.911 (95e centile)
+
+genere par tools/train_model.py

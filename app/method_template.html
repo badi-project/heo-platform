@@ -1,0 +1,130 @@
+<h2 style="font-size:12px">Méthode, performances et limites</h2>
+<h3>Ce que fait cet outil</h3>
+<p>Il prédit, pour une composition donnée — formule ou ensemble de cations —, <b>la famille
+structurale la plus probable</b> et le <b>diffractogramme de poudre attendu</b> si cette famille se
+forme. Il indique aussi si la combinaison de cations a déjà été publiée dans le corpus récolté et si
+elle se trouve dans le domaine où le modèle a vu des exemples comparables.</p>
+<h3>Ce qu'il ne fait pas</h3>
+<ul>
+<li>Il <b>ne prédit aucune activité électrocatalytique ou photocatalytique</b>. Les valeurs publiées
+(surpotentiel à 10 mA/cm², pente de Tafel, constante apparente de dégradation) dépendent de la charge
+d'électrode, du substrat, du liant, de l'électrolyte, de la normalisation et de la correction iR :
+agrégées entre laboratoires, elles mesurent le protocole autant que le matériau.</li>
+<li>Il <b>ne prédit pas la voie de synthèse</b> qui mène au monophasé, ni la morphologie, ni la
+taille de particule — déterminées par le procédé, pas par la composition.</li>
+<li>Il <b>ne dit pas si le composé sera monophasé</b> de façon fiable : {{n_single}} échantillons
+seulement sont annotés « monophasé » et {{n_multi}} « multiphasé », parce que personne ne publie les
+essais ratés.</li>
+<li>La surface d'un HEO en fonctionnement n'a pas la composition du volume. Sous réaction de
+dégagement d'oxygène, la phase active réelle est souvent un (oxy)hydroxyde reconstruit.</li>
+</ul>
+<h3>Base de données</h3>
+<p>2189 notices récoltées via EuropePMC, Crossref et arXiv, filtrées par expression exacte, puis
+extraction structurée par modèle de langue avec phrase source conservée. Depuis la version 1.1, la
+<b>stœchiométrie est relue dans la formule écrite par les auteurs</b> par un analyseur déterministe
+(<code>src/formula.py</code>), au lieu d'être supposée équimolaire sur l'ensemble de cations proposé
+par le modèle de langue. Cet ensemble perdait régulièrement un site cristallographique entier —
+(Na<sub>0.2</sub>Bi<sub>0.2</sub>Ba<sub>0.2</sub>Sr<sub>0.2</sub>Ca<sub>0.2</sub>)TiO<sub>3</sub>
+était enregistré sans titane — et le facteur de Goldschmidt calculé était donc faux.</p>
+<p>Après relecture : <b>{{n_rows}} échantillons, {{n_pubs}} publications, {{n_systems}} systèmes
+cationiques distincts, {{n_cations}} cations</b> ; {{n_fixed}} ensembles de cations corrigés, dont
+{{n_site}} où un site manquait ; {{n_dropped}} entrées écartées (cations inventés absents du texte,
+stœchiométrie illisible pour une structure à plusieurs sites, formule à moins de cinq cations).
+<b>Audit</b> sur 50 entrées tirées au hasard, stratifiées par famille : stœchiométrie correcte dans
+48 cas ; l'ancienne pondération équimolaire l'était dans 23 cas sur 49.</p>
+<h3>Modèle</h3>
+<p>Arbres de décision boostés par histogramme (scikit-learn, 250 itérations, 15 feuilles,
+pondération des classes équilibrée) sur <b>134 descripteurs</b> calculés sur la stœchiométrie réelle :
+statistiques élémentaires pondérées (rayons de Shannon en coordinence IV, VI, VIII et XII,
+électronégativité, états d'oxydation, températures de fusion, volumes molaires, énergies
+d'ionisation), entropie configurationnelle, désaccords de taille et d'électronégativité, séparation
+des sites A et B par rayon décroissant avec facteur de tolérance et facteur octaédrique, fractions de
+familles chimiques, et présence des 30 cations les plus fréquents. La chaîne d'entraînement est dans
+le dépôt (<code>tools/train_model.py</code>) : le modèle de cette page se régénère à l'identique.</p>
+<p><b>Trois validations</b>, de la plus douce à la plus stricte : croisée en 20 plis <i>groupés par
+système cationique</i> (aucun système des deux côtés) ; <i>temporelle</i> (apprentissage sur les
+articles publiés jusqu'en {{t_cut}}, test sur les suivants) ; <i>chimie inédite</i> (20 groupes de
+systèmes voisins retirés tour à tour).</p>
+<div class="metric">
+<span class="k">exactitude, 6 familles, validation groupée ({{n_labeled}} échantillons)</span><span class="v">{{cv_acc}}</span>
+<span class="k">F1 macro</span><span class="v">{{cv_f1}}</span>
+<span class="k">validation temporelle, articles {{t_test_years}} ({{t_n_test}} échantillons)</span><span class="v">{{t_acc}}</span>
+<span class="k">— dont systèmes jamais publiés avant ({{t_n_unseen}})</span><span class="v">{{t_acc_unseen}}</span>
+<span class="k">chimie inédite (groupes de systèmes retirés)</span><span class="v">{{chem_acc}}</span>
+<span class="k">référence : système publié le plus proche, sans apprentissage</span><span class="v">{{base_nearest}}</span>
+<span class="k">référence : présence des cations seulement</span><span class="v">{{base_presence}}</span>
+<span class="k">référence : 9 descripteurs classiques</span><span class="v">{{base_classic}}</span>
+<span class="k">référence : classe majoritaire (spinelle)</span><span class="v">{{base_majority}}</span>
+<span class="k">pérovskite ou non — ce modèle</span><span class="v">{{bin_model}}</span>
+<span class="k">pérovskite ou non — facteur de Goldschmidt, bornes ajustées</span><span class="v">{{bin_gold}}</span>
+</div>
+<p style="margin-top:10px">F1 par famille : {{f1_per_class}}. <b>La confusion dominante reste
+rocksalt → spinelle</b> ({{rs_as_sp}} cas, {{sp_as_rs}} dans l'autre sens) : les mêmes cations 3d
+donnent l'une ou l'autre structure selon la température de calcination et la stœchiométrie en
+oxygène, information absente de la plupart des résumés. Les classes bixbyite et rutile, trop peu
+peuplées, sont écartées.</p>
+<p>Probabilités calibrées par mise à l'échelle de température (T = {{temperature}}) ajustée sur les
+prédictions hors échantillon : erreur de calibration {{ece_raw}} → {{ece_cal}}. Une annonce entre 90
+et 100 % correspond à {{rel_hi}} d'exactitude observée ; une annonce entre 60 et 70 % à
+{{rel_mid}}.</p>
+<h3>Domaine d'applicabilité</h3>
+<p>Distance moyenne aux 5 plus proches voisins du jeu d'entraînement dans l'espace standardisé de
+20 descripteurs interprétables ; seuil au 95<sup>e</sup> centile de cette distance sur
+l'entraînement ({{ad_threshold}}). Au-delà, l'interface refuse d'interpréter la probabilité :
+ce n'est pas une prédiction prudente, c'est une absence de prédiction.</p>
+<h3>Paramètre de maille et diffractogramme</h3>
+<p>Pas de régresseur appris : le paramètre de maille n'est rapporté que <b>{{n_lattice}} fois</b> dans
+la base. À la place, un modèle géométrique sur rayons de Shannon, recalé par prototype sur un composé
+de référence (MgO, CeO<sub>2</sub>, SrTiO<sub>3</sub>, MgAl<sub>2</sub>O<sub>4</sub>,
+Y<sub>2</sub>O<sub>3</sub>, Y<sub>2</sub>Ti<sub>2</sub>O<sub>7</sub>), avec un écart absolu moyen de
+<b>{{lattice_mae}} %</b> sur les valeurs expérimentales disponibles. Le diffractogramme est calculé à
+partir des facteurs de structure exacts des prototypes, validés contre <code>pymatgen</code>.
+Occupations supposées aléatoires sur tous les sites cationiques, sauf pérovskite et pyrochlore où les
+cations sont répartis entre sites A et B par rayon ionique décroissant.</p>
+<h3>Thermodynamique calculée (potentiel interatomique CHGNet)</h3>
+<p>Pour les cations des systèmes rocksalt et spinelle ({{th_elements}}), la carte « Thermodynamique
+calculée » remplace la question « que rapporte la littérature » par des grandeurs physiques calculées
+avec un potentiel interatomique universel appris (CHGNet, entraîné sur les calculs DFT du Materials
+Project), chacune confrontée à des mesures avant usage (<code>thermo/</code>, rapports
+<code>QC/thermo_*.txt</code>).</p>
+<ul>
+<li><b>Rocksalt monophasé ou non</b> — enthalpie de mélange et dispersion des longueurs de liaison,
+méthode de Sivak et al. (<i>Phys. Rev. Lett.</i> 2025) : les {{rs_n}} compositions synthétisées par ces
+auteurs sont séparées ({{rs_hits}}) avec des seuils lus sur les monophasés eux-mêmes ; en un-contre-tous,
+{{rs_loo}}. Pour (MgCoNiCuZn)O, le calcul donne {{rs_h5}} meV/atome contre {{rs_cal}} mesurés par
+calorimétrie. Huit compositions ne fixent pas un seuil général : la carte ne l'affiche que pour elles.</li>
+<li><b>Rocksalt ou spinelle dans l'air</b> — enthalpie d'oxydation 3 MO + O → M<sub>3</sub>O<sub>4</sub>,
+corrigée élément par élément sur des couples redox mesurés (NIST-JANAF), calculée sur {{th_n}} systèmes
+de la base. Elle sépare les systèmes rapportés rocksalt et spinelle avec une AUC de {{th_auc}} ;
+résumée par un modèle additif par cation (erreur {{th_mae}} eV/O). Elle <b>n'améliore pas</b> le
+classifieur dans son domaine ; quand un cation est inconnu du modèle, s'appuyer sur elle fait passer
+l'exactitude rocksalt / spinelle de {{lco_comp}} à {{lco_switch}} en moyenne, avec des écarts forts
+selon le cation. Li, monovalent, n'est pas couvert.</li>
+<li><b>Paramètre de maille des spinelles</b> — CHGNet calibré sur 17 spinelles binaires :
+{{lat_mae}} % d'écart sur les spinelles HEO mesurés (le modèle géométrique ci-dessous : 1,9 %).</li>
+</ul>
+<h3>Activité catalytique : pourquoi pas de prédiction</h3>
+<p>Les surtensions OER publiées ne peuvent pas entraîner de prédicteur : pour une même composition,
+elles varient de {{oer_sd}} mV d'écart-type d'un laboratoire à l'autre, et la part de leur variance
+attribuable à la composition est de {{oer_icc}}. Le descripteur retenu est calculé — l'énergie de
+formation de lacune d'oxygène, qui suit la réductibilité mesurée de neuf oxydes binaires (corrélation
+de rang {{vac_rho}}) — et doit être confronté à des mesures à protocole constant ; la carte l'affiche
+pour les spinelles calculées.</p>
+<h3>Quoi synthétiser ensuite</h3>
+<p>Rejouée sur la base, une sélection des compositions les plus informatives atteint la même
+exactitude qu'un choix au hasard avec {{al_saving}} de synthèses en moins (critère fixé : 25 %,
+<code>tools/active_learning.py</code>). Les propositions pour un laboratoire d'oxydes 3d, chacune avec
+la prédiction du classifieur et celle du calcul, sont dans <code>data/next_experiments.csv</code>.</p>
+<h3>Criblage</h3>
+<p>{{screen_total}} compositions évaluées : les {{screen_quin}} quinaires équimolaires des
+{{screen_pool}} cations documentés au moins 20 fois, plus {{screen_sen}} sénaires obtenus en ajoutant un
+cation aux 3000 meilleurs quinaires. {{screen_novel_in}} sont à la fois absentes de la base et dans le
+domaine d'applicabilité. <b>Deux mises en garde</b> : la probabilité affichée est celle d'une
+<i>famille structurale</i>, pas d'une performance ; et le criblage énumère des mélanges équimolaires,
+qui ne respectent pas les sites A et B d'une pérovskite — pour ces familles, saisissez la formule.</p>
+<h3>Reproductibilité</h3>
+<p>La base, les descripteurs, le modèle, le criblage et cette page se régénèrent par
+<code>tools/clean_database.py</code>, <code>tools/train_model.py</code>, <code>tools/screen.py</code>
+et <code>tools/build_app.py</code>. Les arbres exportés reproduisent scikit-learn à l'identique ; les
+descripteurs et l'analyseur de formules sont recalculés en JavaScript et leur parité avec Python est
+vérifiée à chaque commit (<code>tools/parity_check.py</code>).</p>
