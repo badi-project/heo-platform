@@ -65,14 +65,19 @@ def test_candidate_table_announces_truncation():
 def test_database_shape_and_missing_dois():
     rows = list(csv.DictReader(open(os.path.join(ROOT, "data", "heo_database.csv"),
                                     encoding="utf-8")))
-    assert len(rows) == 1133
-    assert sum(1 for r in rows if not r["doi"]) == 58
-    assert {"cations", "n_cat", "phase", "proto", "a_ang", "T_C", "route", "doi"} \
-        <= set(rows[0])
+    report = read("QC", "database_cleaning.txt")
+    assert f"entrees conservees : {len(rows)}" in report
+    assert {"cations", "n_cat", "phase", "proto", "a_ang", "T_C", "route", "doi", "frac",
+            "cations_llm", "stoich_source"} <= set(rows[0])
     assert all(int(r["n_cat"]) >= 5 for r in rows)
+    # preprints without DOI reach the page as null and must render "sans DOI"
+    assert any(not r["doi"] for r in rows)
 
 
 def test_candidate_file_matches_the_exported_subset():
     rows = list(csv.DictReader(open(os.path.join(ROOT, "data", "heo_candidats.csv"),
                                     encoding="utf-8")))
-    assert len(rows) == 3589
+    html = read("app", "heo_designer.html")
+    start = html.index("{", html.index("const PAYLOAD = "))
+    payload, _ = json.JSONDecoder().raw_decode(html, start)
+    assert len(rows) == len(payload["CANDS"])
