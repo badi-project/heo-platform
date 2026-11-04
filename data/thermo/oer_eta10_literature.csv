@@ -1,0 +1,37 @@
+system,proto,eta10_mV,doi,perf_text
+Al-Co-Cr-Cu-Fe-Ni-Zn,spinel,266.0,10.1002/cssc.70712,266 mV overpotential at 10 mA·cm⁻² for OER; 200 h stability at 100 mA·cm⁻²; 500 mA·cm⁻² at 2.3 V in 1 M KOH seawater
+Al-Co-Cr-Fe-Ni,spinel,230.0,10.1021/acsomega.4c03807,"Tafel slope 29 mV·dec⁻¹, overpotential η₁₀ = 230 mV under alkaline conditions"
+Co-Cr-Cu-Fe-Ni,spinel,270.0,10.1021/acsami.2c09161,"UOR: 1.35 V at 10 mA cm⁻²; OER: 270 mV overpotential at 10 mA cm⁻², Tafel slope 49 mV dec⁻¹"
+Co-Cr-Cu-Fe-Ni,spinel,518.1,10.3390/coatings13081461,"OER: 518.1 mV overpotential at 10 mA/cm², 119.7 mV/dec Tafel slope in alkaline conditions"
+Co-Cr-Fe-Ir-Ru,rutile,185.0,10.1038/s41467-025-56189-y,185 mV overpotential at 10 mA cm⁻²; >1000 h stability in acidic electrolyte; PEM electrolyzer stable >600 h at 1 A cm⁻²
+Co-Cr-Fe-La-Mn-Ni,perovskite,165.0,10.1039/d5sc04541j,"165 mV overpotential at 10 mA cm⁻², 1800 h stability, 5.8 A cm⁻² at 2.0 V cell voltage in anion exchange membrane water electrolyzer"
+Co-Cr-Fe-La-Mn-Ni,perovskite,450.0,10.1039/d4ra02680b,Overpotential 450 mV at 10 mA cm⁻²
+Co-Cr-Fe-La-Mn-Ni-Sr,perovskite,330.0,10.1039/d4ra02680b,Overpotential 330 mV at 10 mA cm⁻²; stable for 200 h at 10 mA cm⁻² in two-electrode water splitting
+Co-Cr-Fe-La-Mg-Ni,perovskite,381.0,10.1111/jace.71071,381 mV overpotential at 10 mA cm−2
+Co-Cr-Fe-Mn-Mo,spinel,188.0,10.1002/chem.202303779,η₁₀ = 188 mV at 10 mA cm⁻²
+Co-Cr-Fe-Mn-Ni,spinel,204.0,10.1021/jacs.6c02539,204 mV overpotential at 10 mA cm⁻²; 5235.42 A g_Ru⁻¹ at 1.50 V vs RHE; stable operation for 320 h at 500 mA cm⁻² in PEM electrolyzer
+Co-Cr-Fe-Mn-Ni,spinel,219.0,10.1021/acsami.4c21521,"219 mV overpotential at 10 mA cm⁻², stable for 320 h at 100 mA cm⁻²"
+Co-Cr-Fe-Mn-Ni,spinel,263.0,10.1016/j.jcis.2023.09.063,263 mV overpotential at 10 mA cm⁻²; Tafel slope 41.24 mV dec⁻¹ in 1 M KOH
+Co-Cr-Fe-Mn-Ni,spinel,260.0,10.1016/j.jcis.2023.05.043,260 mV overpotential @ 10 mA cm⁻²; small Tafel slope; stable for 95 h in 1 M KOH without obvious potential change
+Co-Cr-Fe-Mn-Ni,spinel,366.0,10.3390/ma17143415,366 mV overpotential at 10 mA cm⁻²; 24 h durability at 10 mA cm⁻²
+Co-Cr-Fe-Mn-Ni,spinel,309.0,10.21203/rs.3.rs-1879578/v1,"309 mV overpotential at 10 mA cm⁻² under alkaline conditions, 168 hours durability"
+Co-Cr-Fe-Mn-Ni,spinel,282.0,10.1039/d5cc03852a,282 mV@10 mA cm⁻² with 100 h stability in alkaline seawater
+Co-Cr-Fe-Mn-Ni,spinel,287.0,10.1021/acs.inorgchem.3c02930,287 mV overpotential at 10 mA cm⁻² for OER; excellent cyclic stability
+Co-Cr-Fe-Mn-Ni,spinel,341.0,10.1007/s10853-024-09710-5,overpotential of 341 mV at 10 mA cm−2 and a Tafel slope of 50 mV dec−1 in alkaline media
+Co-Cr-Fe-Mn-Ni,spinel,323.0,10.3390/catal15090827,323 mV overpotential at 10 mA/cm² in 1.0 M KOH; Tafel slope 56 mV/dec
+Co-Cr-Fe-Mo-Ni,spinel,240.0,10.1002/smtd.202501108,240 mV overpotential at 10 mA·cm⁻² with 400 mT magnetic field; 45 mV·dec⁻¹ Tafel slope
+Co-Cu-Fe-La-Mn-Ni,perovskite,303.0,10.1002/cssc.70498,"overpotential 303 mV at 10 mA cm−2, Tafel slope 43 mV dec−1, stable over 100 h"
+Co-Cu-Fe-La-Mn-Ni-Sr,perovskite,309.0,10.1039/d3nj04481e,309 mV overpotential at 10 mA cm−2 in alkaline OER
+Co-Cu-Fe-Ni-Zn,rocksalt,322.0,10.1039/d5cy01129a,"322 mV overpotential at 10 mA cm⁻², 30 h stability"
+Co-Cu-Fe-Mg-Ni-Zn,spinel,420.0,10.1002/smll.202205412,overpotentials of 420 mV at 10 mA cm⁻² in 1 m KOH
+Co-Cu-Fe-Mn-Ni,unk,290.0,10.1039/d4dt00074a,"290 mV overpotential at 10 mA cm⁻², 85 mV dec⁻¹ Tafel slope, 20 h durability test with negligible overpotential change in alkaline media"
+Co-Cu-Fe-Ni-Ru-Zn,unk,170.0,10.1002/adma.202308490,170 mV overpotential at 10 mA cm⁻²; Tafel slope 56 mV dec⁻¹; 7% activity decay in 30 h (alkaline)
+Co-Cu-Fe-Ni-Zn,rocksalt,322.0,10.1039/d5cy01129a,"322 mV overpotential at 10 mA cm⁻², 30 h stability"
+Ca-Co-Fe-Mg-Mn-Ni,perovskite,320.0,10.1002/adfm.202112157,320 mV overpotential at 10 mA cm⁻²
+Co-Fe-Mg-Mn-Zn,spinel,240.0,10.1002/smll.202402241,"lower overpotential of 240 mV to reach 10 mA cm⁻², enhanced reaction kinetics (59 mV dec⁻¹), outstanding durability of 1000 h without any potential loss"
+Co-Fe-Mn-Nd-Ni,perovskite,350.0,10.1039/d5dt02975a,"OER: 350 mV overpotential at 10 mA cm-2, Tafel slope 91.2 mV dec-1; HER: 144 mV at 10 mA cm-2, Tafel slope 105 mV dec-1; OWS: 1.67 V at 10 mA cm-2 with 72 h stability; MOR: 1.467 V onset potential at 100 mA cm-2, Tafel slope 49 mV dec-1"
+Co-Fe-Mn-Ni-Ru,spinel,230.0,10.1002/smll.202309937,"OER: 230 mV overpotential @10 mA cm−2, 270 mV @100 mA cm−2; Tafel slope 39.4 mV dec−1; 100 h stability @100 mA cm−2 without significant decay"
+Co-Fe-Mo-Ni-W,unk,281.0,10.1021/acs.inorgchem.4c00778,281 mV overpotential at 10 mA cm⁻²; 34.5 mV dec⁻¹ Tafel slope
+Co-Gd-Ir-Mn-Ru,other,211.0,10.1021/acs.nanolett.6c02503,211 mV overpotential at 10 mA cm-2 in acidic media; 700 h stability
+Co-Mn-Ni-Ru-Ta,unk,196.0,10.1039/d6sc05092a,196 mV overpotential at 10 mA cm−2; >500 h durability under acidic conditions
+Cu-Fe-Mn-Ni-Ru,other,196.0,10.1021/jacs.6c07890,196 mV overpotential at 10 mA cm−2; 2% activity loss after 1000 accelerated CV cycles
