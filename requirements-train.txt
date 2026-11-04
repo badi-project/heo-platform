@@ -1,0 +1,6 @@
+# Training and screening chain (tools/train_model.py, tools/screen.py, tools/make_figures.py).
+# Versions pinned: the exported tree thresholds depend on them, and the parity check
+# requires the published model to be regenerated bit for bit.
+numpy==2.5.3
+scikit-learn==1.9.1
+matplotlib==3.11.2

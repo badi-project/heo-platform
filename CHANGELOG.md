@@ -4,6 +4,62 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## [Non publié]
 
+### Ajouté — étapes 1 à 3 : thermodynamique calculée, réductibilité, boucle active
+
+- **`thermo/` : grandeurs physiques calculées par potentiel interatomique appris**
+  (CHGNet 0.3.0), chacune confrontée à des mesures avec un critère écrit avant le
+  calcul (`docs/RAPPORT_plateforme_HEO.md`, §11-§13) :
+  - descripteur de monophasage des rocksalt de Sivak et al. (PRL 2025) recalculé sur
+    leurs 8 compositions : 7 / 8 en un-contre-tous, enthalpie de (MgCoNiCuZn)O plus
+    proche de la calorimétrie que la DFT de référence (63 contre 91 meV/atome, mesure 36) ;
+  - validation redox sur six couples binaires (NIST-JANAF) et correction par élément,
+    contrôlée hors échantillon (Fe₃O₄ → Fe₂O₃ : +0,67 → −0,02 eV/O) ;
+  - enthalpie d'oxydation rocksalt → spinelle sur 80 systèmes de la base :
+    AUC 0,95 entre systèmes rapportés rocksalt et spinelle ; aucun gain du classifieur dans son domaine (critère non atteint), 78,6 % → 81,8 % quand un cation est inconnu du modèle ;
+  - paramètre de maille des spinelles calibré sur 17 binaires : 0,53 % sur 4 spinelles
+    HEO mesurés (v1.0 : 1,9 %), +0,24 % sur l'échantillon interne ;
+  - énergie de formation de lacune d'oxygène : corrélation de rang 0,93 avec la réductibilité mesurée de 9 oxydes binaires (critère 0,70) ; 14 spinelles HEO calculées, dont les substitutions de l'échantillon interne.
+- **Carte « Thermodynamique calculée » dans l'application** : enthalpie d'oxydation et
+  tendance rocksalt / spinelle pour toute composition des cations couverts, mise en avant
+  hors du domaine d'applicabilité statistique ; maille et diffractogramme des spinelles
+  tirés du calcul.
+- **Mesure de la variance des surpotentiels OER publiés** (`thermo/analyze_oer_literature.py`) :
+  corrélation intraclasse 0,00 [0,00-0,16] — aucun prédicteur ne peut être entraîné
+  sur ces valeurs.
+- **Boucle d'apprentissage actif** (`tools/active_learning.py`) : 27 % de synthèses en moins que le hasard sur un banc rétrospectif de 10 découpages (critère 25 %, atteint de justesse) ;
+  propositions dans `data/next_experiments.csv`.
+- **Résultats internes** : `data/lab_results.csv` (gabarit
+  `data/lab_results_template.csv`) entre dans la base par le même lecteur de formules,
+  y compris les lots multiphasés.
+
+### Modifié — v1.1 : stœchiométrie relue dans les formules
+
+- **Les descripteurs sont calculés sur la stœchiométrie écrite**, plus sur un mélange
+  équimolaire de l'ensemble de cations du modèle de langue. `src/formula.py` lit les
+  groupes, fractions, fractions rationnelles, variables (x = 0,1), placeholders
+  (`M = Dy, Ho, Er`), sommes d'oxydes, composites, dopants et l'ABO₃ écrit sans
+  parenthèses ; les groupes ambigus sont tranchés par bilan de charge. Miroir
+  JavaScript (`FX` dans `app/heo_engine.js`) vérifié sur les 1 086 formules.
+- **Base reconstruite par `tools/clean_database.py`** depuis
+  `data/heo_database_raw.csv` (la v1.0, jamais modifiée) : 1 074 entrées conservées,
+  142 ensembles de cations corrigés dont 121 sites restitués, 59 entrées écartées avec
+  leur raison. L'ensemble d'origine reste dans la colonne `cations_llm`.
+- **Chaîne d'entraînement versionnée** (`tools/train_model.py`) : validation groupée,
+  temporelle (≤ 2024 → 2025-2027) et par chimie inédite, références (présence des
+  cations, système le plus proche, motif stœchiométrique seul, 9 descripteurs
+  classiques, régression logistique), calibration évaluée sur des systèmes non vus,
+  export bit-exact. Exactitude groupée 0,837 → 0,916.
+- **Criblage, figures et textes de la page régénérés** par `tools/screen.py`,
+  `tools/make_figures.py` et `tools/build_app.py` ; plus aucun chiffre tapé à la main
+  dans l'interface. La CI vérifie que base, page et contrôles sont la sortie exacte de
+  la chaîne.
+- **Saisie de formule dans l'application** : on écrit la formule comme dans un article.
+
+### Supprimé
+
+- Les résumés d'éditeurs de `data/heo_corpus.jsonl` (redistribués à tort sous
+  CC BY 4.0) ; seule leur longueur reste (`abstract_chars`).
+
 ### Corrigé
 
 - **Parité Python / JavaScript rompue sous CPython < 3.12.** `src/features.py`
