@@ -16,7 +16,7 @@ const $ = id => document.getElementById(id);
 const fmt = (v, n=3) => (v===null||v===undefined||Number.isNaN(v)) ? "—"
   : Number(v).toLocaleString("fr-FR",{minimumFractionDigits:n, maximumFractionDigits:n});
 
-/* 58 of the 1133 database entries are arXiv preprints with no DOI; they reach the
+/* some database entries are arXiv preprints with no DOI; they reach the
    payload as NaN. Rendering them as a doi.org link produced dead https://doi.org/NaN
    references, so every DOI goes through hasDOI / refCell. */
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
@@ -27,12 +27,12 @@ const refCell = d => hasDOI(d)
   ? `<a href="https://doi.org/${encodeURI(String(d).trim())}" target="_blank" rel="noopener noreferrer">${esc(d)}</a>`
   : `<span class="nodoi" title="notice sans DOI — préprint arXiv ou référence interne">sans DOI</span>`;
 
-/* number of compositions enumerated in the screening; CANDS is the exported subset */
-const SCREEN_TOTAL = 734208;
-/* phase labels in the database: 416 single-phase vs 54 multi-phase reports */
+/* number of compositions enumerated in the screening (CANDS is the exported subset) and
+   phase-label counts: both computed by tools/build_app.py, never typed by hand */
+const SCREEN_TOTAL = SCREEN.total;
 const PHASE_CAVEAT = "La colonne « phase » reproduit ce que rapporte la littérature, "
-  + "qui compte 416 lots monophasés contre 54 multiphasés : l'absence de phase secondaire "
-  + "rapportée n'est pas une preuve de monophasage.";
+  + `qui compte ${PHASES.single} lots monophasés contre ${PHASES.multi} multiphasés : `
+  + "l'absence de phase secondaire rapportée n'est pas une preuve de monophasage.";
 
 /* ---------- picker ---------- */
 function buildPicker(){
@@ -56,6 +56,38 @@ function buildPicker(){
   });
 }
 function equimolar(){ const k=Object.keys(sel); k.forEach(e=>sel[e]=1/k.length); }
+
+/* ---------- formula input ---------- */
+const FLAG_FR = {
+  minor_component_dropped: "dopant ou métal déposé écarté",
+  dopant_dropped: "dopant écarté", composite_main_phase: "composite : phase à haute entropie retenue",
+  variable: "variable x évaluée à 0,1", placeholder_mixed_site: "site mixte développé",
+  placeholder_variant: "première variante retenue", oxide_sum: "somme d'oxydes",
+  per_element_multiplier: "coefficient appliqué à chaque élément (bilan de charge)",
+  abo3_bare_sequence: "ABO₃ écrit sans parenthèses : gros cations en site A, les autres en site B",
+};
+function syncPicker(){
+  document.querySelectorAll(".el").forEach(b=>b.classList.toggle("sel", b.dataset.el in sel));
+}
+function loadFormula(text){
+  const fr = FX.cationFractions(text);
+  const els = Object.keys(fr);
+  const note = $("fxnote");
+  const unknown = els.filter(e => !(e in ELEM));
+  if (els.length < 2 || unknown.length){
+    note.className = "note fxnote-warn";
+    note.textContent = unknown.length
+      ? `Cation sans propriétés tabulées : ${unknown.join(", ")}. Prédiction impossible.`
+      : "Formule non lue : écrivez-la comme dans un article, par exemple La(CrMnFeCoNi)O3.";
+    return;
+  }
+  sel = {}; for (const e of els) sel[e] = Math.round(fr[e]*1e6)/1e6;
+  const flags = FX.parse(text).flags.map(f => FLAG_FR[f]).filter(Boolean);
+  note.className = "note";
+  note.textContent = "Lu : " + els.map(e => `${e} ${(100*fr[e]).toFixed(1).replace(".", ",")} %`).join(" · ")
+    + (flags.length ? ` — ${flags.join(" ; ")}.` : ".");
+  syncPicker(); render();
+}
 
 function renderChips(){
   const k=Object.keys(sel).sort();
@@ -158,6 +190,21 @@ function render(){
     ? `Prédiction peu tranchée : ${PROTO_FR[r.top]} et ${PROTO_FR[second.c]} sont à moins de 25 points. Attendez-vous à un mélange de phases ou à une sensibilité forte à la température de calcination.`
     : `Marge de ${(100*(r.order[0].p-second.p)).toFixed(0)} points sur la deuxième hypothèse (${PROTO_FR[second.c]}).`;
 
+  /* spinel of cations covered by thermo/: the CHGNet lattice parameter, calibrated on
+     binary spinels (0.4 % on measured HEO spinels), replaces the geometric model (1.9 %) */
+  let aPct = LATTICE.mae_pct, aSrc = "geo";
+  if (r.top === "spinel" && THERMO && THERMO.lat && els.every(e => (THERMO.lat.cov || THERMO.lat.elements).includes(e))){
+    const L = THERMO.lat;
+    r.a = L.k * els.reduce((acc, e) => acc + frac[e] * L.a[L.elements.indexOf(e)], 0);
+    aPct = L.mae_pct; aSrc = "chgnet";
+    r.aTol = r.a * aPct / 100;
+    r.pattern = simulatePattern(r.top, frac, r.a, 80);
+  }
+  $("lattnote").textContent = aSrc === "chgnet"
+    ? `Potentiel CHGNet, modèle additif par cation calibré sur 17 spinelles binaires de maille connue. `
+      + `Écart absolu moyen sur les spinelles HEO mesurés : ${fmt(aPct, 2)} % (modèle géométrique : ${fmt(LATTICE.mae_pct, 1)} %).`
+    : `Modèle géométrique à partir des rayons de Shannon, recalé sur un composé de référence par prototype. `
+      + `Écart absolu moyen mesuré sur les valeurs expérimentales disponibles : ${fmt(LATTICE.mae_pct, 1)} %.`;
   const A=r.a;
   $("latt").innerHTML = A
     ? `<dt>prototype</dt><dd>${PROTO_FR[r.top]} — ${XRD.prototypes[r.top].sg}</dd>
@@ -168,12 +215,13 @@ function render(){
 
   $("desc").innerHTML = REPORT_FEATS.map(n=>
     `<dt>${DESC_FR[n]||n}</dt><dd>${fmt(r.desc[n], DESC_DEC[n]??3)}</dd>`).join("");
+  renderThermo(frac, els, r.inDomain, r.top);
 
   if (r.pattern.length){
-    const tol = tt => { const th=tt*Math.PI/360; return Math.abs(2*Math.tan(th)*(LATTICE.mae_pct/100))*180/Math.PI; };
+    const tol = tt => { const th=tt*Math.PI/360; return Math.abs(2*Math.tan(th)*(aPct/100))*180/Math.PI; };
     drawXRD(r.pattern, tol);
     $("xrdnote").textContent = `${r.pattern.length} réflexions sous 80°. La bande claire est l'incertitude de position induite par `
-      + `l'incertitude de ${String(LATTICE.mae_pct).replace(".", ",")} % sur a. Occupations cationiques supposées `
+      + `l'incertitude de ${fmt(aPct, 2)} % sur a. Occupations cationiques supposées `
       + (XRD.prototypes[r.top].ordered ? "réparties entre sites A et B par rayon ionique décroissant." : "aléatoires sur tous les sites cationiques.");
   } else {
     const ctx=$("xrd").getContext("2d"); ctx.clearRect(0,0,1040,300);
@@ -187,6 +235,60 @@ function render(){
       <td>${refCell(r2.d)}</td></tr>`).join("")
     || `<tr><td colspan="5">Aucun système partageant au moins 3 cations.</td></tr>`)
     + `<tr><td colspan="5" class="caveat">${PHASE_CAVEAT}</td></tr>`;
+}
+
+/* ---------- computed thermodynamics (thermo/, CHGNet) ---------- */
+function renderThermo(frac, els, inDomain, top){
+  const card = $("thermocard");
+  if (!THERMO){ card.className = "hide"; return; }
+  card.className = "card";
+  const ox = THERMO.ox, key = els.slice().sort().join("-");
+  const h = Object.fromEntries(ox.elements.map((e, i) => [e, ox.h[i]]));
+  const cov = ox.cov || ox.elements;
+  const missing = els.filter(e => !cov.includes(e));
+  const pctFR = v => (100 * v).toFixed(0) + " %";
+  if (missing.length){
+    $("thermo").innerHTML = `<dt>hors du calcul</dt><dd>cation${missing.length > 1 ? "s" : ""} non couvert${missing.length > 1 ? "s" : ""} : ${missing.join(", ")}</dd>`;
+    $("thermonote").textContent = `Le calcul CHGNet couvre les cations ${cov.join(" ")} — `
+      + "ceux d'au moins deux systèmes rocksalt ou spinelle calculés. Ailleurs, seule la prédiction statistique s'applique.";
+    return;
+  }
+  const s = els.reduce((a, e) => a + frac[e], 0);
+  const dh = els.reduce((a, e) => a + frac[e] / s * h[e], 0);
+  const exact = THERMO.systems[key];
+  /* the value computed directly with CHGNet is used when it was computed for this very
+     composition (fractions within 0.02), the additive summary otherwise */
+  const direct = exact && exact.dh !== undefined && exact.frac
+    && els.every(e => Math.abs((exact.frac[e] || 0) - frac[e] / s) < 0.02);
+  const dhUse = direct ? exact.dh : dh;
+  const p = 1 / (1 + Math.exp(-(ox.b0 + ox.b1 * dhUse)));
+  const verdict = p > 0.7 ? "plutôt rocksalt" : p < 0.3 ? "plutôt spinelle" : "zone frontière";
+  const rows = direct
+    ? [`<dt>oxydation rocksalt → spinelle</dt><dd>${fmt(exact.dh, 2)} eV/O, calcul direct de cette composition</dd>`]
+    : [`<dt>oxydation rocksalt → spinelle</dt><dd>${fmt(dh, 2)} ± ${fmt(ox.mae, 2)} eV/O (modèle additif)</dd>`];
+  rows.push(`<dt>dans l'air, la littérature rapporte</dt><dd>${verdict} (rocksalt ${pctFR(p)})</dd>`);
+  if (top === "spinel" && THERMO.lat && els.every(e => (THERMO.lat.cov || THERMO.lat.elements).includes(e))){
+    const a = THERMO.lat.k * els.reduce((acc, e) =>
+      acc + frac[e] / s * THERMO.lat.a[THERMO.lat.elements.indexOf(e)], 0);
+    rows.push(`<dt>paramètre <i>a</i> si spinelle</dt><dd>${fmt(a, 3)} Å ± ${fmt(THERMO.lat.mae_pct, 1)} %</dd>`);
+  }
+  if (exact && exact.rs)
+    rows.push(`<dt>rocksalt : mélange, désordre</dt><dd>${fmt(exact.rs.dh, 1)} meV/atome, σ ${fmt(exact.rs.sigma, 3)} Å — `
+      + (exact.rs.single ? "dans les seuils du monophasé" : "hors des seuils : multiphasé attendu") + `</dd>`);
+  if (exact && exact.ev !== undefined)
+    rows.push(`<dt>lacune d'oxygène (spinelle)</dt><dd>${fmt(exact.ev, 2)} eV en moyenne, ${fmt(exact.evmin, 2)} eV au plus facile</dd>`);
+  if (!inDomain)
+    rows.unshift(`<dt>hors domaine statistique</dt><dd>ce calcul ne dépend pas des données publiées. `
+      + `Testé en retirant tour à tour chaque cation de l'entraînement, s'appuyer dessus hors domaine `
+      + `fait passer l'exactitude rocksalt / spinelle de ${pctFR(ox.lco_comp)} à ${pctFR(ox.lco_switch)} `
+      + `en moyenne — gain net mais inégal selon le cation</dd>`);
+  $("thermo").innerHTML = rows.join("");
+  $("thermonote").textContent = "Enthalpie d'oxydation 3 MO + O → M₃O₄ calculée avec le potentiel universel CHGNet "
+    + `sur ${ox.n} systèmes de la base, corrigée par élément sur des couples redox mesurés, puis résumée par un modèle `
+    + `additif par cation (erreur un-contre-tous ${fmt(ox.mae, 2)} eV/O). Elle sépare les systèmes rapportés rocksalt `
+    + `et spinelle avec une AUC de ${fmt(ox.auc, 2)}. Plus elle est négative, plus les cations prennent l'oxygène : `
+    + "spinelle à l'air, rocksalt seulement sous atmosphère réductrice ou à haute température. "
+    + "C'est une tendance thermodynamique, pas une garantie de monophasage.";
 }
 
 /* ---------- candidates ---------- */
@@ -203,7 +305,7 @@ function renderCands(){
   const MAXROWS = 400, nf2 = n => n.toLocaleString("fr-FR");
   $("screencount").textContent =
     `${nf2(rows.length)} candidats retenus sur ${nf2(CANDS.length)} exportés `
-    + `(sous-ensemble du criblage de ${nf2(SCREEN_TOTAL)} compositions, au plus 700 par prototype ; `
+    + `(sous-ensemble du criblage de ${nf2(SCREEN_TOTAL)} compositions, au plus ${SCREEN.cap} par prototype ; `
     + `le criblage intégral est dans screening_all.csv.gz)`
     + (rows.length > MAXROWS ? ` — seules les ${nf2(MAXROWS)} premières lignes du tri courant sont affichées.` : "");
   const head=[["c","composition"],["t","prototype"],["p","probabilité"],["a","a (Å)"],
@@ -236,10 +338,12 @@ $("f-proto").innerHTML = `<option value="">tous</option>`+
 $("methodtext").innerHTML = METHOD_HTML;
 $("btn-equi").onclick=()=>{equimolar(); render();};
 $("btn-clear").onclick=()=>{sel={}; document.querySelectorAll(".el").forEach(b=>b.classList.remove("sel")); render();};
-function loadEx(list){ sel={}; list.forEach(e=>sel[e]=0); equimolar();
-  document.querySelectorAll(".el").forEach(b=>b.classList.toggle("sel", b.dataset.el in sel)); render(); }
-$("ex1").onclick=()=>loadEx(["Mg","Co","Ni","Cu","Zn"]);
-$("ex2").onclick=()=>loadEx(["Cr","Mn","Fe","Co","Ni"]);
-$("ex3").onclick=()=>loadEx(["La","Sr","Pr","Ba","Ce","Co"]);
+function loadEx(text){ $("fx").value = text; loadFormula(text); }
+$("btn-fx").onclick=()=>loadFormula($("fx").value);
+$("fx").addEventListener("keydown", e=>{ if (e.key==="Enter") loadFormula($("fx").value); });
+$("ex1").onclick=()=>loadEx("(Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O");
+$("ex2").onclick=()=>loadEx("(CrMnFeCoNi)3O4");
+$("ex3").onclick=()=>loadEx("(La0.2Pr0.2Nd0.2Ba0.2Sr0.2)CoO3");
+$("ex4").onclick=()=>loadEx("(Na0.2Bi0.2Ba0.2Sr0.2Ca0.2)TiO3");
 renderCands();
-loadEx(["Mg","Co","Ni","Cu","Zn"]);
+loadEx("(Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O");
