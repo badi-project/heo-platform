@@ -18,8 +18,8 @@ diffractogramme de poudre, et criblage de 739 222 compositions.
 | — sur des familles chimiques entières retirées | opérationnel | 89,5 % (système publié le plus proche : 54,0 %) |
 | Pérovskite ou non | opérationnel | 98,5 % (règle de Goldschmidt optimisée sur la base : 94,6 %) |
 | Calibration des probabilités | opérationnel | erreur 0,070 → 0,019 (température ajustée sur d'autres systèmes) |
-| Paramètre de maille des spinelles (CHGNet) | opérationnel, ± 0,5 % | 0,53 % sur 4 spinelles HEO mesurés ; échantillon interne +0,24 % |
-| Paramètre de maille, autres familles | opérationnel, ± 2 % | écart absolu moyen 1,9 % |
+| Paramètre de maille des spinelles (CHGNet) | opérationnel, ± 0,5 % | 0,35 % sur 13 spinelles HEO de maille mesurée ; échantillon interne +0,24 % |
+| Paramètre de maille, autres familles (rayons de Shannon par valence et coordinence) | opérationnel, ± 0,2 à 1,2 % selon la famille | 0,53 % sur 63 HEO mesurés des cinq familles (modèle précédent : 1,99 %) ; rocksalt 1,18 %, **critère de 1 % non atteint** |
 | Rocksalt ou spinelle, cation inconnu du modèle | complément, hors domaine | 78,6 % → 81,8 % avec l'enthalpie d'oxydation calculée ; aucun gain dans le domaine |
 | Monophasage des rocksalt (Sivak et al.) | démonstration, 8 systèmes | 7 / 8 en un-contre-tous |
 | Énergie de lacune d'oxygène | descripteur validé, activité non prédite | suit la réductibilité mesurée de 9 oxydes binaires (corrélation de rang 0,93) ; §12 du rapport |
@@ -146,8 +146,11 @@ caractère) et sur l'indexation de sept motifs mesurés synthétiques (`QC/parit
 | Contrôle | Résultat | Rapport |
 |---|---|---|
 | Densité avec la maille mesurée de 4 oxydes de référence | écart maximal 0,71 % (critère 1 %) | `QC/density_validation.txt` |
-| Densité avec la maille prédite, spinelles (CHGNet), 4 HEO mesurés | écart moyen 1,5 % (critère 2 %) | idem |
-| Densité avec la maille prédite, modèle géométrique, 2 rocksalt mesurés | écart moyen 10,7 % — **critère de 6 % non atteint** | idem |
+| Densité avec la maille prédite, spinelles (CHGNet), 13 HEO mesurés | écart moyen 1,1 % (critère 2 %) | idem |
+| Densité avec la maille prédite, modèle géométrique, 50 HEO mesurés | écart moyen 1,6 % (critère 6 %), maximum 12,6 % (rocksalt au Sr) | idem |
+| Maille prédite, 48 oxydes simples de référence | écart moyen 0,23 à 0,44 % selon la famille (porte : 1 %) | `QC/lattice_validation.txt` |
+| Maille prédite, 63 HEO de maille mesurée, protocole écrit avant le calcul | 0,53 % ; pyrochlore 0,23, fluorine 0,27 (validation non aveugle), pérovskite 0,48, spinelle 0,70, rocksalt 1,18 (**non atteint**) | idem |
+| Dispersion entre laboratoires sur une même composition | 0,02 à 0,14 % en moyenne ; jusqu'à 1,5 % d'étendue pour (CoCrFeMnNi)₃O₄ | `QC/lattice_dataset.txt` |
 | Maille affinée sur motifs synthétiques propres (jeu vierge, 6 cas) | écart maximal 0,017 % (critère 0,05 %) | `QC/xrd_fit_validation.txt` |
 | Idem, motifs bruités | écart maximal 0,14 % (critère 0,25 %) | idem |
 | Raies d'une phase étrangère signalées | 4 / 4, aucune fausse alerte | idem |
@@ -161,9 +164,11 @@ sous-ensemble plafonné à 700 par prototype. Le criblage intégral est dans
 ```
 app/        application autonome (HTML + JS + modèle exporté)
 src/        features.py — les 134 descripteurs ; formula.py — lecture des formules ;
-            predict.py — prédiction complète ; xrdfit.py — indexation d'une mesure
+            predict.py — prédiction complète ; xrdfit.py — indexation d'une mesure ;
+            radii.py — rayons de Shannon ; lattice.py — modèle de maille
 data/       base brute v1.0 et base curée, descripteurs, candidats, criblage, corpus
-data/reference/  tables élémentaires, prototypes DRX, constantes du modèle de maille
+data/reference/  tables élémentaires, prototypes DRX, rayons de Shannon, règles du modèle
+            de maille, mailles mesurées sourcées et protocole de validation
 figures/    fig1 à fig6
 docs/       rapport méthodologique et note de faisabilité
 thermo/     calculs par potentiel interatomique appris (CHGNet) et leurs analyses
@@ -183,6 +188,10 @@ QC/         rapports régénérés : nettoyage, entraînement, criblage, parité
 | `data/heo_corpus.jsonl` | 2 189 notices récoltées (EuropePMC, Crossref, arXiv), sans résumé |
 | `data/heo_extracted.jsonl` | sortie brute d'extraction, avant curation |
 | `app/heo_model.json` | modèle exporté, métriques, domaine d'applicabilité, jeu de contrôle |
+| `data/reference/shannon_radii.json` | rayons de Shannon (1976) par valence, coordinence et spin, 58 cations |
+| `data/reference/lattice_measured.csv` | 132 mailles mesurées, 32 sources, une source par ligne |
+| `data/reference/lattice_protocol.md` | protocole de validation du modèle de maille, écrit avant le calcul, amendements datés |
+| `data/reference/lattice_rules.json` | valences, sites et relations du modèle de maille, lus par Python et par la page |
 
 ## Chaîne de production
 
@@ -193,6 +202,8 @@ python tools/train_model.py             # descripteurs, validations, export (QC/
 python tools/screen.py                  # criblage (QC/screening_report.txt)
 python tools/make_figures.py            # figures 4 et 5
 python tools/build_app.py               # données et textes de la page, puis ré-inlining du JS
+python tools/lattice_dataset.py         # mailles mesurées : contrôle, dispersion (QC/lattice_dataset.txt)
+python tools/validate_lattice.py        # modèle de maille (QC/lattice_validation.txt)
 python tools/validate_density.py        # densité théorique (QC/density_validation.txt)
 python tools/validate_xrd_fit.py        # affinement de maille (QC/xrd_fit_validation.txt)
 python tools/parity_check.py            # parité Python / JavaScript (nécessite node >= 20)
@@ -233,15 +244,21 @@ Le détail complet, les contrôles physiques et les pièges de portage sont dans
   famille chimique, pas ligne à ligne.
 - Une formule décrivant une série (`(M0.2La0.2…)CrO3 (M = Dy, Ho, Er)`) est lue sur sa
   première variante ; les variables x, y, z valent 0,1.
-- La maille des spinelles HEO est confrontée à **quatre** mesures indépendantes
-  (8,25-8,36 Å) ; sur un intervalle aussi étroit, prédire la moyenne ferait déjà 0,7 %.
-  La preuve que le calcul suit la chimie vient des 17 spinelles binaires (0,40 %).
-- Hors spinelles, la maille vient d'un modèle géométrique dont la table de rayons ne
-  porte qu'**une valence par élément** : sur les deux rocksalt HEO de maille mesurée,
-  l'erreur est de +2,3 % et −4,5 %, et la densité qui en découle est fausse de 7 et 15 %
-  (`QC/density_validation.txt`). Aucune maille mesurée de pérovskite, de fluorine ou de
-  pyrochlore HEO ne figure dans la base : pour ces familles, l'erreur du modèle de maille
-  n'a jamais été mesurée.
+- Le modèle de maille est validé sur 63 oxydes à haute entropie de maille mesurée, mais
+  inégalement : 9 pérovskites (dont 6 d'un même article), 10 pyrochlores (9 zirconates).
+  Les titanates, stannates et hafnates pyrochlores, les pérovskites à site A alcalin et
+  toute composition éloignée de ces séries restent peu ou pas vérifiés.
+- **Rocksalt : critère de 1 % non atteint** (1,18 %). Les compositions contenant Sr²⁺ ou
+  K⁺ ont la maille de la matrice sans ce cation : le modèle prédit une dilatation que la
+  mesure ne montre pas (+4,6 % pour le strontium). La page le signale, sans corriger.
+- **Fluorine : validation non aveugle.** La correction des lacunes d'oxygène a été ajoutée
+  après la lecture des résidus (amendement A1 du protocole) ; sans elle, l'erreur est de
+  1,40 %. Les fluorines au manganèse sont sous-estimées de 0,6 % (valence supposée).
+- Les valences sont déduites de l'électroneutralité dans un ordre fixé, pas mesurées ;
+  l'occupation des sites du spinelle suit une échelle de préférence, pas une mesure.
+- Pour une même composition nominale, deux laboratoires trouvent des mailles différentes
+  — jusqu'à 1,5 % pour (CoCrFeMnNi)₃O₄. Aucun modèle de composition seule ne descend
+  sous cet écart.
 - La densité théorique suppose le sous-réseau d'oxygène complet ; une fluorine riche en
   cations trivalents est plus légère (jusqu'à environ 4 %).
 - L'indexation d'un diffractogramme mesuré n'est validée que sur des **motifs

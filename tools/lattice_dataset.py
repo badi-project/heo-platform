@@ -7,8 +7,8 @@ before any computation of the new model. It writes:
 
 - QC/lattice_dataset.txt — counts per family, the scatter between laboratories that
   measured the same composition (the floor below which no model can be judged), and the
-  error of the lattice model that the platform uses today (the baseline to beat,
-  criterion C3 of the protocol);
+  error of the v1.0 lattice model (the baseline to beat, criterion C3 of the
+  protocol), recomputed here so that it stays fixed when the platform changes model;
 - data/reference/lattice_dataset.json — the same numbers, machine-readable.
 
     python tools/lattice_dataset.py            # rewrite the report and the summary
@@ -151,9 +151,38 @@ def scatter(comps):
     return out
 
 
+_V1 = None
+
+
+def v1_geometric(proto, frac, E):
+    """The geometric lattice model of v1.0, frozen here as the baseline to beat: one
+    Shannon radius per element (element_properties.json), mean over the relevant site,
+    times a constant calibrated on one compound per prototype (lattice_model.json)."""
+    global _V1
+    if _V1 is None:
+        with open(os.path.join(ROOT, "data", "reference", "lattice_model.json"),
+                  encoding="utf-8") as fh:
+            _V1 = json.load(fh)
+    kind, r_o = _V1["geo"][proto]
+
+    def mean(key, f):
+        return features.wsum([E[e][key] for e in f], [f[e] for e in f])
+    if kind == "mean_VI":
+        r = mean("r_shannon_VI", frac)
+    elif kind == "mean_IV":
+        r = mean("r_shannon_IV", frac)
+    elif kind == "mean_VIII":
+        r = mean("r_shannon_VIII", frac)
+    else:
+        A, B = features.ab_split(frac, E)
+        r = mean("r_shannon_VI", B) if kind == "rB_VI" else mean("r_shannon_VIII", A)
+    return _V1["kcal"][proto] * (r + r_o)
+
+
 def current_model(P, proto, frac):
-    """(geometric a, platform a, platform source) of the model in use today."""
-    geo = P.geometric_lattice(proto, frac)
+    """(geometric a, platform a, platform source) of the v1.0 model: CHGNet for the
+    covered spinels, the v1.0 geometric model otherwise."""
+    geo = v1_geometric(proto, frac, P.elements)
     th = P.thermo_lattice(proto, frac)
     return geo, (th if th is not None else geo), ("chgnet" if th is not None else "geometric")
 
@@ -223,8 +252,9 @@ def build():
               "   en oxygene, taille des cristallites).",
               ""]
 
-    lines += ["3. Modele de maille actuel (reference a battre, critere C3)",
+    lines += ["3. Modele de maille de la v1.0 (reference a battre, critere C3)",
               "   geometrique : rayon moyen x constante calibree sur un compose par prototype",
+              "   (fige dans data/reference/lattice_model.json, recalcule ici independamment de src/predict.py)",
               "   plateforme  : CHGNet pour les spinelles a cations couverts, geometrique sinon",
               "",
               "   groupe     famille      n   geometrique : moyen   biais    max     plateforme : moyen   biais    max"]

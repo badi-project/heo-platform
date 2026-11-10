@@ -154,25 +154,301 @@ function adDistance(x) {
   return acc / AD.k;
 }
 
-/* ---------- lattice parameter (calibrated geometric model) ---------- */
-function rEff(kind, frac) {
-  const sum = (key, f) => {
-    const k = Object.keys(f);
-    return wsum(k.map(e => ELEM[e][key]), k.map(e => f[e]));
-  };
-  if (kind === "mean_VI") return sum("r_shannon_VI", frac);
-  if (kind === "mean_IV") return sum("r_shannon_IV", frac);
-  if (kind === "mean_VIII") return sum("r_shannon_VIII", frac);
-  const [A, B] = abSplit(frac);
-  if (kind === "rB_VI") return sum("r_shannon_VI", B);
-  if (kind === "rA_VIII") return sum("r_shannon_VIII", A);
-  return null;
+/* ---------- ionic radii: mirror of src/radii.py ---------- */
+/* Shannon (1976) effective radii (LATTICE.shannon), high spin except Co3+ and Ni3+; an
+   untabulated coordination is interpolated between its neighbours, or extrapolated with
+   the mean ratio of the ions of the same charge tabulated at both coordinations. */
+const CN_ROMAN = { II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8, IX: 9, X: 10, XI: 11, XII: 12 };
+const ROMAN_CN = {};
+for (const k in CN_ROMAN) ROMAN_CN[CN_ROMAN[k]] = k;
+const LOW_SPIN = new Set(["Co3", "Ni3"]);
+const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+
+function pickRadius(entry, el, ox) {
+  if (LOW_SPIN.has(el + ox) && own(entry, "ls")) return entry.ls;
+  return own(entry, "hs") ? entry.hs : entry.ls;
+}
+
+function sameChargeRatio(ox, cnFrom, cnTo) {
+  const tab = LATTICE.shannon, a = ROMAN_CN[cnFrom], b = ROMAN_CN[cnTo];
+  const ratios = [];
+  for (const el of Object.keys(tab).sort()) {
+    const byCn = tab[el][String(ox)];
+    if (byCn && own(byCn, a) && own(byCn, b))
+      ratios.push(pickRadius(byCn[b], el, ox) / pickRadius(byCn[a], el, ox));
+  }
+  if (!ratios.length) return null;
+  let s = 0.0;
+  for (const v of ratios) s += v;
+  return s / ratios.length;
+}
+
+/* [radius in angstrom, how] for el^ox+ in coordination cn; [null, "missing"] when
+   Shannon gives no radius for that oxidation state */
+function ionicRadius(el, ox, cn) {
+  const byCn = (LATTICE.shannon[el] || {})[String(ox)];
+  if (!byCn) return [null, "missing"];
+  const pts = Object.keys(byCn).filter(k => own(CN_ROMAN, k))
+    .map(k => [CN_ROMAN[k], pickRadius(byCn[k], el, ox)])
+    .sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+  if (!pts.length) return [null, "missing"];
+  for (const [c, r] of pts) if (c === cn) return [r, "exact"];
+  if (pts.length === 1) return [pts[0][1], "single"];
+  const lower = pts.filter(p => p[0] < cn), upper = pts.filter(p => p[0] > cn);
+  if (lower.length && upper.length) {
+    const [c1, r1] = lower[lower.length - 1], [c2, r2] = upper[0];
+    return [r1 + (r2 - r1) * (cn - c1) / (c2 - c1), "interpolated"];
+  }
+  const est = [];
+  for (const [c, r] of pts) {
+    const ratio = sameChargeRatio(ox, c, cn);
+    if (ratio !== null) est.push(r * ratio);
+  }
+  if (!est.length) {
+    const [[c1, r1], [c2, r2]] = upper.length ? [upper[0], upper[1]]
+      : [lower[lower.length - 2], lower[lower.length - 1]];
+    return [r1 + (r2 - r1) * (cn - c1) / (c2 - c1), "extrapolated"];
+  }
+  let s = 0.0;
+  for (const v of est) s += v;
+  return [s / est.length, "extrapolated"];
+}
+
+function oxygenRadius(cn) { return LATTICE.shannon.O["-2"][ROMAN_CN[cn]].hs; }
+
+/* ---------- lattice parameter: mirror of src/lattice.py ---------- */
+/* Shannon radii, oxidation states by charge balance in a fixed order, cation sites and
+   one published relation per prototype (rules in LATTICE.rules, from
+   data/reference/lattice_rules.json; protocol in data/reference/lattice_protocol.md).
+   Ions are [site, element, state, amount]; every sum is a plain loop in the order of
+   the Python module, so both give the same value. */
+const LAT_EPS = 1e-12;
+const LAT_HOW = { interpolated: "interpolé", extrapolated: "extrapolé",
+  single: "pris dans la seule coordinence tabulée" };
+
+class LatticeError extends Error {}
+
+/* x with n decimals as Python's format() writes it: toFixed() rounds an exact tie (0.3125
+   to three decimals) away from zero, Python to the even digit. toFixed(100) is the exact
+   decimal expansion of a double of this magnitude, so a tie is recognised exactly. */
+function pyFixed(x, n) {
+  const ax = Math.abs(x), s = ax.toFixed(100), i = s.indexOf(".");
+  let out = ax.toFixed(n);
+  if (/^50*$/.test(s.slice(i + 1 + n))) {
+    const t = n ? s.slice(0, i + 1 + n) : s.slice(0, i);
+    if (Number(t[t.length - 1]) % 2 === 0) out = t;
+  }
+  return (x < 0 ? "-" : "") + out;
+}
+
+function latSum(values) { let s = 0.0; for (const v of values) s += v; return s; }
+function latCharge(ions) { return latSum(ions.map(i => i[2] * i[3])); }
+function latOx(table, e) { return own(table, e) ? table[e] : ELEM[e].ox; }
+
+function latShift(ions, order, need, step) {
+  for (const el of order) {
+    const n = ions.length;
+    for (let k = 0; k < n; k++) {
+      const ion = ions[k];
+      if (ion[1] !== el || need <= LAT_EPS) continue;
+      const target = ion[2] + step;
+      if (ionicRadius(el, target, 6)[0] === null) continue;
+      const moved = Math.min(ion[3], need);
+      need -= moved;
+      if (moved >= ion[3] - LAT_EPS) ion[2] = target;
+      else { ion[3] -= moved; ions.push([ion[0], el, target, moved]); }
+    }
+  }
+  return need;
+}
+
+function latTwoSites(frac, aSet, notes) {
+  const els = Object.keys(frac).sort();
+  const A = els.filter(e => aSet.has(e)), B = els.filter(e => !aSet.has(e));
+  if (A.length && B.length) {
+    const ta = latSum(A.map(e => frac[e])), tb = latSum(B.map(e => frac[e]));
+    if (Math.abs(ta - tb) > 0.02) notes.push(`rapport A/B = ${pyFixed((ta / tb), 3)}, différent de 1`);
+    const An = {}, Bn = {};
+    for (const e of A) An[e] = frac[e] / ta;
+    for (const e of B) Bn[e] = frac[e] / tb;
+    return [An, Bn];
+  }
+  notes.push("aucun cation de la classe attendue sur l'un des sites : sites attribués " +
+             "par rayon décroissant");
+  return abSplit(frac);
+}
+
+function latSpinelSites(ions, score) {
+  const sc = i => own(score, i[1] + i[2]) ? score[i[1] + i[2]] : 0;
+  const order = ions.slice().sort((p, q) => sc(q) - sc(p) || (p[1] < q[1] ? -1 : p[1] > q[1] ? 1 : 0)
+    || p[2] - q[2]);
+  let room = 1 / 3;
+  const out = [];
+  for (const [, el, ox, x] of order) {
+    const t = room > LAT_EPS ? Math.min(x, room) : 0.0;
+    room -= t;
+    if (t > LAT_EPS) out.push(["T", el, ox, t * 3]);
+    if (x - t > LAT_EPS) out.push(["O", el, ox, (x - t) * 3 / 2]);
+  }
+  return out;
+}
+
+function latAssign(proto, frac) {
+  const R = LATTICE.rules, D = R.default_ox;
+  const els = Object.keys(frac).sort();
+  const notes = [];
+  let ions;
+  if (proto === "rocksalt") {
+    /* 2+ unless listed; an element without a tabulated 2+ ion (Y, Sc, Zr...) takes the
+       platform default (amendment A2, no validation composition concerned) */
+    const d = D.rocksalt, ox0 = e => own(d, e) ? d[e]
+      : own(LATTICE.shannon[e] || {}, String(d._)) ? d._ : ELEM[e].ox;
+    ions = els.map(e => ["M", e, ox0(e), frac[e]]);
+    const need = 2.0 - latCharge(ions);
+    if (need > LAT_EPS) {
+      const left = latShift(ions, R.oxidise.rocksalt, need, +1);
+      if (left > 1e-9) notes.push(`charge inférieure de ${pyFixed(left, 3)} à +2 par cation : lacunes`);
+    } else if (need < -1e-9) notes.push(`charge supérieure de ${pyFixed((-need), 3)} à +2 par cation : lacunes`);
+    const big = els.filter(e => { const r = ionicRadius(e, ox0(e), 6)[0];
+      return r !== null && r > R.rocksalt.large_cation_A; });
+    if (big.length)
+      notes.push("cation volumineux (" + big.join(", ") + ") : sur les rocksalt mesurés, " +
+                 "une maille inchangée suggère une incorporation partielle ; la maille " +
+                 "prédite peut être trop grande");
+  } else if (proto === "spinel") {
+    const d = D.spinel;
+    ions = els.map(e => ["?", e, latOx(d, e), frac[e]]);
+    const need = 8 / 3 - latCharge(ions);
+    if (need > LAT_EPS) {
+      const left = latShift(ions, R.oxidise.spinel, need, +1);
+      if (left > 1e-9) notes.push(`charge inférieure de ${pyFixed((3 * left), 3)} à +8 par AB2O4`);
+    } else if (need < -1e-9) notes.push(`charge supérieure de ${pyFixed((-3 * need), 3)} à +8 par AB2O4`);
+    ions = latSpinelSites(ions, R.tet_score);
+  } else if (proto === "fluorite") {
+    const d = D.fluorite, mixed = R.fluorite_mixed;
+    ions = [];
+    for (const e of els) {
+      if (own(mixed, e)) for (const [ox, share] of mixed[e]) ions.push(["M", e, ox, frac[e] * share]);
+      else ions.push(["M", e, latOx(d, e), frac[e]]);
+    }
+  } else if (proto === "perovskite" || proto === "pyrochlore") {
+    const [A, B] = latTwoSites(frac, new Set(R[proto + "_A"]), notes);
+    const dA = D[proto + "_A"], dB = D[proto + "_B"];
+    ions = Object.keys(A).sort().map(e => ["A", e, latOx(dA, e), A[e]])
+      .concat(Object.keys(B).sort().map(e => ["B", e, latOx(dB, e), B[e]]));
+    if (proto === "perovskite") {
+      const need = 6.0 - latCharge(ions);
+      if (need > LAT_EPS) {
+        const left = latShift(ions, R.oxidise.perovskite, need, +1);
+        if (left > 1e-9) notes.push(`charge inférieure de ${pyFixed(left, 3)} à +6 : lacunes d'oxygène`);
+      } else if (need < -LAT_EPS) {
+        const left = latShift(ions, R.reduce_perovskite, -need, -1);
+        if (left > 1e-9) notes.push(`charge supérieure de ${pyFixed(left, 3)} à +6`);
+      }
+    }
+  } else throw new LatticeError(`prototype sans modèle de maille : ${proto}`);
+  const cmp = (p, q) => (p < q ? -1 : p > q ? 1 : 0);
+  ions.sort((p, q) => cmp(p[0], q[0]) || cmp(p[1], q[1]) || p[2] - q[2]);
+  return [ions, notes];
+}
+
+function latMeanRadius(ions, site, cn, used) {
+  let num = 0.0, den = 0.0;
+  for (const [s, el, ox, x] of ions) {
+    if (s !== site) continue;
+    const [r, how] = ionicRadius(el, ox, cn);
+    if (r === null) throw new LatticeError(`pas de rayon de Shannon pour ${el}${ox}+`);
+    used.push({ site, ion: `${el}${ox}+`, cn, r, how, amount: x });
+    num += r * x;
+    den += x;
+  }
+  return num / den;
+}
+
+function vacancyRadius(ions) {
+  const hosts = LATTICE.rules.fluorite.vacancy_hosts, names = Object.keys(hosts).sort();
+  const d = (4.0 - latCharge(ions)) / 2;
+  if (d <= 1e-9) return [0.0, null];
+  const rh = {};
+  for (const h of names) rh[h] = ionicRadius(h, 4, 8)[0];
+  let num = 0.0, den = 0.0;
+  for (const [, el, ox, x] of ions) if (ox < 4) {
+    const w = (4 - ox) * x;
+    num += ionicRadius(el, ox, 8)[0] * w;
+    den += w;
+  }
+  const rs = num / den;
+  let rv = 0.0, tot = 0.0;
+  for (const [, el, ox, x] of ions) {
+    if (ox !== 4) continue;
+    let h = el;
+    if (!own(hosts, el)) {
+      const r = ionicRadius(el, 4, 8)[0];
+      h = names[0];
+      for (const k of names) if (Math.abs(rh[k] - r) < Math.abs(rh[h] - r)) h = k;
+    }
+    const [c0, c1] = hosts[h];
+    rv += (c0 - c1 * (rs - rh[h])) * x;
+    tot += x;
+  }
+  if (tot <= LAT_EPS) throw new LatticeError("fluorine lacunaire sans cation tétravalent hôte");
+  return [d, rv / tot];
+}
+
+/* {a, ions, radii, notes, estimated, vacancies}; throws LatticeError when there is no
+   model for the prototype or no radius for an ion */
+function latticeModel(proto, frac) {
+  const R = LATTICE.rules;
+  const [ions, notes] = latAssign(proto, frac);
+  const used = [];
+  let a, vac = null;
+  if (proto === "rocksalt") {
+    a = 2 * (latMeanRadius(ions, "M", 6, used) + oxygenRadius(6));
+  } else if (proto === "fluorite") {
+    const o4 = oxygenRadius(4);
+    const rc = latMeanRadius(ions, "M", 8, used);
+    const [d, rv] = vacancyRadius(ions);
+    const rAn = rv === null ? o4 : ((2 - d) * o4 + d * rv) / 2;
+    if (rv !== null) {
+      vac = { per_cation: d, r_V: rv };
+      notes.push(`lacunes d'oxygène : ${pyFixed(d, 3)} par cation, rayon effectif ${pyFixed(rv, 3)} Å ` +
+                 "(sphères dures)");
+    }
+    a = 4 / Math.sqrt(3) * (rc + rAn);
+  } else if (proto === "perovskite") {
+    const c = R.perovskite.c, o6 = oxygenRadius(6);
+    const rA = latMeanRadius(ions, "A", 6, used);
+    const rB = latMeanRadius(ions, "B", 6, used);
+    a = c[0] + c[1] * (rA + o6) + c[2] * (rB + o6);
+    const q = latCharge(ions);
+    if (q < 6 - 1e-9) vac = { per_cation: (6 - q) / 4, r_V: null };
+  } else if (proto === "spinel") {
+    const o4 = oxygenRadius(4);
+    const RT = latMeanRadius(ions, "T", 4, used) + o4;
+    const RO = latMeanRadius(ions, "O", 6, used) + o4;
+    a = 8 / (11 * Math.sqrt(3)) * (5 * RT + Math.sqrt(33 * RO * RO - 8 * RT * RT));
+  } else {
+    const c = R.pyrochlore.c, o4 = oxygenRadius(4);
+    const RA = latMeanRadius(ions, "A", 8, used) + o4;
+    const RB = latMeanRadius(ions, "B", 6, used) + o4;
+    a = 8 / Math.sqrt(3) * (c[0] * RA - c[1] * RA * RA / RB);
+  }
+  const estimated = used.filter(u => u.how !== "exact");
+  for (const u of estimated)
+    notes.push(`rayon ${u.ion} en coordinence ${u.cn} ${LAT_HOW[u.how]} : ${pyFixed(u.r, 3)} Å`);
+  return { a, ions, radii: used, notes, estimated, vacancies: vac };
+}
+
+/* geometric lattice model, or null (mirror of Predictor.lattice_detail) */
+function latticeDetail(proto, frac) {
+  if (!LATTICE.rules.families.includes(proto)) return null;
+  try { return latticeModel(proto, frac); }
+  catch (err) { if (err instanceof LatticeError) return null; throw err; }
 }
 
 function predictA(proto, frac) {
-  if (!(proto in LATTICE.geo)) return null;
-  const [kind, rO] = LATTICE.geo[proto];
-  return LATTICE.kcal[proto] * (rEff(kind, frac) + rO);
+  const r = latticeDetail(proto, frac);
+  return r ? r.a : null;
 }
 
 /* ---------- simulated powder pattern ---------- */
@@ -677,16 +953,19 @@ function predict(frac0) {
   const order = MODEL.classes.map((c, i) => ({ c, p: probs[i] })).sort((a, b) => b.p - a.p);
   const d = adDistance(x);
   const top = order[0].c;
-  /* lattice parameter: geometric model (Shannon radii), replaced for covered spinels by
-     the CHGNet model, four times more accurate on measured HEO spinels */
-  let a = predictA(top, frac), aPct = LATTICE.mae_pct, aSrc = a ? "geo" : null;
+  /* lattice parameter: geometric model (Shannon radii and the published relation of the
+     prototype), replaced for spinels whose cations it covers by the CHGNet model, more
+     accurate on the measured high-entropy spinels (QC/lattice_validation.txt) */
+  const geo = latticeDetail(top, frac);
+  let a = geo ? geo.a : null, aPct = geo ? LATTICE.mae_pct[top] : null,
+    aSrc = geo ? "geo" : null, aNotes = geo ? geo.notes : [];
   const aTh = thermoLattice(top, frac);
-  if (aTh !== null) { a = aTh; aPct = THERMO.lat.mae_pct; aSrc = "chgnet"; }
+  if (aTh !== null) { a = aTh; aPct = THERMO.lat.mae_pct; aSrc = "chgnet"; aNotes = []; }
   const rho = xrayDensity(top, frac, a);
   return {
     frac, x, probs, order, top,
     adDistance: d, inDomain: d <= AD.threshold,
-    a, aPct, aSrc, aTol: a ? a * aPct / 100 : null,
+    a, aPct, aSrc, aNotes, aTol: a ? a * aPct / 100 : null,
     rho, rhoPct: rho ? densityUncertaintyPct(aSrc, aPct) : null,
     rhoTol: rho ? rho * densityUncertaintyPct(aSrc, aPct) / 100 : null,
     pattern: a ? simulatePattern(top, frac, a, 80) : [],
@@ -721,7 +1000,8 @@ function normalizeFractions(amounts) {
   return frac;
 }
 function predictionWarnings(r) {
-  const w = [], n = Object.keys(r.frac).length;
+  const w = (r.aNotes || []).filter(t => t.startsWith("cation volumineux")),
+    n = Object.keys(r.frac).length;
   if (!r.inDomain)
     w.push("hors du domaine d'applicabilité : le modèle extrapole, la probabilité n'a pas de valeur");
   if (n < TRAINED_MIN_CATIONS)

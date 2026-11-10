@@ -34,8 +34,9 @@ donnees : data/reference/lattice_measured.csv
    entre deux syntheses de la meme composition (temperature, atmosphere, stoechiometrie
    en oxygene, taille des cristallites).
 
-3. Modele de maille actuel (reference a battre, critere C3)
+3. Modele de maille de la v1.0 (reference a battre, critere C3)
    geometrique : rayon moyen x constante calibree sur un compose par prototype
+   (fige dans data/reference/lattice_model.json, recalcule ici independamment de src/predict.py)
    plateforme  : CHGNet pour les spinelles a cations couverts, geometrique sinon
 
    groupe     famille      n   geometrique : moyen   biais    max     plateforme : moyen   biais    max

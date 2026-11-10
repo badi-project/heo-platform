@@ -1,0 +1,133 @@
+Modele de maille (src/lattice.py) : validation sur des mailles mesurees
+protocole ecrit avant le calcul : data/reference/lattice_protocol.md
+regles : data/reference/lattice_rules.json ; donnees : data/reference/lattice_measured.csv
+unite : composition unique (mediane de ses mesures), phase pure declaree par la source
+ecart = (predit - mesure) / mesure ; colonnes : n, ecart absolu moyen, biais moyen, ecart maximal
+
+C1 (porte). References : ecart absolu moyen <= 1.0 % dans chaque famille
+
+   famille       modele final                       protocole initial (sans A1)
+   rocksalt       7   0.44 %   +0.44 %   1.18 %   atteint       7   0.44 %   +0.44 %   1.18 %
+   spinel        27   0.31 %   +0.26 %   1.07 %   atteint      27   0.31 %   +0.26 %   1.07 %
+   fluorite       4   0.23 %   +0.12 %   0.25 %   atteint       4   0.98 %   +0.98 %   1.59 %
+   perovskite     6   0.33 %   -0.17 %   0.66 %   atteint       6   0.33 %   -0.17 %   0.66 %
+   pyrochlore     4   0.32 %   -0.32 %   0.68 %   atteint       4   0.32 %   -0.32 %   0.68 %
+
+   -> C1 atteint
+
+C2. Oxydes a haute entropie : ecart absolu moyen <= 1.0 % dans chaque famille
+
+   famille       modele final                       aveugle  protocole initial (sans A1)        plancher
+   rocksalt      10   1.18 %   +1.18 %   4.58 %   NON ATTEINT oui       10   1.18 %   +1.18 %   4.58 %   0.04 %
+   spinel        14   0.70 %   +0.45 %   3.34 %   atteint     oui       14   0.70 %   +0.45 %   3.34 %   0.14 %
+   fluorite      20   0.27 %   -0.21 %   0.90 %   atteint     non       20   1.40 %   +1.40 %   2.40 %   -
+   perovskite     9   0.48 %   -0.48 %   0.85 %   atteint     oui        9   0.48 %   -0.48 %   0.85 %   0.07 %
+   pyrochlore    10   0.23 %   -0.17 %   0.50 %   atteint     oui       10   0.23 %   -0.17 %   0.50 %   0.02 %
+
+   -> C2 atteint pour : spinel, fluorite, perovskite, pyrochlore ; non atteint pour : rocksalt
+
+C3. Meilleur que le modele geometrique de la v1.0, globalement et dans chaque famille
+
+   famille       v1.0                               modele final
+   rocksalt      10   2.39 %   -1.64 %   4.77 %    10   1.18 %   +1.18 %   4.58 %   mieux
+   spinel        14   2.13 %   -0.19 %   3.41 %    14   0.70 %   +0.45 %   3.34 %   mieux
+   fluorite      20   1.37 %   +1.37 %   2.87 %    20   0.27 %   -0.21 %   0.90 %   mieux
+   perovskite     9   2.39 %   +0.84 %   5.15 %     9   0.48 %   -0.48 %   0.85 %   mieux
+   pyrochlore    10   2.25 %   -2.25 %   2.78 %    10   0.23 %   -0.17 %   0.50 %   mieux
+   toutes        63   1.99 %   -0.11 %   5.15 %    63   0.53 %   +0.12 %   4.58 %
+   (protocole initial, sans A1 :  63   0.89 %   +0.63 %   4.58 %)
+
+   -> C3 atteint
+
+Spinelles : CHGNet ou modele geometrique (selection de modele declaree, protocole section 5)
+   13 spinelles de validation dont tous les cations sont couverts par CHGNet
+   geometrique  13   0.49 %   +0.23 %   1.76 %
+   CHGNet       13   0.35 %   +0.00 %   0.89 %
+   -> retenu pour ces spinelles : chgnet ; geometrique pour les autres
+
+Amendement A1 (fluorine). Ecrit apres la premiere lecture des residus : la relation de
+contact surestimait toutes les fluorines lacunaires, references comprises (CeO2 +0,25 %, mais
+La0.5Ce0.5O1.75 +1,32 %, Ce-La-Pr +1,59 %). Les lacunes d'oxygene sont traitees en spheres
+dures de rayon r_V donne par l'hote (Chatzichristodoulou et al. 2015, tableau 1, aucune
+constante ajustee ici). La validation de la fluorine n'est donc plus aveugle ; le resultat du
+protocole initial est donne a cote.
+
+Detail, oxydes a haute entropie
+
+   famille      composition                                    mesure   predit   ecart    v1.0     notes
+   rocksalt     (Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O                   4.2368   4.2500  +0.31 %  -1.90 %  
+   rocksalt     (Co0.25Mg0.25Ni0.25Zn0.25)O                    4.2310   4.2475  +0.39 %  -2.21 %  
+   rocksalt     (Ni0.4Cu0.2Zn0.2Co0.2)O                        4.2290   4.2380  +0.21 %  -2.00 %  
+   rocksalt     (Ni0.18Cu0.18Zn0.18Co0.18Mg0.18Li0.1)O         4.1990   4.2170  +0.43 %  -0.69 %  
+   rocksalt     (Ni0.18Cu0.18Zn0.18Co0.18Mg0.18Na0.1)O         4.2360   4.2690  +0.78 %  -0.34 %  cation volumineux (Na)
+   rocksalt     (Ni0.18Cu0.18Zn0.18Co0.18Mg0.18K0.1)O          4.2330   4.3410  +2.55 %  +1.42 %  cation volumineux (K)
+   rocksalt     (Mg0.2Co0.2Fe0.2Ni0.2Zn0.2)O                   4.2200   4.2700  +1.18 %  -3.77 %  
+   rocksalt     (Mg0.2Mn0.2Fe0.2Co0.2Ni0.2)O                   4.2831   4.3060  +0.53 %  -4.77 %  
+   rocksalt     (Cu0.2Zn0.2Ni0.2Co0.2Sr0.2)O                   4.2400   4.4340  +4.58 %  +2.34 %  cation volumineux (Sr)
+   rocksalt     (Fe0.2Co0.2Mn0.2Mg0.2Zn0.2)O                   4.2900   4.3260  +0.84 %  -4.46 %  
+   spinel       (Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)3O4                 8.3460   8.3149  -0.37 %  +1.68 %  
+   spinel       (Fe0.2Co0.2Cr0.2Mn0.2Zn0.2)3O4                 8.3850   8.3768  -0.10 %  +1.72 %  
+   spinel       (Mg0.2Mn0.2Fe0.2Co0.2Ni0.2)Fe2O4               8.3760   8.4233  +0.56 %  -2.72 %  
+   spinel       (Mg0.2Fe0.2Co0.2Ni0.2Cu0.2)Fe2O4               8.3660   8.3952  +0.35 %  -3.33 %  
+   spinel       (Mg0.2Fe0.2Co0.2Ni0.2Zn0.2)Fe2O4               8.3810   8.4053  +0.29 %  -3.41 %  
+   spinel       (Mn0.2Fe0.2Co0.2Ni0.2Zr0.2)3O4                 8.2800   8.5566  +3.34 %  +2.23 %  
+   spinel       (Cr0.2Mn0.2Fe0.2Ni0.2Zn0.2)3O4                 8.3250   8.3863  +0.74 %  +2.14 %  charge inférieure de 0.200 à +8 par AB2O4
+   spinel       (Mn0.2Co0.2Ni0.2Cu0.2Fe0.2)Fe2O4               8.3800   8.4260  +0.55 %  -2.76 %  
+   spinel       (Mn0.2Co0.2Ni0.2Cu0.2Mg0.2)Fe2O4               8.3910   8.4097  +0.22 %  -2.62 %  
+   spinel       (Al0.1667Cu0.1667Co0.1667Fe0.1667Mn0.1667Ni0.  8.2697   8.2231  -0.56 %  +0.39 %  
+   spinel       (Cu0.2Ni0.2Zn0.2Al0.2Fe0.2)3O4                 8.2453   8.3904  +1.76 %  -1.44 %  charge inférieure de 0.800 à +8 par AB2O4
+   spinel       (Cu0.2Ni0.2Fe0.2Mn0.2Co0.2)3O4                 8.3602   8.3022  -0.69 %  +1.05 %  charge inférieure de 0.200 à +8 par AB2O4
+   spinel       (Mn0.2Co0.2Ni0.2Cu0.2Zn0.2)Cr2O4               8.3261   8.3439  +0.21 %  +2.52 %  
+   spinel       (Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)Cr2O4               8.3188   8.3179  -0.01 %  +1.88 %  
+   fluorite     (Hf0.25Zr0.25Ce0.25Y0.25)O2                    5.2400   5.2418  +0.04 %  +0.84 %  
+   fluorite     (Hf0.25Zr0.25Ce0.25Y0.125Yb0.125)O2            5.2300   5.2328  +0.05 %  +0.84 %  
+   fluorite     (Hf0.2Zr0.2Ce0.2Y0.2Yb0.2)O2                   5.2400   5.2410  +0.02 %  +1.45 %  
+   fluorite     (Hf0.25Zr0.25Ce0.25Y0.125Ca0.125)O2            5.2500   5.2373  -0.24 %  +1.20 %  
+   fluorite     (Hf0.25Zr0.25Ce0.25Y0.125Gd0.125)O2            5.2500   5.2508  +0.02 %  +0.83 %  
+   fluorite     (Hf0.2Zr0.2Ce0.2Y0.2Gd0.2)O2                   5.2800   5.2698  -0.19 %  +1.28 %  
+   fluorite     (Hf0.25Zr0.25Ce0.25Yb0.125Gd0.125)O2           5.2500   5.2418  -0.16 %  +0.64 %  
+   fluorite     (Hf0.2Zr0.2Ce0.2Yb0.2Gd0.2)O2                  5.2700   5.2554  -0.28 %  +1.17 %  
+   fluorite     (Ce0.25La0.25Pr0.25Y0.25)O2                    5.4962   5.4957  -0.01 %  +2.59 %  
+   fluorite     (Ce0.25La0.25Pr0.25Sm0.25)O2                   5.5276   5.5288  +0.02 %  +2.63 %  
+   fluorite     (Ce0.2La0.2Pr0.2Sm0.2Y0.2)O2                   5.5071   5.5000  -0.13 %  +2.47 %  
+   fluorite     (Ce0.1667La0.1667Nd0.1667Pr0.1667Sm0.1667Y0.1  5.4998   5.5138  +0.25 %  +2.87 %  
+   fluorite     (Zr0.2Hf0.2Ce0.2Sn0.2Mn0.2)O2                  5.1360   5.1009  -0.68 %  +0.23 %  rayon estime
+   fluorite     (Zr0.225Hf0.225Ti0.225Mn0.225Ce0.1)O2          5.0520   5.0204  -0.62 %  +0.52 %  rayon estime
+   fluorite     (Zr0.2Hf0.2Ti0.2Mn0.2Ce0.1Ta0.05Fe0.05)O2      5.0510   5.0181  -0.65 %  +0.32 %  rayon estime
+   fluorite     (Ce0.2Zr0.2Y0.2La0.2Gd0.2)O2                   5.4246   5.3848  -0.73 %  +1.38 %  
+   fluorite     (Zr0.2Hf0.2Pr0.2Y0.2La0.2)O2                   5.3627   5.3145  -0.90 %  +1.97 %  
+   fluorite     (La0.1Nd0.1Sm0.1Eu0.1Gd0.1Zr0.25Ce0.25)O2      5.3976   5.3842  -0.25 %  +1.49 %  
+   fluorite     (La0.1667Nd0.1667Gd0.1667Ce0.5)O2              5.5000   5.5031  +0.06 %  +1.26 %  
+   fluorite     (La0.1Nd0.1Sm0.1Eu0.1Gd0.1Ce0.5)O2             5.4792   5.4878  +0.16 %  +1.35 %  
+   perovskite   (Gd0.2La0.2Nd0.2Sm0.2Y0.2)CoO3                 3.7651   3.7393  -0.69 %  +2.42 %  
+   perovskite   (Gd0.2La0.2Nd0.2Sm0.2Y0.2)FeO3                 3.8807   3.8685  -0.31 %  -5.15 %  
+   perovskite   Gd(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3                3.8129   3.8011  -0.31 %  +3.79 %  
+   perovskite   La(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3                3.8803   3.8472  -0.85 %  +1.99 %  
+   perovskite   Nd(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3                3.8441   3.8231  -0.55 %  +2.95 %  
+   perovskite   (Gd0.2La0.2Nd0.2Sm0.2Y0.2)(Co0.2Cr0.2Fe0.2Mn0  3.8319   3.8129  -0.50 %  +3.28 %  
+   perovskite   (Ba0.5Sr0.5)(Ti0.3333Zr0.3333Hf0.3333)O3       4.0903   4.0601  -0.74 %  -1.04 %  
+   perovskite   (Ba0.5Sr0.5)(Ti0.3333Zr0.3333Sn0.3333)O3       4.0673   4.0515  -0.39 %  -0.80 %  
+   perovskite   (Ba0.5Sr0.5)(Ga0.3333In0.3333Sn0.3333)O3       4.0931   4.0924  -0.02 %  +0.08 %  charge inférieure de 0.667 à +6
+   pyrochlore   (Yb0.2Tb0.2Gd0.2Dy0.2Er0.2)2Ti2O7             10.1117  10.1425  +0.30 %  -0.05 %  
+   pyrochlore   (La0.2Y0.2Gd0.2Nd0.2Sm0.2)2Zr2O7              10.5945  10.5841  -0.10 %  -2.13 %  
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2La0.2)2Zr2O7             10.6414  10.6026  -0.37 %  -2.19 %  
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Dy0.2)2Zr2O7             10.5701  10.5500  -0.19 %  -2.59 %  
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Ho0.2)2Zr2O7             10.5558  10.5452  -0.10 %  -2.56 %  
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Er0.2)2Zr2O7             10.5671  10.5408  -0.25 %  -2.75 %  
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Tm0.2)2Zr2O7             10.5543  10.5368  -0.17 %  -2.71 %  
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Yb0.2)2Zr2O7             10.5540  10.5331  -0.20 %  -2.78 %  
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Lu0.2)2Zr2O7             10.5453  10.5299  -0.15 %  -2.76 %  
+   pyrochlore   (La0.3333Nd0.3333Gd0.3333)2Zr2O7              10.6832  10.6296  -0.50 %  -2.03 %  
+
+Lecture
+   Rocksalt : l'echec de C2 vient de 3 composition(s) a cation volumineux (Sr2+, K+, Na+) dont
+   la maille mesuree est celle de la matrice sans ce cation ; la relation de contact, comme la loi
+   de Vegard, predit une dilatation que la mesure ne montre pas, ce qui suggere une incorporation
+   partielle. Sans elles (information, pas critere) :   7   0.56 %   +0.56 %   1.18 %.
+   La plateforme le signale pour tout rocksalt contenant un cation de rayon VI > 1,0 A.
+   Fluorine : les compositions a Mn sont sous-estimees (-0,6 %) : la valence de Mn y est fixee
+   a celle de Mn3O4, non mesuree.
+   Spinelle : le plus grand ecart, (MnFeCoNiZr)3O4 synthetise a 500 C, suppose Zr4+ dans le
+   reseau ; une partie peut etre restee en ZrO2 amorphe.
+
+genere par tools/validate_lattice.py

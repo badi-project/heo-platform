@@ -20,7 +20,9 @@ pymatgen. This module only adds two documented conventions:
 
     import radii
     radii.radius("Fe", 3, 6)          # (0.645, 'exact')
-    radii.radius("Pr", 3, 12)         # (1.304, 'extrapolated')
+    radii.radius("Pr", 3, 12)         # (1.3017..., 'extrapolated')
+
+Values are not rounded, so that the JavaScript mirror gives the same number.
 
 Mirrored by ionicRadius() in app/heo_engine.js.
 """
@@ -82,7 +84,7 @@ def radius(el, ox, cn, tab=None):
     upper = [p for p in pts if p[0] > cn]
     if lower and upper:
         (c1, r1), (c2, r2) = lower[-1], upper[0]
-        return round(r1 + (r2 - r1) * (cn - c1) / (c2 - c1), 4), "interpolated"
+        return r1 + (r2 - r1) * (cn - c1) / (c2 - c1), "interpolated"
     estimates = []
     for c, r in pts:
         ratio = same_charge_ratio(ox, c, cn, tab)
@@ -90,11 +92,11 @@ def radius(el, ox, cn, tab=None):
             estimates.append(r * ratio)
     if not estimates:                 # no ion of this charge tabulated at both
         (c1, r1), (c2, r2) = (upper[0], upper[1]) if upper else (lower[-2], lower[-1])
-        return round(r1 + (r2 - r1) * (cn - c1) / (c2 - c1), 4), "extrapolated"
+        return r1 + (r2 - r1) * (cn - c1) / (c2 - c1), "extrapolated"
     s = 0.0
     for v in estimates:
         s += v
-    return round(s / len(estimates), 4), "extrapolated"
+    return s / len(estimates), "extrapolated"
 
 
 def same_charge_ratio(ox, cn_from, cn_to, tab=None):

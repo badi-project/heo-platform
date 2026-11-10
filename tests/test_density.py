@@ -67,10 +67,11 @@ def test_prediction_reports_density_with_an_honest_uncertainty():
     assert sp["source"] == "chgnet" and 5.2 < sp["density_g_cm3"] < 5.45
     assert sp["density_uncertainty_pct"] == max(3 * sp["uncertainty_pct"], seen["chgnet"]["mae_pct"])
     rs = P.predict("(Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O")["lattice"]
-    # the geometric model missed its criterion: the displayed uncertainty is the observed
-    # error, larger than three times the lattice uncertainty
-    assert not seen["geo"]["met"]
-    assert rs["density_uncertainty_pct"] == seen["geo"]["mae_pct"] > 3 * rs["uncertainty_pct"]
+    # the displayed uncertainty is the larger of three times the lattice uncertainty and
+    # the density error observed for this lattice model on measured high-entropy oxides
+    assert rs["source"] == "geometric" and seen["geo"]["met"] and seen["geo"]["n"] >= 40
+    assert rs["density_uncertainty_pct"] == max(3 * rs["uncertainty_pct"], seen["geo"]["mae_pct"])
+    assert rs["density_uncertainty_pct"] >= seen["geo"]["mae_pct"]
     assert abs(rs["density_uncertainty_g_cm3"]
                - rs["density_g_cm3"] * rs["density_uncertainty_pct"] / 100) < 1e-12
 
@@ -79,8 +80,8 @@ def test_validation_report_is_the_output_of_its_script():
     assert validate_density.main(check=True) == 0
     report = open(os.path.join(ROOT, "QC", "density_validation.txt"), encoding="utf-8").read()
     assert "ecart maximal" in report and "-> atteint" in report
-    # the negative result on the geometric model is published, not hidden
-    assert "NON ATTEINT" in report
+    # the worst case of the geometric model is published, not hidden
+    assert "Co-Cu-Ni-Sr-Zn" in report and "lattice_measured.csv" in report
 
 
 def test_page_embeds_the_validation_summary():

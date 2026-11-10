@@ -16,14 +16,14 @@ au seuil de detection) ; le jeu 2, reexecute, a rendu exactement les memes chiff
    compose                 prototype    a vrai   a depart   a affine    ecart   +/-affiche  zero vrai/trouve  reflexions  1er prototype  non indexes  K-alpha2 retiree
    (CoCuFeMnNi)3O4         spinel       8.3602    8.2859     8.3604  +0.003 %    0.0042   -0.05 / -0.05     12 / 12     spinel           0        oui
    (AlCoCrFeMgNi)3O4       spinel       8.1900    8.2410     8.1902  +0.003 %    0.0041   +0.00 / +0.00     11 / 11     spinel           0        oui
-   (CoCuLiMgNiZn)O         rocksalt     4.2100    4.1789     4.2100  +0.000 %    0.0021   +0.08 / +0.08      5 / 5      rocksalt         0        oui
-   (CoMgMnNiZn)O           rocksalt     4.2700    4.1782     4.2698  -0.005 %    0.0021   +0.00 / -0.00      5 / 5      rocksalt         0        oui
-   (CeLaPrSmY)O2           fluorite     5.4800    5.6431     5.4796  -0.007 %    0.0027   -0.03 / -0.03      8 / 8      fluorite         0        oui
-   (CeGdHfYZr)O2           fluorite     5.2900    5.3474     5.2896  -0.008 %    0.0026   +0.00 / -0.00      7 / 7      fluorite         0        oui
-   (GdLaNdSmY)CoO3         perovskite   3.8000    3.8563     3.8004  +0.010 %    0.0019   +0.00 / +0.00      9 / 9      perovskite       0        oui
-   Ba(HfNbSnTiZr)O3        perovskite   4.1200    4.0374     4.1195  -0.011 %    0.0021   +0.04 / +0.03      6 / 6      perovskite       0        oui
-   (DyErGdHoY)2Ti2O7       pyrochlore  10.1000   10.1144    10.1001  +0.001 %    0.0051   +0.00 / +0.00     15 / 15     pyrochlore       0        oui
-   (CeEuLaNdSm)2Sn2O7      pyrochlore  10.6000   10.3382    10.5995  -0.005 %    0.0053   -0.06 / -0.06     10 / 10     pyrochlore       0        oui
+   (CoCuLiMgNiZn)O         rocksalt     4.2100    4.1950     4.2100  +0.000 %    0.0021   +0.08 / +0.08      5 / 5      rocksalt         0        oui
+   (CoMgMnNiZn)O           rocksalt     4.2700    4.2900     4.2698  -0.005 %    0.0021   +0.00 / -0.00      5 / 5      rocksalt         0        oui
+   (CeLaPrSmY)O2           fluorite     5.4800    5.5000     5.4796  -0.007 %    0.0027   -0.03 / -0.03      8 / 8      fluorite         0        oui
+   (CeGdHfYZr)O2           fluorite     5.2900    5.2698     5.2896  -0.008 %    0.0026   +0.00 / -0.00      7 / 7      fluorite         0        oui
+   (GdLaNdSmY)CoO3         perovskite   3.8000    3.7393     3.8004  +0.010 %    0.0019   +0.00 / +0.00      9 / 9      perovskite       0        oui
+   Ba(HfNbSnTiZr)O3        perovskite   4.1200    4.0949     4.1195  -0.011 %    0.0021   +0.04 / +0.03      6 / 6      perovskite       0        oui
+   (DyErGdHoY)2Ti2O7       pyrochlore  10.1000   10.1457    10.1001  +0.001 %    0.0051   +0.00 / +0.00     15 / 15     pyrochlore       0        oui
+   (CeEuLaNdSm)2Sn2O7      pyrochlore  10.6000   10.5524    10.5995  -0.005 %    0.0053   -0.06 / -0.06     10 / 10     pyrochlore       0        oui
    ecart maximal 0.011 % (critere 0.05 %) -> atteint
    3. prototype vrai classe premier : 10 / 10 -> atteint
    4. pics signales a tort comme non indexes : 0 -> atteint
@@ -32,14 +32,14 @@ au seuil de detection) ; le jeu 2, reexecute, a rendu exactement les memes chiff
    compose                 prototype    a vrai   a depart   a affine    ecart   +/-affiche  zero vrai/trouve  reflexions  1er prototype  non indexes  K-alpha2 retiree
    (CoCuFeMnNi)3O4         spinel       8.3602    8.2859     8.3578  -0.029 %    0.0209   -0.05 / -0.04      7 / 12     spinel           0        non  (a tort)
    (AlCoCrFeMgNi)3O4       spinel       8.1900    8.2410     8.1931  +0.037 %    0.0205   +0.00 / +0.01      7 / 11     spinel           0        oui
-   (CoCuLiMgNiZn)O         rocksalt     4.2100    4.1789     4.2089  -0.026 %    0.0105   +0.08 / +0.10      5 / 5      rocksalt         0        non  (a tort)
-   (CoMgMnNiZn)O           rocksalt     4.2700    4.1782     4.2685  -0.035 %    0.0107   +0.00 / -0.03      5 / 5      rocksalt         0        oui
-   (CeLaPrSmY)O2           fluorite     5.4800    5.6431     5.4820  +0.037 %    0.0137   -0.03 / +0.02      8 / 8      fluorite         0        non  (a tort)
-   (CeGdHfYZr)O2           fluorite     5.2900    5.3474     5.2929  +0.055 %    0.0132   +0.00 / +0.02      5 / 7      fluorite         0        oui
-   (GdLaNdSmY)CoO3         perovskite   3.8000    3.8563     3.8039  +0.102 %    0.0095   +0.00 / +0.08      6 / 9      perovskite       0        non  (a tort)
-   Ba(HfNbSnTiZr)O3        perovskite   4.1200    4.0374     4.1117  -0.201 %    0.0103   +0.04 / -0.01      5 / 6      perovskite       0        non  (a tort)
-   (DyErGdHoY)2Ti2O7       pyrochlore  10.1000   10.1144    10.0926  -0.073 %    0.0252   +0.00 / -0.01      8 / 15     pyrochlore       0        non  (a tort)
-   (CeEuLaNdSm)2Sn2O7      pyrochlore  10.6000   10.3382    10.5992  -0.008 %    0.0265   -0.06 / -0.02      8 / 10     pyrochlore       0        non  (a tort)
+   (CoCuLiMgNiZn)O         rocksalt     4.2100    4.1950     4.2089  -0.026 %    0.0105   +0.08 / +0.10      5 / 5      rocksalt         0        non  (a tort)
+   (CoMgMnNiZn)O           rocksalt     4.2700    4.2900     4.2685  -0.035 %    0.0107   +0.00 / -0.03      5 / 5      rocksalt         0        oui
+   (CeLaPrSmY)O2           fluorite     5.4800    5.5000     5.4820  +0.037 %    0.0137   -0.03 / +0.02      8 / 8      fluorite         0        non  (a tort)
+   (CeGdHfYZr)O2           fluorite     5.2900    5.2698     5.2929  +0.055 %    0.0132   +0.00 / +0.02      5 / 7      fluorite         0        oui
+   (GdLaNdSmY)CoO3         perovskite   3.8000    3.7393     3.8039  +0.102 %    0.0095   +0.00 / +0.08      6 / 9      perovskite       0        non  (a tort)
+   Ba(HfNbSnTiZr)O3        perovskite   4.1200    4.0949     4.1117  -0.201 %    0.0103   +0.04 / -0.01      5 / 6      perovskite       0        non  (a tort)
+   (DyErGdHoY)2Ti2O7       pyrochlore  10.1000   10.1457    10.0926  -0.073 %    0.0252   +0.00 / -0.01      8 / 15     pyrochlore       0        non  (a tort)
+   (CeEuLaNdSm)2Sn2O7      pyrochlore  10.6000   10.5524    10.5992  -0.008 %    0.0265   -0.06 / -0.02      8 / 10     pyrochlore       0        non  (a tort)
    ecart maximal 0.201 % (critere 0.25 %) -> atteint
    prototype vrai classe premier : 10 / 10 (hors critere : sous le bruit, les raies de surstructure d'un pyrochlore peuvent disparaitre, et la fluorine l'explique alors aussi bien)
 
@@ -66,10 +66,10 @@ Bilan jeu 1 (a servi aux corrections) : 1 exactitude, motifs propres : atteint ;
    compose                 prototype    a vrai   a depart   a affine    ecart   +/-affiche  zero vrai/trouve  reflexions  1er prototype  non indexes  K-alpha2 retiree
    (CoCrFeMnZn)3O4         spinel       8.3700    8.3637     8.3702  +0.002 %    0.0042   +0.03 / +0.03     12 / 12     spinel           0        oui
    (CoFeGaMgNi)3O4 mono.   spinel       8.3100    8.2808     8.3104  +0.004 %    0.0042   +0.00 / +0.00     11 / 12     spinel           0        non
-   (CoCuMgNiZn)O mono.     rocksalt     4.2400    4.1564     4.2400  -0.001 %    0.0021   -0.04 / -0.04      5 / 5      rocksalt         0        non
-   (CeLaNdPrY)O2 pas 0,05  fluorite     5.5000    5.6569     5.5003  +0.005 %    0.0028   +0.00 / +0.03      8 / 8      fluorite         0        non  (a tort)
-   (BaCaLaNaSr)TiO3 Co     perovskite   3.9100    3.9050     3.9107  +0.017 %    0.0020   +0.00 / +0.01      7 / 7      perovskite       0        oui
-   (GdLaNdSmY)2Zr2O7       pyrochlore  10.5500   10.3685    10.5498  -0.002 %    0.0053   +0.07 / +0.07     11 / 11     pyrochlore       0        oui
+   (CoCuMgNiZn)O mono.     rocksalt     4.2400    4.2500     4.2400  -0.001 %    0.0021   -0.04 / -0.04      5 / 5      rocksalt         0        non
+   (CeLaNdPrY)O2 pas 0,05  fluorite     5.5000    5.5132     5.5003  +0.005 %    0.0028   +0.00 / +0.03      8 / 8      fluorite         0        non  (a tort)
+   (BaCaLaNaSr)TiO3 Co     perovskite   3.9100    3.8925     3.9107  +0.017 %    0.0020   +0.00 / +0.01      7 / 7      perovskite       0        oui
+   (GdLaNdSmY)2Zr2O7       pyrochlore  10.5500   10.5841    10.5498  -0.002 %    0.0053   +0.07 / +0.07     11 / 11     pyrochlore       0        oui
    ecart maximal 0.017 % (critere 0.05 %) -> atteint
    3. prototype vrai classe premier : 6 / 6 -> atteint
    4. pics signales a tort comme non indexes : 0 -> atteint
@@ -78,10 +78,10 @@ Bilan jeu 1 (a servi aux corrections) : 1 exactitude, motifs propres : atteint ;
    compose                 prototype    a vrai   a depart   a affine    ecart   +/-affiche  zero vrai/trouve  reflexions  1er prototype  non indexes  K-alpha2 retiree
    (CoCrFeMnZn)3O4         spinel       8.3700    8.3637     8.3582  -0.141 %    0.0209   +0.03 / -0.01      8 / 12     spinel           0        non  (a tort)
    (CoFeGaMgNi)3O4 mono.   spinel       8.3100    8.2808     8.3108  +0.009 %    0.0208   +0.00 / -0.00      8 / 12     spinel           0        non
-   (CoCuMgNiZn)O mono.     rocksalt     4.2400    4.1564     4.2398  -0.004 %    0.0106   -0.04 / -0.04      5 / 5      rocksalt         0        non
-   (CeLaNdPrY)O2 pas 0,05  fluorite     5.5000    5.6569     5.5018  +0.033 %    0.0138   +0.00 / +0.04      6 / 8      fluorite         0        non  (a tort)
-   (BaCaLaNaSr)TiO3 Co     perovskite   3.9100    3.9050     3.9094  -0.015 %    0.0098   +0.00 / +0.02      5 / 7      perovskite       0        non  (a tort)
-   (GdLaNdSmY)2Zr2O7       pyrochlore  10.5500   10.3685    10.5546  +0.044 %    0.0264   +0.07 / +0.10      7 / 11     pyrochlore       0        oui
+   (CoCuMgNiZn)O mono.     rocksalt     4.2400    4.2500     4.2398  -0.004 %    0.0106   -0.04 / -0.04      5 / 5      rocksalt         0        non
+   (CeLaNdPrY)O2 pas 0,05  fluorite     5.5000    5.5132     5.5018  +0.033 %    0.0138   +0.00 / +0.04      6 / 8      fluorite         0        non  (a tort)
+   (BaCaLaNaSr)TiO3 Co     perovskite   3.9100    3.8925     3.9094  -0.015 %    0.0098   +0.00 / +0.02      5 / 7      perovskite       0        non  (a tort)
+   (GdLaNdSmY)2Zr2O7       pyrochlore  10.5500   10.5841    10.5546  +0.044 %    0.0264   +0.07 / +0.10      7 / 11     pyrochlore       0        oui
    ecart maximal 0.141 % (critere 0.25 %) -> atteint
    prototype vrai classe premier : 6 / 6 (hors critere : sous le bruit, les raies de surstructure d'un pyrochlore peuvent disparaitre, et la fluorine l'explique alors aussi bien)
 

@@ -48,12 +48,13 @@ def test_lattice_parameter_is_recovered_with_zero_shift_and_kalpha2():
 
 
 def test_start_far_from_the_truth():
-    """The geometric model starts this rocksalt 4.5 % too low; the search still finds it."""
-    frac = {e: 0.2 for e in ("Co", "Fe", "Mg", "Mn", "Zn")}
-    _tt, _c, _found, fits = fit("rocksalt", frac, 4.29, seed=223)
+    """The lattice model starts this rocksalt 4.6 % too high (measured cell 4.24 A: Sr2+
+    is probably not all in the lattice); the search still finds the measured cell."""
+    frac = {e: 0.2 for e in ("Co", "Cu", "Ni", "Sr", "Zn")}
+    _tt, _c, _found, fits = fit("rocksalt", frac, 4.24, seed=223)
     best = fits[0]
-    assert best["proto"] == "rocksalt" and abs(best["a0"] / 4.29 - 1) > 0.04
-    assert abs(best["a"] / 4.29 - 1) < 5e-4
+    assert best["proto"] == "rocksalt" and abs(best["a0"] / 4.24 - 1) > 0.04
+    assert abs(best["a"] / 4.24 - 1) < 5e-4
 
 
 def test_foreign_lines_are_reported_and_do_not_move_the_lattice():

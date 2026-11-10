@@ -133,6 +133,43 @@ l'oxygène, dans la coordinence indiquée.
 
 r̄ est la moyenne des rayons pondérée par les fractions du site.
 
+## 4 bis. Amendements et précisions
+
+Tout ce qui suit a été écrit après la première version de ce protocole. Chaque entrée
+dit si les résidus des oxydes à haute entropie avaient déjà été lus.
+
+- **A1, fluorine, après lecture des résidus.** La relation de contact seule
+  surestimait toutes les fluorines lacunaires, références comprises (CeO2 +0,25 %,
+  La0,5Ce0,5O1,75 +1,32 %, Ce-La-Pr +1,59 %). Les lacunes d'oxygène sont désormais
+  traitées en sphères dures : pour MO(2−d), le rayon anionique vaut
+  ((2 − d) r_O^IV + d r_V) / 2. Le rayon r_V de la lacune dépend de l'hôte
+  tétravalent : r_V = c0 − c1 (r_s − r_h), avec les constantes publiées pour HfO2,
+  ZrO2 et CeO2 (Chatzichristodoulou et al., J. Electroceram. 34 (2015) 100,
+  doi 10.1007/s10832-014-9916-2, tableau 1). r_s est le rayon VIII moyen des cations
+  de valence inférieure à 4, pondéré par les lacunes qu'ils créent ; un hôte sans
+  constante publiée prend celles de l'hôte de rayon le plus proche. Aucune constante
+  n'est ajustée. **La validation de la fluorine n'est plus aveugle** ; le rapport donne
+  à côté le résultat du protocole initial.
+- **A2, rocksalt, sans lien avec les résidus.** Un élément sans ion 2+ dans la table de
+  Shannon (Y, Sc, Zr, terres rares…) prend la valence par défaut de la plateforme au
+  lieu de rester sans maille. Aucune composition de validation n'est concernée ; la
+  règle sert au criblage.
+- **Précision, pérovskite, écrite dans le code avant le calcul sur la validation.**
+  L'ordre d'oxydation des cations B 3d est Mn → Fe → Co → Ni → Cr → Cu ; l'ordre de
+  réduction, si la charge dépasse +6, est Ni → Cu → Co → Fe → Mn → Cr.
+- **Précision, pérovskite et pyrochlore.** Si l'une des deux classes chimiques est
+  vide (par exemple cinq métaux 3d classés pérovskite), les sites sont attribués par
+  rayon décroissant, comme dans le reste de la plateforme, et la prédiction le signale.
+  Aucune composition de validation n'est concernée.
+- **Constat, rocksalt, après lecture des résidus : aucune règle modifiée.** Les trois
+  compositions contenant Sr2+, K+ ou Na+ ont la maille de la matrice sans ce cation.
+  Le modèle n'est pas corrigé pour autant : la plateforme signale tout rocksalt
+  contenant un cation de rayon VI supérieur à 1,0 Å. Ce seuil est un avertissement, il
+  ne change aucune maille prédite.
+
+Les règles sont enregistrées dans `data/reference/lattice_rules.json`, lu à la fois par
+`src/lattice.py` et par la page.
+
 ## 5. Critères de réussite
 
 **Étape 3, modèle géométrique.**
