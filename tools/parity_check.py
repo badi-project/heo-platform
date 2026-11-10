@@ -12,6 +12,8 @@ reads any database formula differently from src/formula.py. Finally it compares 
 complete prediction — family, applicability domain, lattice parameter, powder pattern,
 computed thermodynamics — between src/predict.py and predict() of heo_engine.js, on every
 readable formula of the database: the command line and the page must give the same answer.
+The lattice model alone is also compared on every composition under each of the five
+prototypes, and on the measured simple oxides of data/reference/lattice_measured.csv.
 
     python tools/parity_check.py            # rewrite QC/parity_check.txt
     python tools/parity_check.py --check    # verify only, exit 1 on mismatch
@@ -29,6 +31,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 import features  # noqa: E402
 import formula  # noqa: E402
+import lattice  # noqa: E402
 import predict  # noqa: E402
 import xrdfit  # noqa: E402
 
@@ -133,16 +136,17 @@ def prediction_parity():
     fracs += [p["frac"] for p in P.bundle["probe"]]
     profiled = fracs[::25]
     measured = measured_cases(P)
+    lat_cases = lattice_cases(P, fracs)
     out = subprocess.run(["node", os.path.join(ROOT, "tools", "parity_js.mjs"), "predict"],
                          input=json.dumps({"context": P.context(), "fracs": fracs,
                                            "texts": texts, "profiles": profiled,
-                                           "measured": measured}),
+                                           "measured": measured, "lattice": lat_cases}),
                          capture_output=True, text=True, check=True)
     result = json.loads(out.stdout)
     classes = P.model["classes"]
     src = {"geometric": "geo", "chgnet": "chgnet"}
     gap = {"probs": 0.0, "ad": 0.0, "a": 0.0, "two_theta": 0.0, "intensity": 0.0, "dh": 0.0,
-           "density": 0.0, "profile": 0.0, "fit": 0.0}
+           "density": 0.0, "profile": 0.0, "fit": 0.0, "lattice": 0.0}
     bad = []
     # flat records (batch table, CSV export): text against text
     rows_off = [t for t, js in zip(texts, result["rows"]) if P.record(t) != js]
@@ -169,7 +173,8 @@ def prediction_parity():
         if ok and lat:
             worst("a", lat["a"], js["a"])
             worst("density", lat["density_g_cm3"], js["rho"])
-            ok = src[lat["source"]] == js["aSrc"]
+            ok = src[lat["source"]] == js["aSrc"] and lat["notes"] == js["aNotes"] \
+                and lat["uncertainty_pct"] == js["aPct"]
         if ok:
             for u, v in zip(py["pattern"], js["pattern"]):
                 worst("two_theta", u["two_theta"], v["tt"])
@@ -203,7 +208,35 @@ def prediction_parity():
                           and len(f["unindexed"]) == len(g["unindexed"]))
         if not ok:
             bad.append(name)
-    return len(fracs), bad, gap, (len(texts), rows_off, len(profiled), len(measured))
+    for case, js in zip(lat_cases, result["lattice"]):
+        try:
+            py = lattice.predict(case["proto"], case["frac"], P.elements)
+        except lattice.LatticeError as exc:
+            if "error" not in js or js["error"] != str(exc):
+                bad.append(f"lattice {case['proto']} " + "-".join(case["frac"]))
+            continue
+        if "error" in js or py["notes"] != js["notes"]:
+            bad.append(f"lattice {case['proto']} " + "-".join(case["frac"]))
+            continue
+        worst("lattice", py["a"], js["a"])
+    return len(fracs), bad, gap, (len(texts), rows_off, len(profiled), len(measured),
+                                  len(lat_cases))
+
+
+def lattice_cases(P, fracs):
+    """Lattice model of src/lattice.py against latticeModel() of heo_engine.js: every
+    measured composition of data/reference/lattice_measured.csv with its own prototype
+    (simple oxides included), and every composition of the full-prediction set with each
+    of the five prototypes, so that the charge-balance, site and fallback branches the
+    classifier would rarely reach are exercised too."""
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    import lattice_dataset as ld
+    cases = [{"proto": r["proto"], "frac": ld.fractions(r["formula_text"], P.elements)}
+             for r in ld.load()]
+    for frac in fracs:
+        for proto in lattice.rules()["families"]:
+            cases.append({"proto": proto, "frac": frac})
+    return cases
 
 
 def measured_cases(P):
@@ -245,7 +278,7 @@ def main(check=False):
     py_probs, py_feats = python_side(bundle, elements)
     js = js_side()
     n_formulas, formula_mismatch, d_formula = formula_parity(elements)
-    n_pred, pred_mismatch, gap, (n_rows, rows_off, n_prof, n_meas) = prediction_parity()
+    n_pred, pred_mismatch, gap, (n_rows, rows_off, n_prof, n_meas, n_lat) = prediction_parity()
     d_probs = max_abs(py_probs, js["probs"])
     d_feats = max_abs(py_feats, js["feats"])
     # the probe stores probabilities in display order (classes_order), the model emits
@@ -284,6 +317,9 @@ def main(check=False):
         f"{gap['profile']:.1e} (tolerance {TOL_PRED:.0e})",
         f"  diffractogramme mesure (pics, indexation, maille affinee), {n_meas} motifs "
         f"synthetiques : ecart maximal {gap['fit']:.1e} (tolerance {TOL_PRED:.0e})",
+        f"  modele de maille (src/lattice.py vs latticeModel), {n_lat} cas (mailles mesurees de "
+        f"reference, et chaque composition sous chacun des cinq prototypes) : ecart maximal "
+        f"{gap['lattice']:.1e} A (tolerance {TOL_PRED:.0e}), notes comparees au caractere pres",
         "",
         "genere par tools/parity_check.py",
     ]

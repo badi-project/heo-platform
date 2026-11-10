@@ -7,11 +7,11 @@ famille predite, toutes compositions : spinel 13 %, perovskite 51 %, rocksalt 0 
 famille predite, dans le domaine : spinel 9 %, perovskite 53 %, rocksalt 0 %, fluorite 29 %, pyrochlore 9 %, layered 0 %
 candidats exportes : 3786 (au plus 700 par famille)
 meilleur candidat non publie par famille :
-  spinel      Al-Co-Fe-Mn-Ti         p = 0.997  a = 8.183 A
-  perovskite  Ba-Ca-Co-Dy-Ni-Sc      p = 0.996  a = 4.035 A
-  rocksalt    Cu-Li-Mg-Ni-Zn         p = 0.964  a = 4.228 A
-  fluorite    Ce-Er-Hf-La-Sc         p = 0.996  a = 5.404 A
-  pyrochlore  Gd-Hf-Pr-Ta-Yb         p = 0.962  a = 10.304 A
+  spinel      Al-Co-Fe-Mn-Ti         p = 0.997  a = 8.458 A
+  perovskite  Ba-Ca-Co-Dy-Ni-Sc      p = 0.996  a = 3.852 A
+  rocksalt    Cu-Li-Mg-Ni-Zn         p = 0.964  a = 4.204 A
+  fluorite    Ce-Er-Hf-La-Sc         p = 0.996  a = 5.292 A
+  pyrochlore  Gd-Hf-Pr-Ta-Yb         p = 0.962  a = 10.403 A
   layered     Cu-Li-Mn-Na-Ti         p = 0.928  a = -
 
 genere par tools/screen.py

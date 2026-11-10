@@ -25,8 +25,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 import sync_app  # noqa: E402
-# the thermo payload and the lattice-model error are shared with the Python predictor
-from predict import LATTICE_MAE_PCT, lattice_payload, thermo_payload  # noqa: E402
+# the thermo and lattice payloads are shared with the Python predictor
+from predict import lattice_payload, thermo_payload  # noqa: E402
 
 HTML = os.path.join(ROOT, "app", "heo_designer.html")
 REPORT_FEATS = ["s_config", "delta_r", "delta_X_rel", "mean_ox", "redox_flex", "r_A", "r_B",
@@ -58,6 +58,18 @@ def read_json(*p):
 def read_csv(*p):
     with open(os.path.join(ROOT, *p), encoding="utf-8", newline="") as fh:
         return list(csv.DictReader(fh))
+
+
+def correction_fill():
+    """Figures of the learned lattice correction (tools/learn_lattice_correction.py). The
+    method page states that it was tried and not retained; the build stops if the verdict
+    ever changes, because the text and the engines would then have to change too."""
+    c = read_json("data", "reference", "lattice_correction.json")
+    if c["integrated"]:
+        raise SystemExit("lattice_correction.json: the correction is now integrated; "
+                         "update src/lattice.py, heo_engine.js and method_template.html")
+    return {"corr_base": fr_num(c["step3"]["all"], 2), "corr_judged": fr_num(c["judged"]["all"], 2),
+            "corr_gain": fr_num(c["gain_point"], 2), "corr_n": c["n_heo"], "corr_groups": c["n_groups"]}
 
 
 def fr_num(v, n=3):
@@ -197,13 +209,27 @@ def build(check=False):
         "ece_raw": fr_num(cv["ece_raw"]), "ece_cal": fr_num(cv["ece_cal"]),
         "rel_hi": pct(rel["0.9-1.0"]["accuracy"]), "rel_mid": pct(rel["0.6-0.7"]["accuracy"]),
         "ad_threshold": fr_num(bundle["ad"]["threshold"], 2),
-        "n_lattice": sum(1 for r in db if r["a_ang"]),
-        "lattice_mae": fr_num(LATTICE_MAE_PCT, 1),
         "screen_total": thousands(scr["total"]), "screen_quin": thousands(scr["quinaries"]),
         "screen_sen": thousands(scr["senaries"]), "screen_pool": scr["pool"],
         "screen_novel_in": thousands(scr["novel_in_domain"]),
     }
     fill.update(thermo_fill(payload["THERMO"]))
+    # lattice model (tools/lattice_dataset.py, tools/validate_lattice.py)
+    lv = read_json("data", "reference", "lattice_validation.json")
+    ldat = read_json("data", "reference", "lattice_dataset.json")
+    fam = lv["families"]
+    fill.update({
+        "lat_n_rows": ldat["n_rows"], "lat_n_sources": ldat["n_sources"],
+        "lat_n_heo": lv["heo"]["n"], "lat_n_ref": sum(fam[f]["reference"]["n"] for f in fam),
+        "latm_all": fr_num(lv["heo"]["mae_pct"], 2), "latm_v1": fr_num(lv["heo_v1"]["mae_pct"], 2),
+        **{f"latm_{k}": fr_num(fam[f]["heo"]["mae_pct"], 2)
+           for k, f in (("rs", "rocksalt"), ("sp", "spinel"), ("fl", "fluorite"),
+                        ("pv", "perovskite"), ("py", "pyrochlore"))},
+        **correction_fill(),
+        "lat_sel_n": lv["spinel_selection"]["n"],
+        "lat_sel_chgnet": fr_num(lv["spinel_selection"]["chgnet"]["mae_pct"], 2),
+        "lat_sel_geo": fr_num(lv["spinel_selection"]["geometric"]["mae_pct"], 2),
+    })
     # density and lattice-refinement validations (tools/validate_density.py,
     # tools/validate_xrd_fit.py): the page quotes their figures, never hand-typed ones
     rho = payload["LATTICE"]["rho"]

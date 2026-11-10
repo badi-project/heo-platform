@@ -1,0 +1,310 @@
+{
+ "_source": "Regles fixees dans data/reference/lattice_protocol.md avant le calcul du modele (section 4) ; amendement A1 (lacunes d'oxygene de la fluorine) ajoute apres lecture des residus. Lu par src/lattice.py et, via la page, par lattice() de app/heo_engine.js.",
+ "families": [
+  "rocksalt",
+  "spinel",
+  "fluorite",
+  "perovskite",
+  "pyrochlore"
+ ],
+ "perovskite_A": [
+  "Ba",
+  "Bi",
+  "Ca",
+  "Ce",
+  "Dy",
+  "Er",
+  "Eu",
+  "Gd",
+  "Ho",
+  "K",
+  "La",
+  "Lu",
+  "Na",
+  "Nd",
+  "Pb",
+  "Pr",
+  "Sm",
+  "Sr",
+  "Tb",
+  "Tm",
+  "Y",
+  "Yb"
+ ],
+ "pyrochlore_A": [
+  "Ce",
+  "Dy",
+  "Er",
+  "Eu",
+  "Gd",
+  "Ho",
+  "La",
+  "Lu",
+  "Nd",
+  "Pr",
+  "Sm",
+  "Tb",
+  "Tm",
+  "Y",
+  "Yb"
+ ],
+ "tm3d": [
+  "Co",
+  "Cr",
+  "Fe",
+  "Mn",
+  "Ni",
+  "Cu"
+ ],
+ "default_ox": {
+  "rocksalt": {
+   "Li": 1,
+   "Na": 1,
+   "K": 1,
+   "Ga": 3,
+   "Al": 3,
+   "Cr": 3,
+   "_": 2
+  },
+  "spinel": {
+   "Mg": 2,
+   "Zn": 2,
+   "Ni": 2,
+   "Cu": 2,
+   "Co": 2,
+   "Fe": 2,
+   "Mn": 2,
+   "Al": 3,
+   "Cr": 3,
+   "Ga": 3,
+   "Ti": 4,
+   "Zr": 4,
+   "Sn": 4,
+   "Ge": 4,
+   "Li": 1
+  },
+  "fluorite": {
+   "Ce": 4,
+   "Zr": 4,
+   "Hf": 4,
+   "Ti": 4,
+   "Sn": 4,
+   "Ta": 5,
+   "Nb": 5,
+   "Fe": 3,
+   "Bi": 3,
+   "Ca": 2,
+   "Sr": 2,
+   "Mg": 2,
+   "La": 3,
+   "Nd": 3,
+   "Sm": 3,
+   "Eu": 3,
+   "Gd": 3,
+   "Dy": 3,
+   "Ho": 3,
+   "Er": 3,
+   "Tm": 3,
+   "Yb": 3,
+   "Lu": 3,
+   "Y": 3
+  },
+  "perovskite_A": {
+   "Bi": 3,
+   "Ba": 2,
+   "Sr": 2,
+   "Ca": 2,
+   "Pb": 2,
+   "Na": 1,
+   "K": 1,
+   "La": 3,
+   "Ce": 3,
+   "Pr": 3,
+   "Nd": 3,
+   "Sm": 3,
+   "Eu": 3,
+   "Gd": 3,
+   "Tb": 3,
+   "Dy": 3,
+   "Ho": 3,
+   "Er": 3,
+   "Tm": 3,
+   "Yb": 3,
+   "Lu": 3,
+   "Y": 3
+  },
+  "perovskite_B": {
+   "Ti": 4,
+   "Zr": 4,
+   "Hf": 4,
+   "Sn": 4,
+   "Ga": 3,
+   "In": 3,
+   "Al": 3,
+   "Sc": 3,
+   "Nb": 5,
+   "Ta": 5,
+   "Co": 3,
+   "Cr": 3,
+   "Fe": 3,
+   "Mn": 3,
+   "Ni": 3,
+   "Cu": 3
+  },
+  "pyrochlore_A": {
+   "La": 3,
+   "Ce": 3,
+   "Pr": 3,
+   "Nd": 3,
+   "Sm": 3,
+   "Eu": 3,
+   "Gd": 3,
+   "Tb": 3,
+   "Dy": 3,
+   "Ho": 3,
+   "Er": 3,
+   "Tm": 3,
+   "Yb": 3,
+   "Lu": 3,
+   "Y": 3
+  },
+  "pyrochlore_B": {
+   "Ti": 4,
+   "Zr": 4,
+   "Hf": 4,
+   "Sn": 4
+  }
+ },
+ "_default_ox_note": "element absent de la liste : valence 'ox' de data/reference/element_properties.json",
+ "fluorite_mixed": {
+  "Pr": [
+   [
+    4,
+    0.6666666666666666
+   ],
+   [
+    3,
+    0.3333333333333333
+   ]
+  ],
+  "Tb": [
+   [
+    4,
+    0.5
+   ],
+   [
+    3,
+    0.5
+   ]
+  ],
+  "Mn": [
+   [
+    3,
+    0.6666666666666666
+   ],
+   [
+    2,
+    0.3333333333333333
+   ]
+  ]
+ },
+ "_fluorite_mixed_note": "valence de l'oxyde stable a l'air : Pr6O11, Tb4O7, Mn3O4",
+ "oxidise": {
+  "rocksalt": [
+   "Co",
+   "Mn",
+   "Fe",
+   "Ni"
+  ],
+  "spinel": [
+   "Fe",
+   "Mn",
+   "Co"
+  ],
+  "perovskite": [
+   "Mn",
+   "Fe",
+   "Co",
+   "Ni",
+   "Cr",
+   "Cu"
+  ]
+ },
+ "reduce_perovskite": [
+  "Ni",
+  "Cu",
+  "Co",
+  "Fe",
+  "Mn",
+  "Cr"
+ ],
+ "tet_score": {
+  "Zn2": 10,
+  "Mn2": 9,
+  "Fe3": 8,
+  "Ga3": 7.5,
+  "Co2": 7,
+  "Mg2": 6,
+  "Fe2": 5,
+  "Cu2": 4,
+  "Al3": 3,
+  "Li1": 2,
+  "Mn3": 1,
+  "Ni2": 1
+ },
+ "_tet_score_note": "absent : 0 (octaedrique). Egalites : element puis valence.",
+ "perovskite": {
+  "source": "Ubic, J. Am. Ceram. Soc. 90 (2007) 3326, doi 10.1111/j.1551-2916.2007.01881.x",
+  "c": [
+   0.06741,
+   0.49052,
+   1.29212
+  ],
+  "cn_A": 6,
+  "cn_B": 6,
+  "cn_O": 6
+ },
+ "pyrochlore": {
+  "source": "Mouta, Silva, Paschoal, arXiv:1212.0908",
+  "c": [
+   1.43373,
+   0.42931
+  ],
+  "cn_A": 8,
+  "cn_B": 6,
+  "cn_O": 4
+ },
+ "spinel": {
+  "source": "O'Neill et Navrotsky, Am. Mineral. 68 (1983) 181, eq. 1-2",
+  "cn_T": 4,
+  "cn_O": 6,
+  "cn_anion": 4
+ },
+ "rocksalt": {
+  "source": "contact anion-cation",
+  "cn_M": 6,
+  "cn_O": 6,
+  "large_cation_A": 1.0,
+  "_large_note": "un cation de rayon VI > 1,0 A est signale : sur la validation, les mailles mesurees avec Sr2+ et K+ sont celles de la matrice, ce qui suggere une incorporation partielle"
+ },
+ "fluorite": {
+  "source": "contact anion-cation + lacunes d'oxygene en spheres dures (Chatzichristodoulou et al., J. Electroceram. 34 (2015) 100, doi 10.1007/s10832-014-9916-2, tableau 1)",
+  "cn_M": 8,
+  "cn_O": 4,
+  "vacancy_hosts": {
+   "Hf": [
+    0.999,
+    0.484
+   ],
+   "Zr": [
+    0.982,
+    0.328
+   ],
+   "Ce": [
+    1.12,
+    0.189
+   ]
+  },
+  "_vacancy_note": "r_V = c0 - c1 (r_s - r_h), r_s rayon VIII moyen des cations de valence < 4 ponderes par les lacunes qu'ils creent, r_h rayon VIII de l'hote ; hote sans constante publiee : celui des trois dont le rayon VIII est le plus proche ; moyenne ponderee par la fraction des hotes tetravalents"
+ }
+}

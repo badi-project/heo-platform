@@ -32,6 +32,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import features  # noqa: E402
+import lattice  # noqa: E402
 import train_model as tm  # noqa: E402
 
 MIN_COUNT = 20
@@ -40,30 +41,20 @@ CAP = 700
 CHUNK = 20000
 
 
-def lattice_parameter(proto, frac, E, latt):
-    """Python twin of predictA() in app/heo_engine.js."""
-    if proto not in latt["geo"]:
+def lattice_parameter(proto, frac, E):
+    """Geometric lattice model of the platform (src/lattice.py, predictA() in
+    app/heo_engine.js); None for a family without a cubic prototype or an ion without
+    a Shannon radius."""
+    if proto not in lattice.rules()["families"]:
         return None
-    kind, r_o = latt["geo"][proto]
-
-    def mean(key, f):
-        return features.wsum([E[e][key] for e in f], [f[e] for e in f])
-    if kind == "mean_VI":
-        r = mean("r_shannon_VI", frac)
-    elif kind == "mean_IV":
-        r = mean("r_shannon_IV", frac)
-    elif kind == "mean_VIII":
-        r = mean("r_shannon_VIII", frac)
-    else:
-        A, B = features.ab_split(frac, E)
-        r = mean("r_shannon_VI", B) if kind == "rB_VI" else mean("r_shannon_VIII", A)
-    return latt["kcal"][proto] * (r + r_o)
+    try:
+        return lattice.predict(proto, frac, E)["a"]
+    except lattice.LatticeError:
+        return None
 
 
 def main():
     bundle = json.load(open(os.path.join(ROOT, "app", "heo_model.json"), encoding="utf-8"))
-    latt = json.load(open(os.path.join(ROOT, "data", "reference", "lattice_model.json"),
-                          encoding="utf-8"))
     E = features.load_elements()
     onehot, T, ad = bundle["onehot"], bundle["model"]["temperature"], bundle["ad"]
 
@@ -137,7 +128,7 @@ def main():
             best = max(shared)
             near = min((n for n, k in zip(sys_names, shared) if k == best),
                        key=lambda n: (-published[n], n))
-            a = lattice_parameter(proto, {e: 1.0 / len(s) for e in s}, E, latt)
+            a = lattice_parameter(proto, {e: 1.0 / len(s) for e in s}, E)
             cands.append({**r, "voisin_publie": near, "cations_partages": best,
                           "a_predit": a})
     fields = ["cations", "proto", "p", "ad", "gold_t", "delta_r", "s_config", "novel",

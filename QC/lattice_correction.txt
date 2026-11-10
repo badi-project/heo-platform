@@ -1,0 +1,34 @@
+Correction apprise du modele de maille : bat-elle le modele geometrique hors echantillon ?
+protocole : data/reference/lattice_protocol.md, section 5, etape 4 (ecrit avant ce calcul)
+donnees : 111 compositions uniques, dont 63 oxydes a haute entropie en 20 groupes de sources
+cible : residu relatif du modele geometrique ; un groupe de sources retire a chaque tour
+ecart absolu moyen hors echantillon sur les oxydes a haute entropie, en %
+
+                                           toutes    rocksalt      spinel    fluorite  perovskite  pyrochlore
+   M0 aucune correction (etape 3)          0.53 %      1.18 %      0.70 %      0.27 %      0.48 %      0.23 %
+   M1 biais par famille (information)      0.45 %      0.95 %      0.65 %      0.30 %      0.28 %      0.14 %
+   M2 ridge (information)                  0.49 %      0.80 %      0.69 %      0.42 %      0.38 %      0.17 %
+   M3 gradient boosting (information)      0.49 %      0.58 %      0.72 %      0.50 %      0.36 %      0.15 %
+   procedure jugee (choix interne)         0.49 %      0.95 %      0.65 %      0.42 %      0.28 %      0.14 %
+
+   candidat retenu par la validation interne, sur 20 tours : M0 0 ; M1 19 ; M2 0 ; M3 1
+
+Criteres
+   gain : +0.042 point, +7.8 % en relatif (exige : au moins 0.1 point et 15 %) -> NON ATTEINT
+   pire degradation d'une famille : +0.152 point (toleree : 0.1) -> NON ATTEINT
+
+Verdict : correction NON INTEGREE ; la plateforme garde le modele geometrique de l'etape 3
+
+Lecture
+   Procedure jugee : mieux pour rocksalt, spinel, perovskite, pyrochlore ; moins bien pour fluorite.
+   Meilleur candidat pris seul : M1 biais par famille (0.45 %, soit +0.081 point). Il est rapporte pour information : le
+   retenir apres avoir vu ces chiffres serait une selection sur les donnees de test.
+   Ce que la correction apprend, c'est surtout un biais par famille (perovskite, pyrochlore,
+   rocksalt). Les modeles plus souples n'ajoutent rien de fiable : ils degradent la fluorine, que
+   le modele geometrique decrit deja pres du plancher.
+   Les 63 oxydes a haute entropie viennent de 20 groupes de sources ; perovskite et
+   pyrochlore reposent sur deux ou trois groupes. C'est trop peu pour apprendre davantage qu'un
+   biais. Plancher : pour une meme composition, deux laboratoires different de 0,02 a 0,14 % en
+   moyenne (QC/lattice_dataset.txt).
+
+genere par tools/learn_lattice_correction.py

@@ -23,12 +23,10 @@ import os
 
 import features
 import formula
+import lattice
+import radii
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# mean absolute error of the geometric lattice model on the measured values of the
-# database, in percent (docs/RAPPORT_plateforme_HEO.md, section 5)
-LATTICE_MAE_PCT = 1.93
 MIN_CATIONS = 4          # the page refuses to predict below four cations; so does this
 TRAINED_MIN_CATIONS = 5  # every training composition has at least five
 TWO_THETA_MAX = 80.0
@@ -58,11 +56,24 @@ def _read_csv(root, *parts):
 
 
 def lattice_payload(root=ROOT):
-    """Constants of the lattice models in the form the page embeds (``LATTICE``): the
-    geometric model, its error, and the density error observed per lattice model on the
-    high-entropy oxides of measured lattice parameter (tools/validate_density.py)."""
-    out = {**_read_json(root, "data", "reference", "lattice_model.json"),
-           "mae_pct": LATTICE_MAE_PCT}
+    """Data of the lattice model in the form the page embeds (``LATTICE``): the Shannon
+    table and the rules read by lattice() in app/heo_engine.js, the error per family
+    found on the measured high-entropy oxides (tools/validate_lattice.py), shown as the
+    uncertainty of a predicted lattice parameter, and the density error observed per
+    lattice model (tools/validate_density.py)."""
+    path = os.path.join(root, "data", "reference", "lattice_validation.json")
+    val = _read_json(root, "data", "reference", "lattice_validation.json") \
+        if os.path.exists(path) else None
+    out = {"shannon": radii.load(root)["radii"],
+           "rules": _read_json(root, "data", "reference", "lattice_rules.json"),
+           "mae_pct": {f: (val["families"][f]["uncertainty_pct"] if val else None)
+                       for f in lattice.rules()["families"]},
+           "n_heo": {f: (val["families"][f]["heo"]["n"] if val else 0)
+                     for f in lattice.rules()["families"]},
+           "spinel_selection": ({"n": val["spinel_selection"]["n"],
+                                 "chgnet": val["spinel_selection"]["chgnet"]["mae_pct"],
+                                 "geometric": val["spinel_selection"]["geometric"]["mae_pct"]}
+                                if val else None)}
     path = os.path.join(root, "data", "reference", "density_validation.json")
     if os.path.exists(path):
         out["rho"] = _read_json(root, "data", "reference", "density_validation.json")
@@ -214,30 +225,21 @@ class Predictor:
         return acc / ad["k"]
 
     # -- lattice parameter ---------------------------------------------------------
-    def geometric_lattice(self, proto, frac):
-        """Shannon-radius model recalibrated on one reference compound per prototype."""
-        latt, E = self.lattice, self.elements
-        if proto not in latt["geo"]:
+    def lattice_detail(self, proto, frac):
+        """Geometric lattice model of src/lattice.py: {'a', 'ions', 'notes', ...}, or
+        None when the prototype has no model or an ion has no Shannon radius."""
+        if proto not in lattice.rules()["families"]:
             return None
-        kind, r_o = latt["geo"][proto]
+        try:
+            return lattice.predict(proto, frac, self.elements)
+        except lattice.LatticeError:
+            return None
 
-        def mean(key, f):
-            return features.wsum([E[e][key] for e in f], [f[e] for e in f])
-        if kind == "mean_VI":
-            r = mean("r_shannon_VI", frac)
-        elif kind == "mean_IV":
-            r = mean("r_shannon_IV", frac)
-        elif kind == "mean_VIII":
-            r = mean("r_shannon_VIII", frac)
-        else:
-            A, B = features.ab_split(frac, E)
-            if kind == "rB_VI":
-                r = mean("r_shannon_VI", B)
-            elif kind == "rA_VIII":
-                r = mean("r_shannon_VIII", A)
-            else:
-                return None
-        return latt["kcal"][proto] * (r + r_o)
+    def geometric_lattice(self, proto, frac):
+        """Lattice parameter from Shannon radii and the published relation of the
+        prototype (src/lattice.py), None when there is no model."""
+        r = self.lattice_detail(proto, frac)
+        return r["a"] if r else None
 
     def thermo_lattice(self, proto, frac):
         """CHGNet additive model for spinels made of covered cations, else None."""
@@ -456,20 +458,23 @@ class Predictor:
         d = self.ad_distance(x)
         in_domain = d <= self.ad["threshold"]
 
-        a, pct, src = self.geometric_lattice(top, frac), self.lattice["mae_pct"], "geometric"
+        geo = self.lattice_detail(top, frac)
+        a, pct, src, notes = None, None, None, []
+        if geo is not None:
+            a, pct, src, notes = geo["a"], self.lattice["mae_pct"][top], "geometric", geo["notes"]
         a_th = self.thermo_lattice(top, frac)
         if a_th is not None:
-            a, pct, src = a_th, self.thermo["lat"]["mae_pct"], "chgnet"
-        lattice = None
+            a, pct, src, notes = a_th, self.thermo["lat"]["mae_pct"], "chgnet", []
+        cell = None
         if a is not None:
             rho = self.xray_density(top, frac, a)
             rho_pct = self.density_uncertainty_pct(src, pct)
-            lattice = {"a": a, "uncertainty_pct": pct, "uncertainty_A": a * pct / 100,
-                       "source": src, "space_group": self.xrd["prototypes"][top]["sg"],
-                       "density_g_cm3": rho, "density_uncertainty_pct": rho_pct,
-                       "density_uncertainty_g_cm3": rho * rho_pct / 100}
+            cell = {"a": a, "uncertainty_pct": pct, "uncertainty_A": a * pct / 100,
+                    "source": src, "space_group": self.xrd["prototypes"][top]["sg"],
+                    "density_g_cm3": rho, "density_uncertainty_pct": rho_pct,
+                    "density_uncertainty_g_cm3": rho * rho_pct / 100, "notes": notes}
 
-        warnings = []
+        warnings = [n for n in notes if n.startswith("cation volumineux")]
         if not in_domain:
             warnings.append("hors du domaine d'applicabilité : le modèle extrapole, "
                             "la probabilité n'a pas de valeur")
@@ -486,7 +491,7 @@ class Predictor:
             "margin": probs[order[0]] - probs[order[1]],
             "ad_distance": d, "ad_threshold": self.ad["threshold"], "in_domain": in_domain,
             "known_entries": self.known_entries(frac),
-            "lattice": lattice,
+            "lattice": cell,
             "thermo": self.thermo_ox(frac),
             "pattern": (self.simulate_pattern(top, frac, a) if (pattern and a) else []),
             "descriptors": dict(zip(names, x)),

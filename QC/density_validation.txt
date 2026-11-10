@@ -17,24 +17,80 @@ A. Contenu de la maille : densite calculee avec la maille MESUREE d'oxydes de re
 B. Erreur heritee de la maille : oxydes a haute entropie de maille mesuree
    critere ecrit avant le calcul : ecart absolu moyen <= 2 % (spinelles, modele CHGNet), <= 6 % (modele geometrique)
 
-   systeme              prototype   a mesure  a predit  modele      rho(a mesure)  rho(a predit)  ecart
-   Al-Co-Cu-Fe-Mn-Ni    spinel       8.2697    8.2280  chgnet          5.249          5.329   +1.53 %
-   Al-Cu-Fe-Ni-Zn       spinel       8.2453    8.2053  chgnet          5.363          5.441   +1.47 %
-   Co-Cu-Fe-Mn-Ni       spinel       8.3602    8.2859  chgnet          5.437          5.585   +2.72 %
-   Co-Cu-Ni-Sr-Zn       rocksalt     4.2400    4.3392  geometric       7.219          6.735   -6.70 %
-   Co-Fe-Mg-Mn-Zn       rocksalt     4.2900    4.0988  geometric       5.711          6.548   +14.66 %
-   Co-Cr-Fe-Mn-Ni       spinel       8.3280    8.3380  chgnet          5.341          5.322   -0.36 %
+   systeme                        prototype   a mesure  a predit  modele      rho(a mesure)  rho(a predit)  ecart
+   Co-Cu-Mg-Ni-Zn                 rocksalt     4.2368    4.2500  geometric       6.129          6.072   -0.93 %
+   Co-Mg-Ni-Zn                    rocksalt     4.2310    4.2475  geometric       5.949          5.880   -1.16 %
+   Co-Cu-Ni-Zn                    rocksalt     4.2290    4.2380  geometric       6.767          6.724   -0.64 %
+   Co-Cu-Li-Mg-Ni-Zn              rocksalt     4.1990    4.2170  geometric       5.872          5.797   -1.28 %
+   Co-Cu-Mg-Na-Ni-Zn              rocksalt     4.2360    4.2690  geometric       5.860          5.725   -2.30 %
+   Co-Cu-K-Mg-Ni-Zn               rocksalt     4.2330    4.3410  geometric       6.013          5.576   -7.28 %
+   Co-Fe-Mg-Ni-Zn                 rocksalt     4.2200    4.2700  geometric       6.066          5.856   -3.47 %
+   Co-Fe-Mg-Mn-Ni                 rocksalt     4.2831    4.3060  geometric       5.625          5.536   -1.59 %
+   Co-Cu-Ni-Sr-Zn                 rocksalt     4.2400    4.4340  geometric       7.219          6.312   -12.56 %
+   Co-Fe-Mg-Mn-Zn                 rocksalt     4.2900    4.3260  geometric       5.711          5.570   -2.48 %
+   Co-Cr-Fe-Mn-Ni                 spinel       8.3460    8.3380  chgnet          5.307          5.322   +0.29 %
+   Co-Cr-Fe-Mn-Zn                 spinel       8.3850    8.3637  chgnet          5.324          5.365   +0.77 %
+   Co-Fe-Mg-Mn-Ni                 spinel       8.3760    8.4080  chgnet          5.114          5.056   -1.14 %
+   Co-Cu-Fe-Mg-Ni                 spinel       8.3660    8.3865  chgnet          5.172          5.134   -0.73 %
+   Co-Fe-Mg-Ni-Zn                 spinel       8.3810    8.3967  chgnet          5.152          5.124   -0.56 %
+   Co-Fe-Mn-Ni-Zr                 spinel       8.2800    8.5566  geometric       5.986          5.424   -9.39 %
+   Cr-Fe-Mn-Ni-Zn                 spinel       8.3250    8.3647  chgnet          5.437          5.360   -1.42 %
+   Co-Cu-Fe-Mn-Ni                 spinel       8.3800    8.3987  chgnet          5.284          5.249   -0.67 %
+   Co-Cu-Fe-Mg-Mn-Ni              spinel       8.3910    8.3878  chgnet          5.121          5.127   +0.11 %
+   Al-Co-Cu-Fe-Mn-Ni              spinel       8.2697    8.2280  chgnet          5.249          5.329   +1.53 %
+   Al-Cu-Fe-Ni-Zn                 spinel       8.2453    8.2053  chgnet          5.363          5.441   +1.47 %
+   Co-Cu-Fe-Mn-Ni                 spinel       8.3602    8.2859  chgnet          5.437          5.585   +2.72 %
+   Co-Cr-Cu-Mn-Ni-Zn              spinel       8.3261    8.3607  chgnet          5.254          5.189   -1.24 %
+   Co-Cr-Cu-Mg-Ni-Zn              spinel       8.3188    8.3485  chgnet          5.127          5.072   -1.06 %
+   Ce-Hf-Y-Zr                     fluorite     5.2400    5.2418  geometric       7.233          7.226   -0.11 %
+   Ce-Hf-Y-Yb-Zr                  fluorite     5.2300    5.2328  geometric       7.763          7.750   -0.16 %
+   Ce-Hf-Y-Yb-Zr                  fluorite     5.2400    5.2410  geometric       7.680          7.675   -0.06 %
+   Ca-Ce-Hf-Y-Zr                  fluorite     5.2500    5.2373  geometric       6.912          6.962   +0.73 %
+   Ce-Gd-Hf-Y-Zr                  fluorite     5.2500    5.2508  geometric       7.584          7.581   -0.05 %
+   Ce-Gd-Hf-Y-Zr                  fluorite     5.2800    5.2698  geometric       7.364          7.407   +0.58 %
+   Ce-Gd-Hf-Yb-Zr                 fluorite     5.2500    5.2418  geometric       8.067          8.105   +0.47 %
+   Ce-Gd-Hf-Yb-Zr                 fluorite     5.2700    5.2554  geometric       8.170          8.238   +0.84 %
+   Ce-La-Pr-Y                     fluorite     5.4962    5.4957  geometric       6.369          6.371   +0.02 %
+   Ce-La-Pr-Sm                    fluorite     5.5276    5.5288  geometric       6.865          6.861   -0.06 %
+   Ce-La-Pr-Sm-Y                  fluorite     5.5071    5.5000  geometric       6.516          6.541   +0.39 %
+   Ce-La-Nd-Pr-Sm-Y               fluorite     5.4998    5.5138  geometric       6.624          6.574   -0.76 %
+   Ce-Hf-Mn-Sn-Zr                 fluorite     5.1360    5.1009  geometric       7.290          7.442   +2.08 %
+   Ce-Hf-Mn-Ti-Zr                 fluorite     5.0520    5.0204  geometric       6.688          6.815   +1.90 %
+   Ce-Fe-Hf-Mn-Ta-Ti-Zr           fluorite     5.0510    5.0181  geometric       6.822          6.957   +1.98 %
+   Ce-Gd-La-Y-Zr                  fluorite     5.4246    5.3848  geometric       6.461          6.606   +2.23 %
+   Hf-La-Pr-Y-Zr                  fluorite     5.3627    5.3145  geometric       6.877          7.066   +2.74 %
+   Ce-Eu-Gd-La-Nd-Sm-Zr           fluorite     5.3976    5.3842  geometric       6.932          6.983   +0.75 %
+   Ce-Gd-La-Nd                    fluorite     5.5000    5.5031  geometric       7.005          6.993   -0.17 %
+   Ce-Eu-Gd-La-Nd-Sm              fluorite     5.4792    5.4878  geometric       7.120          7.087   -0.47 %
+   Co-Gd-La-Nd-Sm-Y               perovskite   3.7651    3.7393  geometric       7.556          7.713   +2.09 %
+   Fe-Gd-La-Nd-Sm-Y               perovskite   3.8807    3.8685  geometric       6.813          6.877   +0.95 %
+   Co-Cr-Fe-Gd-Mn-Ni              perovskite   3.8129    3.8011  geometric       7.828          7.902   +0.94 %
+   Co-Cr-Fe-La-Mn-Ni              perovskite   3.8803    3.8472  geometric       6.906          7.086   +2.60 %
+   Co-Cr-Fe-Mn-Nd-Ni              perovskite   3.8441    3.8231  geometric       7.259          7.379   +1.66 %
+   Co-Cr-Fe-Gd-La-Mn-Nd-Ni-Sm-Y   perovskite   3.8319    3.8129  geometric       7.083          7.190   +1.50 %
+   Ba-Hf-Sr-Ti-Zr                 perovskite   4.0903    4.0601  geometric       6.463          6.608   +2.25 %
+   Ba-Sn-Sr-Ti-Zr                 perovskite   4.0673    4.0515  geometric       6.081          6.153   +1.18 %
+   Ba-Ga-In-Sn-Sr                 perovskite   4.0931    4.0924  geometric       6.334          6.337   +0.05 %
+   Dy-Er-Gd-Tb-Ti-Yb              pyrochlore  10.1117   10.1425  geometric       6.878          6.816   -0.91 %
+   Gd-La-Nd-Sm-Y-Zr               pyrochlore  10.5945   10.5841  geometric       6.326          6.345   +0.30 %
+   Eu-Gd-La-Nd-Sm-Zr              pyrochlore  10.6414   10.6026  geometric       6.521          6.593   +1.10 %
+   Dy-Eu-Gd-Nd-Sm-Zr              pyrochlore  10.5701   10.5500  geometric       6.760          6.799   +0.57 %
+   Eu-Gd-Ho-Nd-Sm-Zr              pyrochlore  10.5558   10.5452  geometric       6.799          6.819   +0.30 %
+   Er-Eu-Gd-Nd-Sm-Zr              pyrochlore  10.5671   10.5408  geometric       6.787          6.838   +0.75 %
+   Eu-Gd-Nd-Sm-Tm-Zr              pyrochlore  10.5543   10.5368  geometric       6.820          6.854   +0.50 %
+   Eu-Gd-Nd-Sm-Yb-Zr              pyrochlore  10.5540   10.5331  geometric       6.839          6.879   +0.59 %
+   Eu-Gd-Lu-Nd-Sm-Zr              pyrochlore  10.5453   10.5299  geometric       6.864          6.895   +0.44 %
+   Gd-La-Nd-Zr                    pyrochlore  10.6832   10.6296  geometric       6.407          6.504   +1.52 %
 
-   spinelles, modele CHGNet : ecart absolu moyen 1.52 % sur 4 systeme(s), maximum 2.72 % -> atteint
-   modele geometrique : ecart absolu moyen 10.68 % sur 2 systeme(s), maximum 14.66 % -> NON ATTEINT
+   spinelles, modele CHGNet : ecart absolu moyen 1.05 % sur 13 systeme(s), maximum 2.72 % -> atteint
+   modele geometrique : ecart absolu moyen 1.60 % sur 50 systeme(s), maximum 12.56 % -> atteint
 
 Lecture : avec une maille mesuree, la densite est exacte au contenu de la maille pres
 (partie A) ; c'est la valeur a utiliser pour la densite relative d'une pastille frittee.
 Avec une maille predite, l'incertitude affichee est la plus grande de deux valeurs :
 trois fois l'incertitude de la maille, ou l'ecart moyen observe ci-dessus pour ce modele.
-Le modele geometrique n'atteint pas son critere sur les deux rocksalt mesures : ses
-rayons ioniques sont tabules pour une seule valence par element (Fe3+, Mn3+), pas pour
-le cation 2+ d'un rocksalt. Sa densite est indicative tant que la maille n'est pas mesuree.
+Mailles mesurees : data/reference/lattice_measured.csv (sources par ligne) ; erreur de
+maille par famille : QC/lattice_validation.txt.
 Limite : le sous-reseau d'oxygene est suppose complet. Une fluorine riche en cations
 trivalents contient des lacunes d'oxygene et est plus legere que la valeur affichee
 (jusqu'a environ 4 % pour quatre cations trivalents sur cinq).

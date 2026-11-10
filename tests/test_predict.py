@@ -86,7 +86,11 @@ def test_thermo_payload_is_what_the_page_embeds():
     start = html.index("{", html.index("const PAYLOAD = "))
     payload, _ = json.JSONDecoder().raw_decode(html, start)
     assert payload["THERMO"] == json.loads(json.dumps(P.thermo))
-    assert payload["LATTICE"]["mae_pct"] == predict.LATTICE_MAE_PCT
+    assert payload["LATTICE"] == json.loads(json.dumps(P.lattice))
+    val = json.load(open(os.path.join(ROOT, "data", "reference", "lattice_validation.json"),
+                         encoding="utf-8"))
+    for fam, pct in payload["LATTICE"]["mae_pct"].items():
+        assert pct == val["families"][fam]["uncertainty_pct"]
 
 
 def test_cli_single_formula_and_exit_status():

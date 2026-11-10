@@ -72,24 +72,47 @@ et 100 % correspond à {{rel_hi}} d'exactitude observée ; une annonce entre 60 
 20 descripteurs interprétables ; seuil au 95<sup>e</sup> centile de cette distance sur
 l'entraînement ({{ad_threshold}}). Au-delà, l'interface refuse d'interpréter la probabilité :
 ce n'est pas une prédiction prudente, c'est une absence de prédiction.</p>
-<h3>Paramètre de maille et diffractogramme</h3>
-<p>Pas de régresseur appris : le paramètre de maille n'est rapporté que <b>{{n_lattice}} fois</b> dans
-la base. À la place, un modèle géométrique sur rayons de Shannon, recalé par prototype sur un composé
-de référence (MgO, CeO<sub>2</sub>, SrTiO<sub>3</sub>, MgAl<sub>2</sub>O<sub>4</sub>,
-Y<sub>2</sub>O<sub>3</sub>, Y<sub>2</sub>Ti<sub>2</sub>O<sub>7</sub>), avec un écart absolu moyen de
-<b>{{lattice_mae}} %</b> sur les valeurs expérimentales disponibles. Le diffractogramme est calculé à
-partir des facteurs de structure exacts des prototypes, validés contre <code>pymatgen</code>.
-Occupations supposées aléatoires sur tous les sites cationiques, sauf pérovskite et pyrochlore où les
-cations sont répartis entre sites A et B par rayon ionique décroissant.</p>
+<h3>Paramètre de maille</h3>
+<p>Pas de régresseur appris : la maille est calculée à partir des rayons ioniques de Shannon (1976),
+pris à la valence et à la coordinence de chaque site. Les valences sont fixées par électroneutralité,
+en oxydant les cations rédox dans un ordre écrit d'avance ; les cations sont répartis entre sites A et B
+(pérovskite, pyrochlore) par classe chimique, et entre sites tétraédriques et octaédriques (spinelle)
+par préférence de site. Une relation publiée par prototype donne la maille : contact anion-cation
+(rocksalt) ; contact avec les lacunes d'oxygène traitées en sphères dures (fluorine, Chatzichristodoulou
+et al. 2015) ; Ubic 2007 (pérovskite) ; O'Neill et Navrotsky 1983 (spinelle) ; Mouta et al. 2013
+(pyrochlore). Aucune constante n'est ajustée.</p>
+<p>Validation sur {{lat_n_heo}} oxydes à haute entropie de maille mesurée et {{lat_n_ref}} oxydes
+simples de référence ({{lat_n_rows}} mesures, {{lat_n_sources}} sources, chacune citée ligne par ligne
+dans <code>data/reference/lattice_measured.csv</code>), selon un protocole écrit avant le calcul. Écart
+absolu moyen sur les oxydes à haute entropie : <b>{{latm_all}} %</b>, contre {{latm_v1}} % pour le
+modèle précédent — {{latm_rs}} % (rocksalt), {{latm_sp}} % (spinelle), {{latm_fl}} %
+(fluorine), {{latm_pv}} % (pérovskite), {{latm_py}} % (pyrochlore). Le critère de 1 % n'est pas
+atteint pour les rocksalt : les compositions contenant Sr<sup>2+</sup> ou K<sup>+</sup> ont la maille de
+la matrice sans ce cation, ce qui suggère une incorporation partielle ; la page le signale. La
+correction de lacunes de la fluorine a été ajoutée après la lecture des résidus : sa validation n'est
+pas aveugle. Pour les {{lat_sel_n}} spinelles dont CHGNet couvre tous les cations, sa maille
+({{lat_sel_chgnet}} %) reste préférée au modèle géométrique ({{lat_sel_geo}} %). L'incertitude affichée
+est l'écart moyen de la famille.</p>
+<p><b>Correction apprise : essayée, non retenue.</b> Un régresseur du résidu du modèle géométrique
+(biais par famille, régression ridge, gradient boosting) a été jugé hors échantillon, un groupe de
+sources retiré à chaque tour, selon des critères écrits d'avance. Il ramène l'écart de {{corr_base}} %
+à {{corr_judged}} % : un gain de {{corr_gain}} point, sous le seuil de 0,1 point exigé, et la fluorine
+se dégrade. La plateforme garde donc le modèle géométrique seul
+(<code>QC/lattice_correction.txt</code>). Avec {{corr_n}} oxydes mesurés venant de {{corr_groups}}
+groupes de sources, il n'y a pas assez de données pour apprendre plus qu'un biais par famille.</p>
+<h3>Diffractogramme</h3>
+<p>Le diffractogramme est calculé à partir des facteurs de structure exacts des prototypes, validés
+contre <code>pymatgen</code>. Occupations supposées aléatoires sur tous les sites cationiques, sauf
+pérovskite et pyrochlore où les cations sont répartis entre sites A et B par rayon ionique
+décroissant.</p>
 <h3>Densité théorique</h3>
 <p>Masse de la maille du prototype divisée par son volume, sous-réseau d'oxygène complet.
 Avec la maille <b>mesurée</b> de quatre oxydes de référence, elle retombe à moins de
 {{rho_ref_max}} % de la valeur publiée. Avec une maille <b>prédite</b>, elle hérite de son
 erreur, multipliée par trois : {{rho_chgnet_mae}} % en moyenne pour les {{rho_chgnet_n}} spinelles à haute
-entropie de maille mesurée, {{rho_geo_mae}} % pour les {{rho_geo_n}} rocksalt traités par le modèle
-géométrique — dont la table de rayons ne porte qu'une valence par élément. Pour les
-pérovskites, fluorines et pyrochlores, aucune maille mesurée ne permet de le vérifier.
-L'incertitude affichée est la plus grande de la propagation et de l'erreur observée.</p>
+entropie traités par CHGNet, {{rho_geo_mae}} % pour les {{rho_geo_n}} oxydes à haute entropie traités par
+le modèle géométrique. L'incertitude affichée est la plus grande de la propagation et de l'erreur
+observée.</p>
 
 <h3>Comparer à un diffractogramme mesuré</h3>
 <p>Le fichier chargé (deux colonnes 2θ et intensité, ou .xrdml) est lissé, son fond
@@ -122,7 +145,7 @@ classifieur dans son domaine ; quand un cation est inconnu du modèle, s'appuyer
 l'exactitude rocksalt / spinelle de {{lco_comp}} à {{lco_switch}} en moyenne, avec des écarts forts
 selon le cation. Li, monovalent, n'est pas couvert.</li>
 <li><b>Paramètre de maille des spinelles</b> — CHGNet calibré sur 17 spinelles binaires :
-{{lat_mae}} % d'écart sur les spinelles HEO mesurés (le modèle géométrique ci-dessous : 1,9 %).</li>
+{{lat_sel_chgnet}} % d'écart sur {{lat_sel_n}} spinelles HEO de maille mesurée (modèle géométrique sur les mêmes : {{lat_sel_geo}} %).</li>
 </ul>
 <h3>Activité catalytique : pourquoi pas de prédiction</h3>
 <p>Les surtensions OER publiées ne peuvent pas entraîner de prédicteur : pour une même composition,

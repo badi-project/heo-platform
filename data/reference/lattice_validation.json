@@ -1,0 +1,240 @@
+{
+ "criteria_pct": {
+  "C1": 1.0,
+  "C2": 1.0
+ },
+ "C1_met": true,
+ "C2_met": [
+  "spinel",
+  "fluorite",
+  "perovskite",
+  "pyrochlore"
+ ],
+ "C3_met": true,
+ "families": {
+  "rocksalt": {
+   "reference": {
+    "n": 7,
+    "mae_pct": 0.443776,
+    "bias_pct": 0.443776,
+    "max_pct": 1.183569
+   },
+   "reference_blind": {
+    "n": 7,
+    "mae_pct": 0.443776,
+    "bias_pct": 0.443776,
+    "max_pct": 1.183569
+   },
+   "heo": {
+    "n": 10,
+    "mae_pct": 1.180875,
+    "bias_pct": 1.180875,
+    "max_pct": 4.575472
+   },
+   "heo_blind": {
+    "n": 10,
+    "mae_pct": 1.180875,
+    "bias_pct": 1.180875,
+    "max_pct": 4.575472
+   },
+   "heo_v1": {
+    "n": 10,
+    "mae_pct": 2.389248,
+    "bias_pct": -1.637761,
+    "max_pct": 4.767927
+   },
+   "floor_pct": 0.043,
+   "C1": true,
+   "C2": false,
+   "C3": true,
+   "uncertainty_pct": 1.18,
+   "blind": true
+  },
+  "spinel": {
+   "reference": {
+    "n": 27,
+    "mae_pct": 0.305138,
+    "bias_pct": 0.264921,
+    "max_pct": 1.070162
+   },
+   "reference_blind": {
+    "n": 27,
+    "mae_pct": 0.305138,
+    "bias_pct": 0.264921,
+    "max_pct": 1.070162
+   },
+   "heo": {
+    "n": 14,
+    "mae_pct": 0.697622,
+    "bias_pct": 0.449158,
+    "max_pct": 3.341095
+   },
+   "heo_blind": {
+    "n": 14,
+    "mae_pct": 0.697622,
+    "bias_pct": 0.449158,
+    "max_pct": 3.341095
+   },
+   "heo_v1": {
+    "n": 14,
+    "mae_pct": 2.134476,
+    "bias_pct": -0.190985,
+    "max_pct": 3.40555
+   },
+   "floor_pct": 0.138,
+   "C1": true,
+   "C2": true,
+   "C3": true,
+   "uncertainty_pct": 0.7,
+   "blind": true
+  },
+  "fluorite": {
+   "reference": {
+    "n": 4,
+    "mae_pct": 0.228648,
+    "bias_pct": 0.123349,
+    "max_pct": 0.251086
+   },
+   "reference_blind": {
+    "n": 4,
+    "mae_pct": 0.976592,
+    "bias_pct": 0.976592,
+    "max_pct": 1.593251
+   },
+   "heo": {
+    "n": 20,
+    "mae_pct": 0.272966,
+    "bias_pct": -0.211664,
+    "max_pct": 0.898451
+   },
+   "heo_blind": {
+    "n": 20,
+    "mae_pct": 1.396097,
+    "bias_pct": 1.396097,
+    "max_pct": 2.403501
+   },
+   "heo_v1": {
+    "n": 20,
+    "mae_pct": 1.366517,
+    "bias_pct": 1.366517,
+    "max_pct": 2.872049
+   },
+   "floor_pct": null,
+   "C1": true,
+   "C2": true,
+   "C3": true,
+   "uncertainty_pct": 0.27,
+   "blind": false
+  },
+  "perovskite": {
+   "reference": {
+    "n": 6,
+    "mae_pct": 0.327725,
+    "bias_pct": -0.168509,
+    "max_pct": 0.655047
+   },
+   "reference_blind": {
+    "n": 6,
+    "mae_pct": 0.327725,
+    "bias_pct": -0.168509,
+    "max_pct": 0.655047
+   },
+   "heo": {
+    "n": 9,
+    "mae_pct": 0.48315,
+    "bias_pct": -0.48315,
+    "max_pct": 0.85273
+   },
+   "heo_blind": {
+    "n": 9,
+    "mae_pct": 0.48315,
+    "bias_pct": -0.48315,
+    "max_pct": 0.85273
+   },
+   "heo_v1": {
+    "n": 9,
+    "mae_pct": 2.389423,
+    "bias_pct": 0.838398,
+    "max_pct": 5.145356
+   },
+   "floor_pct": 0.075,
+   "C1": true,
+   "C2": true,
+   "C3": true,
+   "uncertainty_pct": 0.48,
+   "blind": true
+  },
+  "pyrochlore": {
+   "reference": {
+    "n": 4,
+    "mae_pct": 0.320649,
+    "bias_pct": -0.320649,
+    "max_pct": 0.681061
+   },
+   "reference_blind": {
+    "n": 4,
+    "mae_pct": 0.320649,
+    "bias_pct": -0.320649,
+    "max_pct": 0.681061
+   },
+   "heo": {
+    "n": 10,
+    "mae_pct": 0.23189,
+    "bias_pct": -0.171046,
+    "max_pct": 0.501946
+   },
+   "heo_blind": {
+    "n": 10,
+    "mae_pct": 0.23189,
+    "bias_pct": -0.171046,
+    "max_pct": 0.501946
+   },
+   "heo_v1": {
+    "n": 10,
+    "mae_pct": 2.254535,
+    "bias_pct": -2.254535,
+    "max_pct": 2.777677
+   },
+   "floor_pct": 0.021,
+   "C1": true,
+   "C2": true,
+   "C3": true,
+   "uncertainty_pct": 0.23,
+   "blind": true
+  }
+ },
+ "heo": {
+  "n": 63,
+  "mae_pct": 0.534953,
+  "bias_pct": 0.123887,
+  "max_pct": 4.575472
+ },
+ "heo_protocol_initial": {
+  "n": 63,
+  "mae_pct": 0.891502,
+  "bias_pct": 0.634287,
+  "max_pct": 4.575472
+ },
+ "heo_v1": {
+  "n": 63,
+  "mae_pct": 1.986597,
+  "bias_pct": -0.10668,
+  "max_pct": 5.145356
+ },
+ "spinel_selection": {
+  "n": 13,
+  "geometric": {
+   "n": 13,
+   "mae_pct": 0.494278,
+   "bias_pct": 0.226702,
+   "max_pct": 1.760055
+  },
+  "chgnet": {
+   "n": 13,
+   "mae_pct": 0.350263,
+   "bias_pct": 0.001615,
+   "max_pct": 0.889207
+  },
+  "retained": "chgnet"
+ }
+}

@@ -4,6 +4,40 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## [Non publié]
 
+### Modifié — nouveau modèle de paramètre de maille
+
+- **Rayons de Shannon par valence, coordinence et spin** (`data/reference/shannon_radii.json`,
+  `src/radii.py`) : les 58 cations de la plateforme. L'ancienne table ne portait qu'une
+  valence par élément. Une coordinence absente est interpolée ou extrapolée, et signalée.
+- **132 mailles mesurées sourcées** (`data/reference/lattice_measured.csv`, 32 sources) :
+  84 mesures d'oxydes à haute entropie des cinq familles et 48 oxydes simples. La base
+  n'en comptait que 5, aucune pour les pérovskites, fluorines et pyrochlores.
+- **Modèle de maille refait** (`src/lattice.py`, `latticeModel()` dans la page) : valences
+  par électroneutralité, sites par classe chimique ou préférence de site, une relation
+  publiée par prototype, aucune constante ajustée. Protocole écrit avant le calcul
+  (`data/reference/lattice_protocol.md`). Sur 63 oxydes à haute entropie mesurés :
+  **0,53 %** d'écart absolu moyen, contre 1,99 % — rocksalt 2,39 → 1,18 %, spinelle
+  2,13 → 0,70 %, fluorine 1,37 → 0,27 %, pérovskite 2,39 → 0,48 %, pyrochlore
+  2,25 → 0,23 % (`QC/lattice_validation.txt`).
+  - **Critère de 1 % non atteint pour les rocksalt** : les compositions au Sr²⁺ et au K⁺
+    ont la maille de la matrice ; la page le signale.
+  - **Fluorine, validation non aveugle** : la correction des lacunes d'oxygène a été
+    ajoutée après lecture des résidus ; le protocole initial donnait 1,40 %.
+  - CHGNet reste utilisé pour les spinelles qu'il couvre : 0,35 % contre 0,49 % sur 13
+    spinelles mesurés.
+- L'incertitude affichée sur la maille est l'écart moyen de la famille (0,23 à 1,18 %) au
+  lieu de 1,9 % partout. La densité suit : 1,6 % en moyenne sur 50 oxydes mesurés traités
+  par le modèle géométrique (10,7 % auparavant, sur deux rocksalt).
+- La colonne `a_predit` des candidats criblés est recalculée ; ni les candidats ni leurs
+  probabilités ne changent.
+- **Correction apprise de la maille : essayée, non intégrée**
+  (`tools/learn_lattice_correction.py`, `QC/lattice_correction.txt`). Jugée hors
+  échantillon, un groupe de sources retiré à chaque tour, avec des critères écrits
+  d'avance : 0,53 → 0,49 %, soit 0,04 point de gain pour 0,1 exigé, et la fluorine se
+  dégrade de 0,15 point. Le meilleur candidat seul, un biais par famille, atteint 0,45 %.
+- Parité Python / JavaScript étendue au modèle de maille : 6 492 cas, écart nul, notes
+  identiques au caractère près.
+
 ### Ajouté — la plateforme devient un outil de travail
 
 - **Moteur de prédiction Python** (`src/predict.py`, bibliothèque standard) et **ligne de

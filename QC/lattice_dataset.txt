@@ -1,0 +1,122 @@
+Mailles mesurees : jeu de donnees, dispersion entre laboratoires, modele actuel
+protocole (ecrit avant le calcul du nouveau modele) : data/reference/lattice_protocol.md
+donnees : data/reference/lattice_measured.csv
+
+1. Contenu
+
+   famille       references (lignes / compositions)   validation HEO (lignes / compositions)
+   rocksalt          8 / 7                                15 / 10   
+   spinel           28 / 27                               22 / 14   
+   fluorite          4 / 4                                21 / 20   
+   perovskite        6 / 6                                12 / 9    
+   pyrochlore        4 / 4                                12 / 10   
+
+   132 lignes, 32 sources ; compositions uniques (une seule phase declaree) : 111
+   lignes ecartees de la metrique principale (phase non pure) : RS10 (trace spinel <2 %), RS11 (trace spinel <2 %), FL13 (fluorite 97.1 %), PV03 (perovskite 97.7 % + Gd2O3-type), PV07 (perovskite 98.3 % + Sm2O3-type)
+
+   controle des lignes : aucune anomalie (formule lue, maille plausible, source, groupe coherent avec le nombre de cations)
+
+2. Dispersion entre laboratoires (compositions mesurees par au moins deux origines ; une
+   compilation compte chaque article cite, deux echantillons d'un meme article comptent une fois)
+
+   famille      composition                                    n  mediane   min      max      etendue  ecart moyen
+   rocksalt     (Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O                   4   4.2368   4.2360   4.2381   0.05 %    0.02 %
+   spinel       (Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)3O4                 7   8.3460   8.2540   8.3770   1.47 %    0.29 %
+   spinel       (Fe0.2Co0.2Cr0.2Mn0.2Zn0.2)3O4                 2   8.3850   8.3710   8.3990   0.33 %    0.17 %
+   spinel       (Mg0.2Fe0.2Co0.2Ni0.2Cu0.2)Fe2O4               2   8.3660   8.3600   8.3720   0.14 %    0.07 %
+   perovskite   La(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3                2   3.8803   3.8774   3.8832   0.15 %    0.07 %
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2La0.2)2Zr2O7              2  10.6414  10.6392  10.6436   0.04 %    0.02 %
+   rocksalt     MgO                                            2   4.2140   4.2110   4.2170   0.14 %    0.07 %
+   spinel       Fe3O4                                          2   8.3955   8.3940   8.3970   0.04 %    0.02 %
+
+   plancher par famille (moyenne de l'ecart moyen a la mediane) : rocksalt 0.04 % (2) ; spinel 0.14 % (4) ; fluorite - ; perovskite 0.07 % (1) ; pyrochlore 0.02 % (1)
+   lecture : sous ce plancher, l'erreur d'un modele n'est plus distinguable de l'ecart
+   entre deux syntheses de la meme composition (temperature, atmosphere, stoechiometrie
+   en oxygene, taille des cristallites).
+
+3. Modele de maille de la v1.0 (reference a battre, critere C3)
+   geometrique : rayon moyen x constante calibree sur un compose par prototype
+   (fige dans data/reference/lattice_model.json, recalcule ici independamment de src/predict.py)
+   plateforme  : CHGNet pour les spinelles a cations couverts, geometrique sinon
+
+   groupe     famille      n   geometrique : moyen   biais    max     plateforme : moyen   biais    max
+   reference  rocksalt     7           3.52 %   -3.52 %  12.86 %            3.52 %   -3.52 %  12.86 %
+   reference  spinel      27           2.93 %   -1.89 %   7.30 %            0.50 %   -0.11 %   1.31 %
+   reference  fluorite     4           1.67 %   +1.65 %   2.83 %            1.67 %   +1.65 %   2.83 %
+   reference  perovskite   6           4.37 %   -4.37 %   6.30 %            4.37 %   -4.37 %   6.30 %
+   reference  pyrochlore   4           1.93 %   -1.93 %   2.47 %            1.93 %   -1.93 %   2.47 %
+   reference  toutes      48           3.01 %   -2.15 %  12.86 %            1.64 %   -1.14 %  12.86 %
+   heo        rocksalt    10           2.39 %   -1.64 %   4.77 %            2.39 %   -1.64 %   4.77 %
+   heo        spinel      14           2.13 %   -0.19 %   3.41 %            0.48 %   +0.16 %   2.23 %
+   heo        fluorite    20           1.37 %   +1.37 %   2.87 %            1.37 %   +1.37 %   2.87 %
+   heo        perovskite   9           2.39 %   +0.84 %   5.15 %            2.39 %   +0.84 %   5.15 %
+   heo        pyrochlore  10           2.25 %   -2.25 %   2.78 %            2.25 %   -2.25 %   2.78 %
+   heo        toutes      63           1.99 %   -0.11 %   5.15 %            1.62 %   -0.03 %   5.15 %
+
+   detail, validation HEO (maille mesuree = mediane des lignes de la composition) :
+   famille      composition                                    mesure   geometr.  plateforme  ecart geo  ecart plat.
+   rocksalt     (Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O                   4.2368    4.1564    4.1564 geo   -1.90 %    -1.90 %
+   rocksalt     (Co0.25Mg0.25Ni0.25Zn0.25)O                    4.2310    4.1375    4.1375 geo   -2.21 %    -2.21 %
+   rocksalt     (Ni0.4Cu0.2Zn0.2Co0.2)O                        4.2290    4.1444    4.1444 geo   -2.00 %    -2.00 %
+   rocksalt     (Ni0.18Cu0.18Zn0.18Co0.18Mg0.18Li0.1)O         4.1990    4.1699    4.1699 geo   -0.69 %    -0.69 %
+   rocksalt     (Ni0.18Cu0.18Zn0.18Co0.18Mg0.18Na0.1)O         4.2360    4.2215    4.2215 geo   -0.34 %    -0.34 %
+   rocksalt     (Ni0.18Cu0.18Zn0.18Co0.18Mg0.18K0.1)O          4.2330    4.2931    4.2931 geo   +1.42 %    +1.42 %
+   rocksalt     (Mg0.2Co0.2Fe0.2Ni0.2Zn0.2)O                   4.2200    4.0610    4.0610 geo   -3.77 %    -3.77 %
+   rocksalt     (Mg0.2Mn0.2Fe0.2Co0.2Ni0.2)O                   4.2831    4.0789    4.0789 geo   -4.77 %    -4.77 %
+   rocksalt     (Cu0.2Zn0.2Ni0.2Co0.2Sr0.2)O                   4.2400    4.3392    4.3392 geo   +2.34 %    +2.34 %
+   rocksalt     (Fe0.2Co0.2Mn0.2Mg0.2Zn0.2)O                   4.2900    4.0988    4.0988 geo   -4.46 %    -4.46 %
+   spinel       (Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)3O4                 8.3460    8.4862    8.3380 chg   +1.68 %    -0.10 %
+   spinel       (Fe0.2Co0.2Cr0.2Mn0.2Zn0.2)3O4                 8.3850    8.5290    8.3637 chg   +1.72 %    -0.25 %
+   spinel       (Mg0.2Mn0.2Fe0.2Co0.2Ni0.2)Fe2O4               8.3760    8.1483    8.4080 chg   -2.72 %    +0.38 %
+   spinel       (Mg0.2Fe0.2Co0.2Ni0.2Cu0.2)Fe2O4               8.3660    8.0870    8.3865 chg   -3.33 %    +0.25 %
+   spinel       (Mg0.2Fe0.2Co0.2Ni0.2Zn0.2)Fe2O4               8.3810    8.0956    8.3967 chg   -3.41 %    +0.19 %
+   spinel       (Mn0.2Fe0.2Co0.2Ni0.2Zr0.2)3O4                 8.2800    8.4649    8.4649 geo   +2.23 %    +2.23 %
+   spinel       (Cr0.2Mn0.2Fe0.2Ni0.2Zn0.2)3O4                 8.3250    8.5034    8.3647 chg   +2.14 %    +0.48 %
+   spinel       (Mn0.2Co0.2Ni0.2Cu0.2Fe0.2)Fe2O4               8.3800    8.1483    8.3987 chg   -2.76 %    +0.22 %
+   spinel       (Mn0.2Co0.2Ni0.2Cu0.2Mg0.2)Fe2O4               8.3910    8.1711    8.3878 chg   -2.62 %    -0.04 %
+   spinel       (Al0.1667Cu0.1667Co0.1667Fe0.1667Mn0.1667Ni0.  8.2697    8.3016    8.2280 chg   +0.39 %    -0.50 %
+   spinel       (Cu0.2Ni0.2Zn0.2Al0.2Fe0.2)3O4                 8.2453    8.1269    8.2053 chg   -1.44 %    -0.49 %
+   spinel       (Cu0.2Ni0.2Fe0.2Mn0.2Co0.2)3O4                 8.3602    8.4477    8.2859 chg   +1.05 %    -0.89 %
+   spinel       (Mn0.2Co0.2Ni0.2Cu0.2Zn0.2)Cr2O4               8.3261    8.5361    8.3607 chg   +2.52 %    +0.42 %
+   spinel       (Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)Cr2O4               8.3188    8.4748    8.3485 chg   +1.88 %    +0.36 %
+   fluorite     (Hf0.25Zr0.25Ce0.25Y0.25)O2                    5.2400    5.2838    5.2838 geo   +0.84 %    +0.84 %
+   fluorite     (Hf0.25Zr0.25Ce0.25Y0.125Yb0.125)O2            5.2300    5.2740    5.2740 geo   +0.84 %    +0.84 %
+   fluorite     (Hf0.2Zr0.2Ce0.2Y0.2Yb0.2)O2                   5.2400    5.3161    5.3161 geo   +1.45 %    +1.45 %
+   fluorite     (Hf0.25Zr0.25Ce0.25Y0.125Ca0.125)O2            5.2500    5.3129    5.3129 geo   +1.20 %    +1.20 %
+   fluorite     (Hf0.25Zr0.25Ce0.25Y0.125Gd0.125)O2            5.2500    5.2936    5.2936 geo   +0.83 %    +0.83 %
+   fluorite     (Hf0.2Zr0.2Ce0.2Y0.2Gd0.2)O2                   5.2800    5.3474    5.3474 geo   +1.28 %    +1.28 %
+   fluorite     (Hf0.25Zr0.25Ce0.25Yb0.125Gd0.125)O2           5.2500    5.2838    5.2838 geo   +0.64 %    +0.64 %
+   fluorite     (Hf0.2Zr0.2Ce0.2Yb0.2Gd0.2)O2                  5.2700    5.3318    5.3318 geo   +1.17 %    +1.17 %
+   fluorite     (Ce0.25La0.25Pr0.25Y0.25)O2                    5.4962    5.6384    5.6384 geo   +2.59 %    +2.59 %
+   fluorite     (Ce0.25La0.25Pr0.25Sm0.25)O2                   5.5276    5.6729    5.6729 geo   +2.63 %    +2.63 %
+   fluorite     (Ce0.2La0.2Pr0.2Sm0.2Y0.2)O2                   5.5071    5.6431    5.6431 geo   +2.47 %    +2.47 %
+   fluorite     (Ce0.1667La0.1667Nd0.1667Pr0.1667Sm0.1667Y0.1  5.4998    5.6578    5.6578 geo   +2.87 %    +2.87 %
+   fluorite     (Zr0.2Hf0.2Ce0.2Sn0.2Mn0.2)O2                  5.1360    5.1477    5.1477 geo   +0.23 %    +0.23 %
+   fluorite     (Zr0.225Hf0.225Ti0.225Mn0.225Ce0.1)O2          5.0520    5.0785    5.0785 geo   +0.52 %    +0.52 %
+   fluorite     (Zr0.2Hf0.2Ti0.2Mn0.2Ce0.1Ta0.05Fe0.05)O2      5.0510    5.0671    5.0671 geo   +0.32 %    +0.32 %
+   fluorite     (Ce0.2Zr0.2Y0.2La0.2Gd0.2)O2                   5.4246    5.4994    5.4994 geo   +1.38 %    +1.38 %
+   fluorite     (Zr0.2Hf0.2Pr0.2Y0.2La0.2)O2                   5.3627    5.4686    5.4686 geo   +1.97 %    +1.97 %
+   fluorite     (La0.1Nd0.1Sm0.1Eu0.1Gd0.1Zr0.25Ce0.25)O2      5.3976    5.4782    5.4782 geo   +1.49 %    +1.49 %
+   fluorite     (La0.1667Nd0.1667Gd0.1667Ce0.5)O2              5.5000    5.5691    5.5691 geo   +1.26 %    +1.26 %
+   fluorite     (La0.1Nd0.1Sm0.1Eu0.1Gd0.1Ce0.5)O2             5.4792    5.5531    5.5531 geo   +1.35 %    +1.35 %
+   perovskite   (Gd0.2La0.2Nd0.2Sm0.2Y0.2)CoO3                 3.7651    3.8563    3.8563 geo   +2.42 %    +2.42 %
+   perovskite   (Gd0.2La0.2Nd0.2Sm0.2Y0.2)FeO3                 3.8807    3.6810    3.6810 geo   -5.15 %    -5.15 %
+   perovskite   Gd(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3                3.8129    3.9576    3.9576 geo   +3.79 %    +3.79 %
+   perovskite   La(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3                3.8803    3.9576    3.9576 geo   +1.99 %    +1.99 %
+   perovskite   Nd(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3                3.8441    3.9576    3.9576 geo   +2.95 %    +2.95 %
+   perovskite   (Gd0.2La0.2Nd0.2Sm0.2Y0.2)(Co0.2Cr0.2Fe0.2Mn0  3.8319    3.9576    3.9576 geo   +3.28 %    +3.28 %
+   perovskite   (Ba0.5Sr0.5)(Ti0.3333Zr0.3333Hf0.3333)O3       4.0903    4.0479    4.0479 geo   -1.04 %    -1.04 %
+   perovskite   (Ba0.5Sr0.5)(Ti0.3333Zr0.3333Sn0.3333)O3       4.0673    4.0349    4.0349 geo   -0.80 %    -0.80 %
+   perovskite   (Ba0.5Sr0.5)(Ga0.3333In0.3333Sn0.3333)O3       4.0931    4.0966    4.0966 geo   +0.08 %    +0.08 %
+   pyrochlore   (Yb0.2Tb0.2Gd0.2Dy0.2Er0.2)2Ti2O7             10.1117   10.1068   10.1068 geo   -0.05 %    -0.05 %
+   pyrochlore   (La0.2Y0.2Gd0.2Nd0.2Sm0.2)2Zr2O7              10.5945   10.3685   10.3685 geo   -2.13 %    -2.13 %
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2La0.2)2Zr2O7             10.6414   10.4081   10.4081 geo   -2.19 %    -2.19 %
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Dy0.2)2Zr2O7             10.5701   10.2961   10.2961 geo   -2.59 %    -2.59 %
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Ho0.2)2Zr2O7             10.5558   10.2860   10.2860 geo   -2.56 %    -2.56 %
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Er0.2)2Zr2O7             10.5671   10.2768   10.2768 geo   -2.75 %    -2.75 %
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Tm0.2)2Zr2O7             10.5543   10.2684   10.2684 geo   -2.71 %    -2.71 %
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Yb0.2)2Zr2O7             10.5540   10.2608   10.2608 geo   -2.78 %    -2.78 %
+   pyrochlore   (Nd0.2Sm0.2Eu0.2Gd0.2Lu0.2)2Zr2O7             10.5453   10.2541   10.2541 geo   -2.76 %    -2.76 %
+   pyrochlore   (La0.3333Nd0.3333Gd0.3333)2Zr2O7              10.6832   10.4667   10.4667 geo   -2.03 %    -2.03 %
+
+genere par tools/lattice_dataset.py

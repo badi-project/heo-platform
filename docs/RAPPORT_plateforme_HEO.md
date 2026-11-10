@@ -615,7 +615,8 @@ nettoyage, le modèle est réentraîné, et la boucle repropose.
 | `heo_model.json` | export du modèle et jeu de contrôle de parité |
 | `element_properties.json` | table élémentaire (58 éléments) |
 | `xrd_prototypes.json` | réflexions et facteurs de diffusion des 6 prototypes |
-| `lattice_model.json` | constantes du modèle géométrique de maille |
+| `lattice_model.json` | constantes du modèle géométrique de maille de la v1.0 (remplacé, conservé comme référence de comparaison) |
+| `shannon_radii.json`, `lattice_rules.json`, `lattice_measured.csv`, `lattice_protocol.md` | modèle de maille actuel : rayons par valence et coordinence, règles, mailles mesurées sourcées, protocole (voir `QC/lattice_validation.txt`) |
 | `parity_check.txt` | résultat du contrôle de parité JavaScript / Python |
 | `thermo/` | calculs CHGNet et analyses des étapes 1 et 2 (voir `thermo/README.md`) |
 | `data/thermo/` | résultats bruts des calculs, références thermochimiques sourcées, substituts pour la page |

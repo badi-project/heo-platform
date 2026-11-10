@@ -1,0 +1,261 @@
+{
+ "n_rows": 132,
+ "n_sources": 32,
+ "n_compositions": 111,
+ "counts": {
+  "rocksalt": {
+   "reference": {
+    "rows": 8,
+    "compositions": 7
+   },
+   "heo": {
+    "rows": 15,
+    "compositions": 10
+   }
+  },
+  "spinel": {
+   "reference": {
+    "rows": 28,
+    "compositions": 27
+   },
+   "heo": {
+    "rows": 22,
+    "compositions": 14
+   }
+  },
+  "fluorite": {
+   "reference": {
+    "rows": 4,
+    "compositions": 4
+   },
+   "heo": {
+    "rows": 21,
+    "compositions": 20
+   }
+  },
+  "perovskite": {
+   "reference": {
+    "rows": 6,
+    "compositions": 6
+   },
+   "heo": {
+    "rows": 12,
+    "compositions": 9
+   }
+  },
+  "pyrochlore": {
+   "reference": {
+    "rows": 4,
+    "compositions": 4
+   },
+   "heo": {
+    "rows": 12,
+    "compositions": 10
+   }
+  }
+ },
+ "floor": {
+  "rocksalt": {
+   "n": 2,
+   "mad_pct": 0.043
+  },
+  "spinel": {
+   "n": 4,
+   "mad_pct": 0.138
+  },
+  "fluorite": {
+   "n": 0,
+   "mad_pct": null
+  },
+  "perovskite": {
+   "n": 1,
+   "mad_pct": 0.075
+  },
+  "pyrochlore": {
+   "n": 1,
+   "mad_pct": 0.021
+  }
+ },
+ "baseline": {
+  "reference": {
+   "rocksalt": {
+    "geometric": {
+     "n": 7,
+     "mae_pct": 3.516,
+     "bias_pct": -3.516,
+     "max_pct": 12.856
+    },
+    "platform": {
+     "n": 7,
+     "mae_pct": 3.516,
+     "bias_pct": -3.516,
+     "max_pct": 12.856
+    }
+   },
+   "spinel": {
+    "geometric": {
+     "n": 27,
+     "mae_pct": 2.933,
+     "bias_pct": -1.892,
+     "max_pct": 7.302
+    },
+    "platform": {
+     "n": 27,
+     "mae_pct": 0.501,
+     "bias_pct": -0.112,
+     "max_pct": 1.307
+    }
+   },
+   "fluorite": {
+    "geometric": {
+     "n": 4,
+     "mae_pct": 1.671,
+     "bias_pct": 1.647,
+     "max_pct": 2.831
+    },
+    "platform": {
+     "n": 4,
+     "mae_pct": 1.671,
+     "bias_pct": 1.647,
+     "max_pct": 2.831
+    }
+   },
+   "perovskite": {
+    "geometric": {
+     "n": 6,
+     "mae_pct": 4.367,
+     "bias_pct": -4.367,
+     "max_pct": 6.299
+    },
+    "platform": {
+     "n": 6,
+     "mae_pct": 4.367,
+     "bias_pct": -4.367,
+     "max_pct": 6.299
+    }
+   },
+   "pyrochlore": {
+    "geometric": {
+     "n": 4,
+     "mae_pct": 1.927,
+     "bias_pct": -1.927,
+     "max_pct": 2.469
+    },
+    "platform": {
+     "n": 4,
+     "mae_pct": 1.927,
+     "bias_pct": -1.927,
+     "max_pct": 2.469
+    }
+   },
+   "all": {
+    "geometric": {
+     "n": 48,
+     "mae_pct": 3.008,
+     "bias_pct": -2.146,
+     "max_pct": 12.856
+    },
+    "platform": {
+     "n": 48,
+     "mae_pct": 1.64,
+     "bias_pct": -1.145,
+     "max_pct": 12.856
+    }
+   }
+  },
+  "heo": {
+   "rocksalt": {
+    "geometric": {
+     "n": 10,
+     "mae_pct": 2.389,
+     "bias_pct": -1.638,
+     "max_pct": 4.768
+    },
+    "platform": {
+     "n": 10,
+     "mae_pct": 2.389,
+     "bias_pct": -1.638,
+     "max_pct": 4.768
+    }
+   },
+   "spinel": {
+    "geometric": {
+     "n": 14,
+     "mae_pct": 2.134,
+     "bias_pct": -0.191,
+     "max_pct": 3.406
+    },
+    "platform": {
+     "n": 14,
+     "mae_pct": 0.485,
+     "bias_pct": 0.161,
+     "max_pct": 2.233
+    }
+   },
+   "fluorite": {
+    "geometric": {
+     "n": 20,
+     "mae_pct": 1.367,
+     "bias_pct": 1.367,
+     "max_pct": 2.872
+    },
+    "platform": {
+     "n": 20,
+     "mae_pct": 1.367,
+     "bias_pct": 1.367,
+     "max_pct": 2.872
+    }
+   },
+   "perovskite": {
+    "geometric": {
+     "n": 9,
+     "mae_pct": 2.389,
+     "bias_pct": 0.838,
+     "max_pct": 5.145
+    },
+    "platform": {
+     "n": 9,
+     "mae_pct": 2.389,
+     "bias_pct": 0.838,
+     "max_pct": 5.145
+    }
+   },
+   "pyrochlore": {
+    "geometric": {
+     "n": 10,
+     "mae_pct": 2.255,
+     "bias_pct": -2.255,
+     "max_pct": 2.778
+    },
+    "platform": {
+     "n": 10,
+     "mae_pct": 2.255,
+     "bias_pct": -2.255,
+     "max_pct": 2.778
+    }
+   },
+   "all": {
+    "geometric": {
+     "n": 63,
+     "mae_pct": 1.987,
+     "bias_pct": -0.107,
+     "max_pct": 5.145
+    },
+    "platform": {
+     "n": 63,
+     "mae_pct": 1.62,
+     "bias_pct": -0.028,
+     "max_pct": 5.145
+    }
+   }
+  }
+ },
+ "excluded": [
+  "RS10",
+  "RS11",
+  "FL13",
+  "PV03",
+  "PV07"
+ ],
+ "problems": []
+}

@@ -8,7 +8,8 @@
    src/predict.py, and a list of compositions — and prints what predict() returns for
    each: the complete prediction, to be compared with src/predict.py — plus the flat
    record of each formula in "texts" and the continuous profile of each composition in
-   "profiles", and the indexing of each measured pattern in "measured".
+   "profiles", the indexing of each measured pattern in "measured", and the lattice
+   model (latticeModel) of each {proto, frac} case in "lattice".
    Called by tools/parity_check.py; not used by the page itself. */
 import { readFileSync } from "node:fs";
 import { createContext, runInContext } from "node:vm";
@@ -39,7 +40,10 @@ if (process.argv[2] === "predict") {
   runInContext(
     `globalThis.run = frac => { const r = predict(frac);
        return { probs: r.probs, top: r.top, ad: r.adDistance, inDomain: r.inDomain,
-                a: r.a, aPct: r.aPct, aSrc: r.aSrc, rho: r.rho, pattern: r.pattern, thermo: r.thermo }; };`,
+                a: r.a, aPct: r.aPct, aSrc: r.aSrc, aNotes: r.aNotes, rho: r.rho,
+                pattern: r.pattern, thermo: r.thermo }; };
+     globalThis.latm = c => { try { const r = latticeModel(c.proto, c.frac);
+       return { a: r.a, notes: r.notes }; } catch (e) { return { error: String(e.message) }; } };`,
     full);
   runInContext(
     `globalThis.rows = texts => texts.map(predictRow);
@@ -55,6 +59,7 @@ if (process.argv[2] === "predict") {
     rows: full.rows(job.texts || []),
     profiles: (job.profiles || []).map(f => full.prof(f)),
     measured: (job.measured || []).map(m => full.fitm(m)),
+    lattice: (job.lattice || []).map(c => full.latm(c)),
   }));
 } else if (process.argv[2] === "formulas") {
   /* formula-parser parity: a JSON list of formula strings on stdin */

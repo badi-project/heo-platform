@@ -11,13 +11,13 @@ A. Cell content. With the *measured* lattice parameter of reference oxides, one 
    (data/reference/density_references.csv, every line with its source).
    Criterion: every line within 1 %.
 
-B. Inherited lattice error. On the high-entropy oxides of the repository whose lattice
-   parameter was measured (database column a_ang, data/thermo/spinel_heo.csv), the
+B. Inherited lattice error. On the high-entropy oxides of measured lattice parameter
+   (data/reference/lattice_measured.csv, single-phase, one line per composition), the
    density computed from the *predicted* lattice parameter is compared with the one
    computed from the measured parameter. This is not independent of the lattice
-   validation (report, sections 5 and 11.4): a relative error e on a gives 3e on the
+   validation (QC/lattice_validation.txt): a relative error e on a gives 3e on the
    density. Criterion: mean absolute error at most 2 % for spinels (CHGNet model) and
-   6 % for the geometric model — three times the lattice errors already published.
+   6 % for the geometric model — three times the lattice errors published with v1.0.
 
 Part A is a gate: a wrong cell content is a bug. Part B is a measurement: its outcome,
 met or not, is written to the report and to data/reference/density_validation.json, from
@@ -52,22 +52,15 @@ def read_csv(*parts):
 
 def measured_heo(P):
     """(system, prototype, fractions, measured a, origin) for every high-entropy oxide of
-    the repository with a measured lattice parameter, each system once."""
-    out, seen = [], set()
-    for r in read_csv("data", "heo_database.csv"):
-        if r["a_ang"] and r["proto"] in P.xrd["prototypes"]:
-            frac, _, _ = P.read(r["formula_text"])
-            key = (r["sysk"], r["proto"])
-            if key not in seen:
-                seen.add(key)
-                out.append((r["sysk"], r["proto"], frac, float(r["a_ang"]), r["doi"]))
-    for r in read_csv("data", "thermo", "spinel_heo.csv"):
-        key = (r["system"], "spinel")
-        if key not in seen:
-            seen.add(key)
-            els = r["system"].split("-")
-            out.append((r["system"], "spinel", {e: 1 / len(els) for e in els},
-                        float(r["a_exp_A"]), "data/thermo/spinel_heo.csv"))
+    data/reference/lattice_measured.csv declared single-phase, each composition once at
+    the median of its measurements (tools/lattice_dataset.py)."""
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    import lattice_dataset as ld
+    out = []
+    for c in ld.unique_compositions(ld.load(), P).values():
+        if c["group"] == "heo":
+            out.append(("-".join(c["frac"]), c["proto"], c["frac"], c["a"],
+                        ", ".join(sorted({r["source"] for r in c["rows"]}))))
     return out
 
 
@@ -98,7 +91,7 @@ def build():
               f"{TOL_MAE_PCT['chgnet']:.0f} % (spinelles, modele CHGNet), "
               f"<= {TOL_MAE_PCT['geometric']:.0f} % (modele geometrique)",
               "",
-              "   systeme              prototype   a mesure  a predit  modele      rho(a mesure)  rho(a predit)  ecart"]
+              "   systeme                        prototype   a mesure  a predit  modele      rho(a mesure)  rho(a predit)  ecart"]
     errs = {"chgnet": [], "geometric": []}
     for sysk, proto, frac, a_exp, origin in measured_heo(P):
         a_th = P.thermo_lattice(proto, frac)
@@ -107,7 +100,7 @@ def build():
         rho_exp, rho_pred = P.xray_density(proto, frac, a_exp), P.xray_density(proto, frac, a_pred)
         err = 100 * (rho_pred - rho_exp) / rho_exp
         errs[src].append(abs(err))
-        lines.append(f"   {sysk:<20s} {proto:<10s} {a_exp:8.4f}  {a_pred:8.4f}  {src:<10s} "
+        lines.append(f"   {sysk:<30s} {proto:<10s} {a_exp:8.4f}  {a_pred:8.4f}  {src:<10s} "
                      f"{rho_exp:10.3f}  {rho_pred:13.3f}   {err:+5.2f} %")
     lines.append("")
     summary = {"reference": {"n": len(read_csv("data", "reference", "density_references.csv")),
@@ -129,9 +122,8 @@ def build():
               "(partie A) ; c'est la valeur a utiliser pour la densite relative d'une pastille frittee.",
               "Avec une maille predite, l'incertitude affichee est la plus grande de deux valeurs :",
               "trois fois l'incertitude de la maille, ou l'ecart moyen observe ci-dessus pour ce modele.",
-              "Le modele geometrique n'atteint pas son critere sur les deux rocksalt mesures : ses",
-              "rayons ioniques sont tabules pour une seule valence par element (Fe3+, Mn3+), pas pour",
-              "le cation 2+ d'un rocksalt. Sa densite est indicative tant que la maille n'est pas mesuree.",
+              "Mailles mesurees : data/reference/lattice_measured.csv (sources par ligne) ; erreur de",
+              "maille par famille : QC/lattice_validation.txt.",
               "Limite : le sous-reseau d'oxygene est suppose complet. Une fluorine riche en cations",
               "trivalents contient des lacunes d'oxygene et est plus legere que la valeur affichee",
               "(jusqu'a environ 4 % pour quatre cations trivalents sur cinq).",

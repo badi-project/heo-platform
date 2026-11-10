@@ -201,11 +201,16 @@ function render(){
 
   /* r.aSrc tells which lattice model predict() used (heo_engine.js) */
   const aPct = r.aPct, aSrc = r.aSrc;
+  const spSel = LATTICE.spinel_selection;
   $("lattnote").textContent = aSrc === "chgnet"
     ? `Potentiel CHGNet, modèle additif par cation calibré sur 17 spinelles binaires de maille connue. `
-      + `Écart absolu moyen sur les spinelles HEO mesurés : ${fmt(aPct, 2)} % (modèle géométrique : ${fmt(LATTICE.mae_pct, 1)} %).`
-    : `Modèle géométrique à partir des rayons de Shannon, recalé sur un composé de référence par prototype. `
-      + `Écart absolu moyen mesuré sur les valeurs expérimentales disponibles : ${fmt(LATTICE.mae_pct, 1)} %.`;
+      + `Écart absolu moyen sur ${spSel.n} spinelles à haute entropie de maille mesurée : ${fmt(spSel.chgnet, 2)} % `
+      + `(modèle géométrique sur les mêmes : ${fmt(spSel.geometric, 2)} %).`
+    : !aSrc ? ""
+    : `Rayons de Shannon à la valence et à la coordinence de chaque site, relation publiée pour ce prototype, `
+      + `aucune constante ajustée. Écart absolu moyen sur les ${LATTICE.n_heo[r.top]} oxydes à haute entropie `
+      + `mesurés de cette famille : ${fmt(aPct, 2)} %.`
+      + (r.aNotes.length ? " Remarques : " + r.aNotes.join(" ; ").replace(/(\d)\.(\d)/g, "$1,$2") + "." : "");
   /* density: what the stated uncertainty rests on, from tools/validate_density.py */
   const seen = (LATTICE.rho || {})[aSrc];
   $("rhonote").textContent = !r.rho ? "" :
