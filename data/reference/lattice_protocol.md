@@ -197,3 +197,33 @@ modèle retenu.
     0,1 point et d'au moins 15 % en relatif par rapport à l'étape 3 ;
   - aucune famille ne se dégrade de plus de 0,1 point.
 - Sinon, elle n'est pas intégrée et le rapport le dit.
+
+**Étape 4, précisions écrites avant le premier calcul de la correction** (après
+l'étape 3, donc en connaissant les résidus du modèle géométrique).
+
+- *Cible.* Résidu relatif du modèle géométrique, (mesuré − prédit) / prédit, en %.
+  Maille corrigée = prédit × (1 + résidu estimé / 100).
+- *Unité et groupes.* Composition unique, comme à l'étape 3. Deux compositions sont
+  dans le même groupe si une même origine (article, ou article cité par une
+  compilation) a mesuré l'une et l'autre, directement ou par chaîne. Un groupe entier
+  est retiré à chaque tour.
+- *Apprentissage.* Références et oxydes à haute entropie des autres groupes, poids égal
+  par composition. *Évaluation* : les oxydes à haute entropie du groupe retiré.
+- *Descripteurs*, tous tirés du modèle géométrique : famille (5 indicatrices) ; charge
+  moyenne des cations ; désaccord de taille (écart-type des rayons sur chaque site,
+  rapporté au rayon moyen, moyenné sur les sites) ; lacunes d'oxygène par cation ; part
+  des rayons estimés ; part des cations à valence variable (Cr, Mn, Fe, Co, Ni, Cu, Ce,
+  Pr, Tb) ; entropie de configuration.
+- *Candidats*, hyperparamètres fixés ici, sans réglage :
+  - M0, aucune correction (modèle de l'étape 3) ;
+  - M1, biais par famille : moyenne du résidu de la famille ;
+  - M2, régression ridge (α = 1) sur les descripteurs centrés-réduits ;
+  - M3, gradient boosting (200 arbres de profondeur 2, pas 0,05, graine 0).
+- *Procédure jugée.* À chaque tour, le candidat retenu est celui dont l'écart absolu
+  moyen est le plus faible en validation croisée interne (mêmes groupes) sur les oxydes
+  à haute entropie d'apprentissage ; M0 peut être retenu. Les critères ci-dessus
+  s'appliquent à cette procédure. Les résultats de chaque candidat pris seul sont
+  rapportés pour information : choisir le meilleur après coup serait une sélection sur
+  les données de test.
+- *Limite connue.* Les descripteurs ont été choisis en connaissant les résidus de
+  l'étape 3 ; la validation croisée protège les paramètres appris, pas ce choix.
