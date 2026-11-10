@@ -1,0 +1,112 @@
+Diffractogramme mesure : indexation sur un prototype cubique et affinement de la maille
+motifs synthetiques de maille connue (K-alpha1 + K-alpha2, largeur, decalage de zero, fond, bruit)
+criteres ecrits avant toute execution
+
+Jeu 1 : execute une premiere fois, il a manque deux criteres de peu (exactitude 0,051 % pour 0,05 % ;
+deux reflexions reelles signalees non indexees). Trois causes corrigees : la raie K-alpha2 tirait
+chaque sommet vers les grands angles (elle est maintenant detectee et retiree) ; les reflexions
+proches des bords du balayage ou juste sous le seuil d'intensite n'etaient pas creditees ; une bosse
+du bruit sur le pied d'un pic fort passait pour un pic. Ce jeu ne vaut donc plus comme jeu vierge.
+Jeu 2 : ecrit apres ces corrections, execute sans aucune retouche. C'est lui qui dit a quoi s'attendre.
+Une derniere correction est venue ensuite d'un autre fichier (bosse du bruit sur le flanc d'un pic fort,
+au seuil de detection) ; le jeu 2, reexecute, a rendu exactement les memes chiffres.
+
+===== jeu 1 (a servi aux corrections) =====
+1. Motifs propres (5 000 coups au pic le plus fort)
+   compose                 prototype    a vrai   a depart   a affine    ecart   +/-affiche  zero vrai/trouve  reflexions  1er prototype  non indexes  K-alpha2 retiree
+   (CoCuFeMnNi)3O4         spinel       8.3602    8.2859     8.3604  +0.003 %    0.0042   -0.05 / -0.05     12 / 12     spinel           0        oui
+   (AlCoCrFeMgNi)3O4       spinel       8.1900    8.2410     8.1902  +0.003 %    0.0041   +0.00 / +0.00     11 / 11     spinel           0        oui
+   (CoCuLiMgNiZn)O         rocksalt     4.2100    4.1789     4.2100  +0.000 %    0.0021   +0.08 / +0.08      5 / 5      rocksalt         0        oui
+   (CoMgMnNiZn)O           rocksalt     4.2700    4.1782     4.2698  -0.005 %    0.0021   +0.00 / -0.00      5 / 5      rocksalt         0        oui
+   (CeLaPrSmY)O2           fluorite     5.4800    5.6431     5.4796  -0.007 %    0.0027   -0.03 / -0.03      8 / 8      fluorite         0        oui
+   (CeGdHfYZr)O2           fluorite     5.2900    5.3474     5.2896  -0.008 %    0.0026   +0.00 / -0.00      7 / 7      fluorite         0        oui
+   (GdLaNdSmY)CoO3         perovskite   3.8000    3.8563     3.8004  +0.010 %    0.0019   +0.00 / +0.00      9 / 9      perovskite       0        oui
+   Ba(HfNbSnTiZr)O3        perovskite   4.1200    4.0374     4.1195  -0.011 %    0.0021   +0.04 / +0.03      6 / 6      perovskite       0        oui
+   (DyErGdHoY)2Ti2O7       pyrochlore  10.1000   10.1144    10.1001  +0.001 %    0.0051   +0.00 / +0.00     15 / 15     pyrochlore       0        oui
+   (CeEuLaNdSm)2Sn2O7      pyrochlore  10.6000   10.3382    10.5995  -0.005 %    0.0053   -0.06 / -0.06     10 / 10     pyrochlore       0        oui
+   ecart maximal 0.011 % (critere 0.05 %) -> atteint
+   3. prototype vrai classe premier : 10 / 10 -> atteint
+   4. pics signales a tort comme non indexes : 0 -> atteint
+
+2. Motifs bruites (800 coups sur un fond de 400, largeur 0,3 deg, pas 0,04 deg)
+   compose                 prototype    a vrai   a depart   a affine    ecart   +/-affiche  zero vrai/trouve  reflexions  1er prototype  non indexes  K-alpha2 retiree
+   (CoCuFeMnNi)3O4         spinel       8.3602    8.2859     8.3578  -0.029 %    0.0209   -0.05 / -0.04      7 / 12     spinel           0        non  (a tort)
+   (AlCoCrFeMgNi)3O4       spinel       8.1900    8.2410     8.1931  +0.037 %    0.0205   +0.00 / +0.01      7 / 11     spinel           0        oui
+   (CoCuLiMgNiZn)O         rocksalt     4.2100    4.1789     4.2089  -0.026 %    0.0105   +0.08 / +0.10      5 / 5      rocksalt         0        non  (a tort)
+   (CoMgMnNiZn)O           rocksalt     4.2700    4.1782     4.2685  -0.035 %    0.0107   +0.00 / -0.03      5 / 5      rocksalt         0        oui
+   (CeLaPrSmY)O2           fluorite     5.4800    5.6431     5.4820  +0.037 %    0.0137   -0.03 / +0.02      8 / 8      fluorite         0        non  (a tort)
+   (CeGdHfYZr)O2           fluorite     5.2900    5.3474     5.2929  +0.055 %    0.0132   +0.00 / +0.02      5 / 7      fluorite         0        oui
+   (GdLaNdSmY)CoO3         perovskite   3.8000    3.8563     3.8039  +0.102 %    0.0095   +0.00 / +0.08      6 / 9      perovskite       0        non  (a tort)
+   Ba(HfNbSnTiZr)O3        perovskite   4.1200    4.0374     4.1117  -0.201 %    0.0103   +0.04 / -0.01      5 / 6      perovskite       0        non  (a tort)
+   (DyErGdHoY)2Ti2O7       pyrochlore  10.1000   10.1144    10.0926  -0.073 %    0.0252   +0.00 / -0.01      8 / 15     pyrochlore       0        non  (a tort)
+   (CeEuLaNdSm)2Sn2O7      pyrochlore  10.6000   10.3382    10.5992  -0.008 %    0.0265   -0.06 / -0.02      8 / 10     pyrochlore       0        non  (a tort)
+   ecart maximal 0.201 % (critere 0.25 %) -> atteint
+   prototype vrai classe premier : 10 / 10 (hors critere : sous le bruit, les raies de surstructure d'un pyrochlore peuvent disparaitre, et la fluorine l'explique alors aussi bien)
+
+4. Phase etrangere : raies ajoutees au motif d'une phase unique
+   (AlCoCrFeMgNi)3O4 + Fe2O3        raies ajoutees a 33.15, 49.48 deg -> signalees non indexees : 33.14, 49.48 ; a affine 8.1901 (vrai 8.19)
+   (CoMgMnNiZn)O + CuO              raies ajoutees a 35.54, 38.71 deg -> signalees non indexees : 35.52, 38.69 ; a affine 4.2701 (vrai 4.27)
+   raies etrangeres retrouvees : 4 / 4 -> atteint
+
+5. Valeur de depart a 5 % de la verite
+   (CoCuFeMnNi)3O4         depart   7.9422 (-5 %) ->    8.3604  ecart +0.003 %
+   (CoCuFeMnNi)3O4         depart   8.7782 (+5 %) ->    8.3604  ecart +0.003 %
+   (CoMgMnNiZn)O           depart   4.0565 (-5 %) ->    4.2698  ecart -0.005 %
+   (CoMgMnNiZn)O           depart   4.4835 (+5 %) ->    4.2698  ecart -0.005 %
+   (GdLaNdSmY)CoO3         depart   3.6100 (-5 %) ->    3.8004  ecart +0.010 %
+   (GdLaNdSmY)CoO3         depart   3.9900 (+5 %) ->    3.8004  ecart +0.010 %
+   (CeEuLaNdSm)2Sn2O7      depart  10.0700 (-5 %) ->   10.5995  ecart -0.005 %
+   (CeEuLaNdSm)2Sn2O7      depart  11.1300 (+5 %) ->   10.5995  ecart -0.005 %
+   ecart maximal 0.010 % (critere 0.05 %) -> atteint
+
+Bilan jeu 1 (a servi aux corrections) : 1 exactitude, motifs propres : atteint ; 3 prototype vrai en tete : atteint ; 4a aucune fausse alerte : atteint ; 2 exactitude, motifs bruites : atteint ; 4b raies etrangeres signalees : atteint ; 5 depart eloigne : atteint
+
+===== jeu 2 (vierge) =====
+1. Motifs propres (5 000 coups au pic le plus fort)
+   compose                 prototype    a vrai   a depart   a affine    ecart   +/-affiche  zero vrai/trouve  reflexions  1er prototype  non indexes  K-alpha2 retiree
+   (CoCrFeMnZn)3O4         spinel       8.3700    8.3637     8.3702  +0.002 %    0.0042   +0.03 / +0.03     12 / 12     spinel           0        oui
+   (CoFeGaMgNi)3O4 mono.   spinel       8.3100    8.2808     8.3104  +0.004 %    0.0042   +0.00 / +0.00     11 / 12     spinel           0        non
+   (CoCuMgNiZn)O mono.     rocksalt     4.2400    4.1564     4.2400  -0.001 %    0.0021   -0.04 / -0.04      5 / 5      rocksalt         0        non
+   (CeLaNdPrY)O2 pas 0,05  fluorite     5.5000    5.6569     5.5003  +0.005 %    0.0028   +0.00 / +0.03      8 / 8      fluorite         0        non  (a tort)
+   (BaCaLaNaSr)TiO3 Co     perovskite   3.9100    3.9050     3.9107  +0.017 %    0.0020   +0.00 / +0.01      7 / 7      perovskite       0        oui
+   (GdLaNdSmY)2Zr2O7       pyrochlore  10.5500   10.3685    10.5498  -0.002 %    0.0053   +0.07 / +0.07     11 / 11     pyrochlore       0        oui
+   ecart maximal 0.017 % (critere 0.05 %) -> atteint
+   3. prototype vrai classe premier : 6 / 6 -> atteint
+   4. pics signales a tort comme non indexes : 0 -> atteint
+
+2. Motifs bruites (800 coups sur un fond de 400, largeur 0,3 deg, pas 0,04 deg)
+   compose                 prototype    a vrai   a depart   a affine    ecart   +/-affiche  zero vrai/trouve  reflexions  1er prototype  non indexes  K-alpha2 retiree
+   (CoCrFeMnZn)3O4         spinel       8.3700    8.3637     8.3582  -0.141 %    0.0209   +0.03 / -0.01      8 / 12     spinel           0        non  (a tort)
+   (CoFeGaMgNi)3O4 mono.   spinel       8.3100    8.2808     8.3108  +0.009 %    0.0208   +0.00 / -0.00      8 / 12     spinel           0        non
+   (CoCuMgNiZn)O mono.     rocksalt     4.2400    4.1564     4.2398  -0.004 %    0.0106   -0.04 / -0.04      5 / 5      rocksalt         0        non
+   (CeLaNdPrY)O2 pas 0,05  fluorite     5.5000    5.6569     5.5018  +0.033 %    0.0138   +0.00 / +0.04      6 / 8      fluorite         0        non  (a tort)
+   (BaCaLaNaSr)TiO3 Co     perovskite   3.9100    3.9050     3.9094  -0.015 %    0.0098   +0.00 / +0.02      5 / 7      perovskite       0        non  (a tort)
+   (GdLaNdSmY)2Zr2O7       pyrochlore  10.5500   10.3685    10.5546  +0.044 %    0.0264   +0.07 / +0.10      7 / 11     pyrochlore       0        oui
+   ecart maximal 0.141 % (critere 0.25 %) -> atteint
+   prototype vrai classe premier : 6 / 6 (hors critere : sous le bruit, les raies de surstructure d'un pyrochlore peuvent disparaitre, et la fluorine l'explique alors aussi bien)
+
+4. Phase etrangere : raies ajoutees au motif d'une phase unique
+   (CeLaNdPrY)O2 + raies etrangeres raies ajoutees a 30.00, 39.50 deg -> signalees non indexees : 29.98, 39.48 ; a affine 5.4998 (vrai 5.5)
+   (GdLaNdSmY)2Zr2O7 + raies etr.   raies ajoutees a 31.60, 45.30 deg -> signalees non indexees : 31.58, 45.29 ; a affine 10.5494 (vrai 10.55)
+   raies etrangeres retrouvees : 4 / 4 -> atteint
+
+5. Valeur de depart a 5 % de la verite
+   (CoCrFeMnZn)3O4         depart   7.9515 (-5 %) ->    8.3702  ecart +0.002 %
+   (CoCrFeMnZn)3O4         depart   8.7885 (+5 %) ->    8.3702  ecart +0.002 %
+   (CeLaNdPrY)O2 pas 0,05  depart   5.2250 (-5 %) ->    5.5003  ecart +0.005 %
+   (CeLaNdPrY)O2 pas 0,05  depart   5.7750 (+5 %) ->    5.5003  ecart +0.005 %
+   ecart maximal 0.005 % (critere 0.05 %) -> atteint
+
+Bilan jeu 2 (vierge) : 1 exactitude, motifs propres : atteint ; 3 prototype vrai en tete : atteint ; 4a aucune fausse alerte : atteint ; 2 exactitude, motifs bruites : atteint ; 4b raies etrangeres signalees : atteint ; 5 depart eloigne : atteint
+
+Lecture : l'incertitude affichee est la plus grande de l'erreur statistique de l'ajustement et de
+l'exactitude etablie ici : 0.05 % de a quand le rapport signal sur bruit du pic le plus fort atteint 500,
+0.25 % en dessous. Les motifs propres ci-dessus ont un rapport de 579 a 793, les motifs bruites de 74 a 112 ;
+sous 70, les donnees sont plus bruitees que tout ce qui a ete verifie et la page le signale.
+Incertitude affichee >= ecart reel : 32 cas sur 32 (les deux jeux, propres et bruites).
+Limites : positions des pics seulement (pas un affinement de Rietveld), prototypes cubiques,
+une phase a la fois ; une distorsion quadratique ou orthorhombique dedouble des pics que ce
+modele signale alors comme non indexes. Les motifs synthetiques ont des pics symetriques et un
+rapport K-alpha2 / K-alpha1 de 0,5 exactement : rien ici ne remplace l'essai sur un diffractogramme reel.
+
+genere par tools/validate_xrd_fit.py

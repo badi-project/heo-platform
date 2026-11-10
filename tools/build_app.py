@@ -23,10 +23,12 @@ from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
+sys.path.insert(0, os.path.join(ROOT, "src"))
 import sync_app  # noqa: E402
+# the thermo payload and the lattice-model error are shared with the Python predictor
+from predict import LATTICE_MAE_PCT, lattice_payload, thermo_payload  # noqa: E402
 
 HTML = os.path.join(ROOT, "app", "heo_designer.html")
-LATTICE_MAE_PCT = 1.93
 REPORT_FEATS = ["s_config", "delta_r", "delta_X_rel", "mean_ox", "redox_flex", "r_A", "r_B",
                 "goldschmidt_t", "octahedral_factor", "r_shannon_VI_mean"]
 DESC_FR = {
@@ -86,60 +88,6 @@ def screening_stats():
             "pool": pool, "cap": cap}
 
 
-def thermo_payload():
-    """Step-1/2 results for the page (thermo/): the per-cation surrogates and the values
-    computed directly with CHGNet. None when thermo/ has not been run."""
-    d = os.path.join(ROOT, "data", "thermo")
-    if not os.path.exists(os.path.join(d, "oxidation_surrogate.json")):
-        return None
-    s = read_json("data", "thermo", "oxidation_surrogate.json")
-
-    def covered(block):
-        # a cation seen in a single calculated system has an undetermined weight; some
-        # cations are outside the chemistry the descriptor describes (not_covered)
-        n = block.get("n_systems_per_element") or [2] * len(block["elements"])
-        out = block.get("not_covered") or {}
-        return [e for e, k in zip(block["elements"], n) if k >= 2 and e not in out]
-    out = {"ox": {"elements": s["elements"], "cov": covered(s), "h": s["h_eV_per_O"],
-                  "mae": s["loo_mae"],
-                  "b0": s["logistic"]["intercept"], "b1": s["logistic"]["slope"],
-                  "switch": s["logistic"]["switch_eV_per_O"], "auc": s["auc_system"],
-                  "n": s["n_systems"],
-                  "lco_comp": s["leave_cation_out"]["composition"],
-                  "lco_switch": s["leave_cation_out"]["aiguillage"]},
-           "lat": None, "systems": {}}
-    lat = s.get("spinel_lattice")
-    if lat:
-        out["lat"] = {"elements": lat["elements"], "cov": covered(lat), "a": lat["a_i_A"],
-                      "k": lat["k"], "mae_pct": lat["measured_mae_pct"]}
-    k = read_json("data", "thermo", "spinel_calibration.json")["k"]
-    for r in read_csv("data", "thermo", "oxidation_descriptor.csv"):
-        out["systems"][r["system"]] = {"dh": round(float(r["dH_ox_corr_eV_per_O"]), 3),
-                                       "a": round(float(r["a_sp_A"]) * k, 3),
-                                       "frac": json.loads(r["frac"])}
-    bench = read_csv("data", "thermo", "rocksalt_benchmark.csv")
-    if bench:
-        agg = {}
-        for r in bench:
-            agg.setdefault(r["system"], []).append((float(r["dH_mix_meV_atom"]),
-                                                    float(r["sigma_bonds_A"])))
-        th = read_json("data", "thermo", "rocksalt_thresholds.json")
-        th_h, th_s = th["dH_mix_meV_atom"], th["sigma_A"]
-        out["rs_threshold"] = {"dh": th_h, "sigma": th_s}
-        for sysk, v in agg.items():
-            h_ = sum(x for x, _ in v) / len(v)
-            s_ = sum(y for _, y in v) / len(v)
-            e = out["systems"].setdefault(sysk, {})
-            e["rs"] = {"dh": round(h_, 1), "sigma": round(s_, 3),
-                       "single": bool(h_ <= th_h + 1e-9 and s_ <= th_s + 1e-9)}
-    if os.path.exists(os.path.join(d, "vacancy_heo.csv")):
-        for r in read_csv("data", "thermo", "vacancy_heo.csv"):
-            e = out["systems"].setdefault(r["system"], {})
-            e["ev"] = round(float(r["E_vac_mean_eV"]), 2)
-            e["evmin"] = round(float(r["E_vac_min_eV"]), 2)
-    return out
-
-
 def thermo_fill(th):
     """Numbers of the thermodynamics / OER / active-learning paragraphs, read from the
     reports of thermo/ and tools/active_learning.py."""
@@ -188,7 +136,6 @@ def thermo_fill(th):
 def build(check=False):
     bundle = read_json("app", "heo_model.json")
     elem = read_json("data", "reference", "element_properties.json")
-    latt = read_json("data", "reference", "lattice_model.json")
     xrd = read_json("data", "reference", "xrd_prototypes.json")
     db = read_csv("data", "heo_database.csv")
     cands = read_csv("data", "heo_candidats.csv")
@@ -199,7 +146,7 @@ def build(check=False):
     payload = {
         "ELEM": elem, "PROPS": bundle["props"], "ONEHOT": bundle["onehot"],
         "FEATNAMES": bundle["featnames"], "MODEL": bundle["model"], "AD": bundle["ad"],
-        "LATTICE": {**latt, "mae_pct": LATTICE_MAE_PCT}, "XRD": xrd,
+        "LATTICE": lattice_payload(ROOT), "XRD": xrd,
         "DB": [{"c": r["cations"], "p": r["proto"], "s": r["phase"],
                 "d": r["doi"] if r["doi"] else None} for r in db],
         "DBSET": dict(Counter(r["sysk"] for r in db)),
@@ -257,6 +204,16 @@ def build(check=False):
         "screen_novel_in": thousands(scr["novel_in_domain"]),
     }
     fill.update(thermo_fill(payload["THERMO"]))
+    # density and lattice-refinement validations (tools/validate_density.py,
+    # tools/validate_xrd_fit.py): the page quotes their figures, never hand-typed ones
+    rho = payload["LATTICE"]["rho"]
+    fit = read_json("data", "reference", "xrd_fit_validation.json")["set2_untouched"]
+    fill.update({
+        "rho_ref_max": fr_num(rho["reference"]["max_pct"], 2),
+        "rho_chgnet_mae": fr_num(rho["chgnet"]["mae_pct"], 1), "rho_chgnet_n": rho["chgnet"]["n"],
+        "rho_geo_mae": fr_num(rho["geo"]["mae_pct"], 1), "rho_geo_n": rho["geo"]["n"],
+        "fit_clean_max": fr_num(fit["clean_max_pct"], 3), "fit_noisy_max": fr_num(fit["noisy_max_pct"], 2),
+    })
     method = open(os.path.join(ROOT, "app", "method_template.html"), encoding="utf-8").read()
     for k, v in fill.items():
         method = method.replace("{{" + k + "}}", str(v))

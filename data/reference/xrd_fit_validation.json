@@ -1,0 +1,30 @@
+{
+ "criteria_pct": {
+  "clean": 0.05,
+  "noisy": 0.25
+ },
+ "set1_used_for_corrections": {
+  "n": 10,
+  "clean_max_pct": 0.011,
+  "noisy_max_pct": 0.201,
+  "foreign_found": 4,
+  "foreign_total": 4,
+  "false_alarms": 0,
+  "true_prototype_first": 10,
+  "met": true
+ },
+ "set2_untouched": {
+  "n": 6,
+  "clean_max_pct": 0.017,
+  "noisy_max_pct": 0.141,
+  "foreign_found": 4,
+  "foreign_total": 4,
+  "false_alarms": 0,
+  "true_prototype_first": 6,
+  "met": true
+ },
+ "uncertainty_covers_error": [
+  32,
+  32
+ ]
+}

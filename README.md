@@ -106,6 +106,52 @@ Le portage JavaScript des descripteurs, du modèle et de la lecture des formules
 vérifié contre Python à chaque commit : écart maximal de probabilité 1,1 × 10⁻¹⁶, 0 écart
 sur les 1 086 formules (`QC/parity_check.txt`).
 
+Depuis l'étape « outil de travail » (voir le journal des modifications), la page fait aussi :
+
+- **un lot de formules** : coller une liste ou charger un CSV, obtenir le tableau des
+  prédictions et l'exporter ;
+- **des exports** : la prédiction (.csv), le profil de diffraction simulé (.xy), la liste
+  des réflexions avec leurs distances interréticulaires ;
+- **la densité théorique** (rayons X) de la phase prédite ;
+- **la confrontation à un diffractogramme mesuré** : le fichier (deux colonnes 2θ,
+  intensité, ou .xrdml) est indexé sur chacun des cinq prototypes cubiques, la maille est
+  affinée par moindres carrés, les pics qu'aucune réflexion n'explique sont signalés, et
+  une ligne prête pour `data/lab_results.csv` peut être exportée. Ce n'est pas un
+  affinement de Rietveld.
+
+## Prédire sans navigateur
+
+`src/predict.py` reproduit en Python, avec la bibliothèque standard, tout ce que calcule
+la page ; `tools/heo_predict.py` en est la ligne de commande.
+
+```bash
+python tools/heo_predict.py "(FeCoNiCrMn)3O4" --peaks              # rapport lisible + réflexions
+python tools/heo_predict.py "La(CrMnFeCoNi)O3" --json              # sortie complète
+python tools/heo_predict.py --csv formules.csv --out predictions.csv   # tout un fichier
+python tools/heo_predict.py "(FeCoNiCrMn)3O4" --xy motif.xy         # profil simulé
+python tools/heo_predict.py "(FeCoNiCrMn)3O4" --measured scan.xy    # indexer une mesure
+```
+
+```python
+import sys; sys.path.insert(0, "src")
+from predict import Predictor
+r = Predictor().predict("(FeCoNiCrMn)3O4")
+r["family"], r["probability"], r["in_domain"], r["lattice"]["a"], r["lattice"]["density_g_cm3"]
+```
+
+Les deux moteurs sont comparés à chaque commit sur les 1 272 compositions de la base et
+du jeu de contrôle, sur les lignes de tableau des 1 086 formules (caractère pour
+caractère) et sur l'indexation de sept motifs mesurés synthétiques (`QC/parity_check.txt`).
+
+| Contrôle | Résultat | Rapport |
+|---|---|---|
+| Densité avec la maille mesurée de 4 oxydes de référence | écart maximal 0,71 % (critère 1 %) | `QC/density_validation.txt` |
+| Densité avec la maille prédite, spinelles (CHGNet), 4 HEO mesurés | écart moyen 1,5 % (critère 2 %) | idem |
+| Densité avec la maille prédite, modèle géométrique, 2 rocksalt mesurés | écart moyen 10,7 % — **critère de 6 % non atteint** | idem |
+| Maille affinée sur motifs synthétiques propres (jeu vierge, 6 cas) | écart maximal 0,017 % (critère 0,05 %) | `QC/xrd_fit_validation.txt` |
+| Idem, motifs bruités | écart maximal 0,14 % (critère 0,25 %) | idem |
+| Raies d'une phase étrangère signalées | 4 / 4, aucune fausse alerte | idem |
+
 L'onglet « Candidats criblés » montre les **3 786 candidats exportés** — un
 sous-ensemble plafonné à 700 par prototype. Le criblage intégral est dans
 `data/screening_all.csv.gz`, pas dans l'application.
@@ -114,7 +160,8 @@ sous-ensemble plafonné à 700 par prototype. Le criblage intégral est dans
 
 ```
 app/        application autonome (HTML + JS + modèle exporté)
-src/        features.py — les 134 descripteurs ; formula.py — lecture des formules
+src/        features.py — les 134 descripteurs ; formula.py — lecture des formules ;
+            predict.py — prédiction complète ; xrdfit.py — indexation d'une mesure
 data/       base brute v1.0 et base curée, descripteurs, candidats, criblage, corpus
 data/reference/  tables élémentaires, prototypes DRX, constantes du modèle de maille
 figures/    fig1 à fig6
@@ -146,6 +193,8 @@ python tools/train_model.py             # descripteurs, validations, export (QC/
 python tools/screen.py                  # criblage (QC/screening_report.txt)
 python tools/make_figures.py            # figures 4 et 5
 python tools/build_app.py               # données et textes de la page, puis ré-inlining du JS
+python tools/validate_density.py        # densité théorique (QC/density_validation.txt)
+python tools/validate_xrd_fit.py        # affinement de maille (QC/xrd_fit_validation.txt)
 python tools/parity_check.py            # parité Python / JavaScript (nécessite node >= 20)
 python -m pytest tests -q
 ```
@@ -187,6 +236,17 @@ Le détail complet, les contrôles physiques et les pièges de portage sont dans
 - La maille des spinelles HEO est confrontée à **quatre** mesures indépendantes
   (8,25-8,36 Å) ; sur un intervalle aussi étroit, prédire la moyenne ferait déjà 0,7 %.
   La preuve que le calcul suit la chimie vient des 17 spinelles binaires (0,40 %).
+- Hors spinelles, la maille vient d'un modèle géométrique dont la table de rayons ne
+  porte qu'**une valence par élément** : sur les deux rocksalt HEO de maille mesurée,
+  l'erreur est de +2,3 % et −4,5 %, et la densité qui en découle est fausse de 7 et 15 %
+  (`QC/density_validation.txt`). Aucune maille mesurée de pérovskite, de fluorine ou de
+  pyrochlore HEO ne figure dans la base : pour ces familles, l'erreur du modèle de maille
+  n'a jamais été mesurée.
+- La densité théorique suppose le sous-réseau d'oxygène complet ; une fluorine riche en
+  cations trivalents est plus légère (jusqu'à environ 4 %).
+- L'indexation d'un diffractogramme mesuré n'est validée que sur des **motifs
+  synthétiques** — le dépôt ne contient aucun fichier de diffraction réel. Elle ne lit
+  que la position des pics, sur des prototypes cubiques, une phase à la fois.
 - Les grandeurs calculées (`thermo/`) viennent d'un potentiel appris, pas de la DFT ;
   ses erreurs redox brutes atteignent 0,7 eV/O et ne sont corrigées que pour Co, Fe et
   Mn (rapport, §11.2).

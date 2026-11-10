@@ -81,6 +81,27 @@ Y<sub>2</sub>O<sub>3</sub>, Y<sub>2</sub>Ti<sub>2</sub>O<sub>7</sub>), avec un �
 partir des facteurs de structure exacts des prototypes, validés contre <code>pymatgen</code>.
 Occupations supposées aléatoires sur tous les sites cationiques, sauf pérovskite et pyrochlore où les
 cations sont répartis entre sites A et B par rayon ionique décroissant.</p>
+<h3>Densité théorique</h3>
+<p>Masse de la maille du prototype divisée par son volume, sous-réseau d'oxygène complet.
+Avec la maille <b>mesurée</b> de quatre oxydes de référence, elle retombe à moins de
+{{rho_ref_max}} % de la valeur publiée. Avec une maille <b>prédite</b>, elle hérite de son
+erreur, multipliée par trois : {{rho_chgnet_mae}} % en moyenne pour les {{rho_chgnet_n}} spinelles à haute
+entropie de maille mesurée, {{rho_geo_mae}} % pour les {{rho_geo_n}} rocksalt traités par le modèle
+géométrique — dont la table de rayons ne porte qu'une valence par élément. Pour les
+pérovskites, fluorines et pyrochlores, aucune maille mesurée ne permet de le vérifier.
+L'incertitude affichée est la plus grande de la propagation et de l'erreur observée.</p>
+
+<h3>Comparer à un diffractogramme mesuré</h3>
+<p>Le fichier chargé (deux colonnes 2θ et intensité, ou .xrdml) est lissé, son fond
+retiré, la raie Kα₂ retirée quand elle est présente ; ses pics sont indexés sur chacun
+des cinq prototypes cubiques en partant de la maille prédite, et la maille est affinée
+par moindres carrés, avec un décalage de zéro. Les pics qu'aucune réflexion n'explique
+sont signalés : phase secondaire possible, ou distorsion de la maille. Sur des motifs
+synthétiques de maille connue jamais vus pendant la mise au point, l'écart maximal est
+de {{fit_clean_max}} % (motifs propres) et {{fit_noisy_max}} % (motifs bruités). <b>Ce n'est pas
+un affinement de Rietveld</b>, et aucun diffractogramme réel n'a encore servi à le
+vérifier.</p>
+
 <h3>Thermodynamique calculée (potentiel interatomique CHGNet)</h3>
 <p>Pour les cations des systèmes rocksalt et spinelle ({{th_elements}}), la carte « Thermodynamique
 calculée » remplace la question « que rapporte la littérature » par des grandeurs physiques calculées

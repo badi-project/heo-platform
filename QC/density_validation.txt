@@ -1,0 +1,42 @@
+Densite theorique (rayons X) : masse de la maille du prototype / volume
+
+A. Contenu de la maille : densite calculee avec la maille MESUREE d'oxydes de reference
+   critere ecrit avant le calcul : chaque ligne a moins de 1 % de la valeur publiee
+
+   compose              prototype    a (A)   calcule  publie  ecart   nature de la valeur publiee
+   MgO (periclase)      rocksalt     4.2110    3.585   3.581  +0.11 %  calculated
+   MgO (periclase)      rocksalt     4.2110    3.585   3.560  +0.71 %  measured
+   Fe3O4 (magnetite)    spinel       8.3970    5.195   5.200  -0.10 %  calculated
+   Fe3O4 (magnetite)    spinel       8.3970    5.195   5.175  +0.38 %  measured
+   SrTiO3               perovskite   3.9050    5.117   5.120  -0.07 %  single crystal
+   CeO2                 fluorite     5.4112    7.215   7.220  -0.07 %  calculated
+
+   ecart maximal 0.71 % -> atteint
+   pyrochlore : pas de densite publiee sourcee ; le contenu de la maille (16 A + 16 B + 56 O, soit 8 A2B2O7) est verifie par tests/test_density.py
+
+B. Erreur heritee de la maille : oxydes a haute entropie de maille mesuree
+   critere ecrit avant le calcul : ecart absolu moyen <= 2 % (spinelles, modele CHGNet), <= 6 % (modele geometrique)
+
+   systeme              prototype   a mesure  a predit  modele      rho(a mesure)  rho(a predit)  ecart
+   Al-Co-Cu-Fe-Mn-Ni    spinel       8.2697    8.2280  chgnet          5.249          5.329   +1.53 %
+   Al-Cu-Fe-Ni-Zn       spinel       8.2453    8.2053  chgnet          5.363          5.441   +1.47 %
+   Co-Cu-Fe-Mn-Ni       spinel       8.3602    8.2859  chgnet          5.437          5.585   +2.72 %
+   Co-Cu-Ni-Sr-Zn       rocksalt     4.2400    4.3392  geometric       7.219          6.735   -6.70 %
+   Co-Fe-Mg-Mn-Zn       rocksalt     4.2900    4.0988  geometric       5.711          6.548   +14.66 %
+   Co-Cr-Fe-Mn-Ni       spinel       8.3280    8.3380  chgnet          5.341          5.322   -0.36 %
+
+   spinelles, modele CHGNet : ecart absolu moyen 1.52 % sur 4 systeme(s), maximum 2.72 % -> atteint
+   modele geometrique : ecart absolu moyen 10.68 % sur 2 systeme(s), maximum 14.66 % -> NON ATTEINT
+
+Lecture : avec une maille mesuree, la densite est exacte au contenu de la maille pres
+(partie A) ; c'est la valeur a utiliser pour la densite relative d'une pastille frittee.
+Avec une maille predite, l'incertitude affichee est la plus grande de deux valeurs :
+trois fois l'incertitude de la maille, ou l'ecart moyen observe ci-dessus pour ce modele.
+Le modele geometrique n'atteint pas son critere sur les deux rocksalt mesures : ses
+rayons ioniques sont tabules pour une seule valence par element (Fe3+, Mn3+), pas pour
+le cation 2+ d'un rocksalt. Sa densite est indicative tant que la maille n'est pas mesuree.
+Limite : le sous-reseau d'oxygene est suppose complet. Une fluorine riche en cations
+trivalents contient des lacunes d'oxygene et est plus legere que la valeur affichee
+(jusqu'a environ 4 % pour quatre cations trivalents sur cinq).
+
+genere par tools/validate_density.py

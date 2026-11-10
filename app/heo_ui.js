@@ -11,6 +11,7 @@ const FAMS = [
   ["Bloc p", e => ELEM[e].group>=13],
 ];
 let sel = {};   // element -> fraction
+const TABS = ["design", "batch", "screen", "method"];
 
 const $ = id => document.getElementById(id);
 const fmt = (v, n=3) => (v===null||v===undefined||Number.isNaN(v)) ? "—"
@@ -52,7 +53,7 @@ function buildPicker(){
   host.querySelectorAll(".el").forEach(b=>b.onclick=()=>{
     const e=b.dataset.el;
     if (e in sel) delete sel[e]; else sel[e]=0;
-    equimolar(); render();
+    LOADED=null; equimolar(); render();
   });
 }
 function equimolar(){ const k=Object.keys(sel); k.forEach(e=>sel[e]=1/k.length); }
@@ -69,22 +70,28 @@ const FLAG_FR = {
 function syncPicker(){
   document.querySelectorAll(".el").forEach(b=>b.classList.toggle("sel", b.dataset.el in sel));
 }
+let LOADED = null;   // formula text the current selection was read from, if any
+function showTab(name){
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.tab===name));
+  TABS.forEach(t=>$(t).className = t===name?"":"hide");
+}
 function loadFormula(text){
-  const fr = FX.cationFractions(text);
-  const els = Object.keys(fr);
-  const note = $("fxnote");
-  const unknown = els.filter(e => !(e in ELEM));
-  if (els.length < 2 || unknown.length){
+  const c = readComposition(text), note = $("fxnote");
+  if (c.error){
+    /* the previous result must not stay on screen under a formula that was not read */
+    const lower = /[a-z]/.test(text) && !/[A-Z]/.test(text);
     note.className = "note fxnote-warn";
-    note.textContent = unknown.length
-      ? `Cation sans propriétés tabulées : ${unknown.join(", ")}. Prédiction impossible.`
-      : "Formule non lue : écrivez-la comme dans un article, par exemple La(CrMnFeCoNi)O3.";
+    note.textContent = c.error.charAt(0).toUpperCase() + c.error.slice(1) + "."
+      + (lower ? " Les symboles chimiques s'écrivent avec leur majuscule : Fe, Co, Ni." : "");
+    sel = {}; LOADED = null; syncPicker(); render();
     return;
   }
-  sel = {}; for (const e of els) sel[e] = Math.round(fr[e]*1e6)/1e6;
-  const flags = FX.parse(text).flags.map(f => FLAG_FR[f]).filter(Boolean);
+  /* exact fractions: they are shown rounded in the boxes below, never stored rounded */
+  sel = {...c.frac}; LOADED = c.text;
+  const els = Object.keys(c.frac);
+  const flags = c.flags.map(f => FLAG_FR[f]).filter(Boolean);
   note.className = "note";
-  note.textContent = "Lu : " + els.map(e => `${e} ${(100*fr[e]).toFixed(1).replace(".", ",")} %`).join(" · ")
+  note.textContent = "Lu : " + els.map(e => `${e} ${(100*c.frac[e]).toFixed(1).replace(".", ",")} %`).join(" · ")
     + (flags.length ? ` — ${flags.join(" ; ")}.` : ".");
   syncPicker(); render();
 }
@@ -97,9 +104,9 @@ function renderChips(){
      <button class="x" data-del="${e}">×</button></div>`).join("")
     || `<div class="note">Aucun cation sélectionné.</div>`;
   $("chips").querySelectorAll("input").forEach(i=>i.onchange=()=>{
-    sel[i.dataset.el]=Math.max(0,parseFloat(i.value)||0); render();});
+    sel[i.dataset.el]=Math.max(0,parseFloat(i.value)||0); LOADED=null; render();});
   $("chips").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
-    delete sel[b.dataset.del]; equimolar(); render();});
+    delete sel[b.dataset.del]; LOADED=null; equimolar(); render();});
   const s=Object.values(sel).reduce((a,b)=>a+b,0);
   $("sumnote").textContent = k.length
     ? `Somme = ${s.toFixed(3)} — les fractions sont renormalisées à 1 avant le calcul.`
@@ -162,7 +169,9 @@ function render(){
   const s=Object.values(sel).reduce((a,b)=>a+b,0);
   if (els.length<4 || s<=0){ $("out").className="hide"; $("empty").className="card"; return; }
   $("empty").className="hide"; $("out").className="";
-  const frac={}; els.forEach(e=>frac[e]=sel[e]/s);
+  /* same normalisation as readComposition() and src/predict.py: a formula gives the same
+     numbers here, in the batch table and on the command line */
+  const frac=normalizeFractions(sel);
   const r=predict(frac); CURRENT=r;
 
   $("topclass").textContent = PROTO_FR[r.top];
@@ -190,33 +199,36 @@ function render(){
     ? `Prédiction peu tranchée : ${PROTO_FR[r.top]} et ${PROTO_FR[second.c]} sont à moins de 25 points. Attendez-vous à un mélange de phases ou à une sensibilité forte à la température de calcination.`
     : `Marge de ${(100*(r.order[0].p-second.p)).toFixed(0)} points sur la deuxième hypothèse (${PROTO_FR[second.c]}).`;
 
-  /* spinel of cations covered by thermo/: the CHGNet lattice parameter, calibrated on
-     binary spinels (0.4 % on measured HEO spinels), replaces the geometric model (1.9 %) */
-  let aPct = LATTICE.mae_pct, aSrc = "geo";
-  if (r.top === "spinel" && THERMO && THERMO.lat && els.every(e => (THERMO.lat.cov || THERMO.lat.elements).includes(e))){
-    const L = THERMO.lat;
-    r.a = L.k * els.reduce((acc, e) => acc + frac[e] * L.a[L.elements.indexOf(e)], 0);
-    aPct = L.mae_pct; aSrc = "chgnet";
-    r.aTol = r.a * aPct / 100;
-    r.pattern = simulatePattern(r.top, frac, r.a, 80);
-  }
+  /* r.aSrc tells which lattice model predict() used (heo_engine.js) */
+  const aPct = r.aPct, aSrc = r.aSrc;
   $("lattnote").textContent = aSrc === "chgnet"
     ? `Potentiel CHGNet, modèle additif par cation calibré sur 17 spinelles binaires de maille connue. `
       + `Écart absolu moyen sur les spinelles HEO mesurés : ${fmt(aPct, 2)} % (modèle géométrique : ${fmt(LATTICE.mae_pct, 1)} %).`
     : `Modèle géométrique à partir des rayons de Shannon, recalé sur un composé de référence par prototype. `
       + `Écart absolu moyen mesuré sur les valeurs expérimentales disponibles : ${fmt(LATTICE.mae_pct, 1)} %.`;
+  /* density: what the stated uncertainty rests on, from tools/validate_density.py */
+  const seen = (LATTICE.rho || {})[aSrc];
+  $("rhonote").textContent = !r.rho ? "" :
+    "Densité théorique : masse de la maille du prototype, sous-réseau d'oxygène complet, divisée par son volume. "
+    + (seen ? `Sur les ${seen.n} oxydes à haute entropie de maille mesurée traités par ce modèle de maille, `
+        + `l'écart moyen est de ${fmt(seen.mae_pct, 1)} % (maximum ${fmt(seen.max_pct, 1)} %)`
+        + (seen.met ? ". " : " : valeur indicative. ")
+      : "Aucune maille mesurée ne permet de la vérifier pour cette famille. ")
+    + "Avec une maille mesurée, elle est exacte.";
   const A=r.a;
   $("latt").innerHTML = A
     ? `<dt>prototype</dt><dd>${PROTO_FR[r.top]} — ${XRD.prototypes[r.top].sg}</dd>
        <dt>paramètre <i>a</i></dt><dd>${fmt(A,3)} ± ${fmt(r.aTol,2)} Å</dd>
        <dt>volume de maille</dt><dd>${fmt(A**3,1)} Å³</dd>
+       <dt>densité théorique</dt><dd>${fmt(r.rho,2)} ± ${fmt(r.rhoTol,2)} g/cm³</dd>
        <dt>cations / maille</dt><dd>${Object.entries(XRD.prototypes[r.top].nsites).filter(([t])=>t[0]!=="O").map(([t,n])=>t+" : "+n).join(", ")}</dd>`
     : `<dt>—</dt><dd>pas de prototype cubique pour cette famille</dd>`;
 
   $("desc").innerHTML = REPORT_FEATS.map(n=>
     `<dt>${DESC_FR[n]||n}</dt><dd>${fmt(r.desc[n], DESC_DEC[n]??3)}</dd>`).join("");
-  renderThermo(frac, els, r.inDomain, r.top);
+  renderThermo(r);
 
+  $("x-xy").disabled = $("x-peaks").disabled = !r.pattern.length;
   if (r.pattern.length){
     const tol = tt => { const th=tt*Math.PI/360; return Math.abs(2*Math.tan(th)*(aPct/100))*180/Math.PI; };
     drawXRD(r.pattern, tol);
@@ -235,43 +247,31 @@ function render(){
       <td>${refCell(r2.d)}</td></tr>`).join("")
     || `<tr><td colspan="5">Aucun système partageant au moins 3 cations.</td></tr>`)
     + `<tr><td colspan="5" class="caveat">${PHASE_CAVEAT}</td></tr>`;
+  renderMeasured();
 }
 
 /* ---------- computed thermodynamics (thermo/, CHGNet) ---------- */
-function renderThermo(frac, els, inDomain, top){
+function renderThermo(r){
   const card = $("thermocard");
-  if (!THERMO){ card.className = "hide"; return; }
+  if (!THERMO || !r.thermo){ card.className = "hide"; return; }
   card.className = "card";
-  const ox = THERMO.ox, key = els.slice().sort().join("-");
-  const h = Object.fromEntries(ox.elements.map((e, i) => [e, ox.h[i]]));
-  const cov = ox.cov || ox.elements;
-  const missing = els.filter(e => !cov.includes(e));
+  const ox = THERMO.ox, th = r.thermo, inDomain = r.inDomain;
+  const cov = ox.cov || ox.elements, missing = th.missing;
   const pctFR = v => (100 * v).toFixed(0) + " %";
-  if (missing.length){
+  if (!th.covered){
     $("thermo").innerHTML = `<dt>hors du calcul</dt><dd>cation${missing.length > 1 ? "s" : ""} non couvert${missing.length > 1 ? "s" : ""} : ${missing.join(", ")}</dd>`;
     $("thermonote").textContent = `Le calcul CHGNet couvre les cations ${cov.join(" ")} — `
       + "ceux d'au moins deux systèmes rocksalt ou spinelle calculés. Ailleurs, seule la prédiction statistique s'applique.";
     return;
   }
-  const s = els.reduce((a, e) => a + frac[e], 0);
-  const dh = els.reduce((a, e) => a + frac[e] / s * h[e], 0);
-  const exact = THERMO.systems[key];
-  /* the value computed directly with CHGNet is used when it was computed for this very
-     composition (fractions within 0.02), the additive summary otherwise */
-  const direct = exact && exact.dh !== undefined && exact.frac
-    && els.every(e => Math.abs((exact.frac[e] || 0) - frac[e] / s) < 0.02);
-  const dhUse = direct ? exact.dh : dh;
-  const p = 1 / (1 + Math.exp(-(ox.b0 + ox.b1 * dhUse)));
-  const verdict = p > 0.7 ? "plutôt rocksalt" : p < 0.3 ? "plutôt spinelle" : "zone frontière";
-  const rows = direct
-    ? [`<dt>oxydation rocksalt → spinelle</dt><dd>${fmt(exact.dh, 2)} eV/O, calcul direct de cette composition</dd>`]
-    : [`<dt>oxydation rocksalt → spinelle</dt><dd>${fmt(dh, 2)} ± ${fmt(ox.mae, 2)} eV/O (modèle additif)</dd>`];
+  const exact = th.system, p = th.pRocksalt;
+  const verdict = {rocksalt: "plutôt rocksalt", spinel: "plutôt spinelle", boundary: "zone frontière"}[th.verdict];
+  const rows = th.direct
+    ? [`<dt>oxydation rocksalt → spinelle</dt><dd>${fmt(th.dh, 2)} eV/O, calcul direct de cette composition</dd>`]
+    : [`<dt>oxydation rocksalt → spinelle</dt><dd>${fmt(th.dh, 2)} ± ${fmt(ox.mae, 2)} eV/O (modèle additif)</dd>`];
   rows.push(`<dt>dans l'air, la littérature rapporte</dt><dd>${verdict} (rocksalt ${pctFR(p)})</dd>`);
-  if (top === "spinel" && THERMO.lat && els.every(e => (THERMO.lat.cov || THERMO.lat.elements).includes(e))){
-    const a = THERMO.lat.k * els.reduce((acc, e) =>
-      acc + frac[e] / s * THERMO.lat.a[THERMO.lat.elements.indexOf(e)], 0);
-    rows.push(`<dt>paramètre <i>a</i> si spinelle</dt><dd>${fmt(a, 3)} Å ± ${fmt(THERMO.lat.mae_pct, 1)} %</dd>`);
-  }
+  if (r.aSrc === "chgnet")
+    rows.push(`<dt>paramètre <i>a</i> si spinelle</dt><dd>${fmt(r.a, 3)} Å ± ${fmt(THERMO.lat.mae_pct, 1)} %</dd>`);
   if (exact && exact.rs)
     rows.push(`<dt>rocksalt : mélange, désordre</dt><dd>${fmt(exact.rs.dh, 1)} meV/atome, σ ${fmt(exact.rs.sigma, 3)} Å — `
       + (exact.rs.single ? "dans les seuils du monophasé" : "hors des seuils : multiphasé attendu") + `</dd>`);
@@ -321,23 +321,273 @@ function renderCands(){
     const k=th.dataset.k; if(k===sortKey) sortDir*=-1; else {sortKey=k; sortDir=(k==="c"||k==="t")?1:-1;}
     renderCands();});
   $("cands").querySelectorAll("tr[data-c]").forEach(tr=>tr.onclick=()=>{
-    sel={}; tr.dataset.c.split("-").forEach(e=>sel[e]=0); equimolar();
-    document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.tab==="design"));
-    ["design","screen","method"].forEach(t=>$(t).className = t==="design"?"":"hide");
-    document.querySelectorAll(".el").forEach(b=>b.classList.toggle("sel", b.dataset.el in sel));
+    sel={}; tr.dataset.c.split("-").forEach(e=>sel[e]=0); equimolar(); LOADED=null;
+    showTab("design"); syncPicker();
     render(); window.scrollTo(0,0);});
 }
 
+/* ---------- exports ---------- */
+/* Everything is built in the page and handed to the browser as a download: the file
+   stays self-contained and nothing leaves the computer. */
+function download(name, text, mime){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type: mime || "text/plain;charset=utf-8"}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const csvCell = v => /[",\n;]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
+/* the byte-order mark makes spreadsheet software read the accents; tools/heo_predict.py
+   reads the file back with or without it */
+const toCSV = (cols, rows) => "﻿" + [cols, ...rows.map(r => cols.map(c => r[c] ?? ""))]
+  .map(line => line.map(csvCell).join(",")).join("\n") + "\n";
+const currentName = () => LOADED || Object.keys(CURRENT.frac).map(e =>
+  e + Number(CURRENT.frac[e].toFixed(4))).join(" ");
+const fileStem = () => Object.keys(CURRENT.frac).join("") + "_" + CURRENT.top;
+function exportPrediction(){
+  const row = {formula_text: currentName(), ...recordOf(CURRENT, LOADED ? FX.parse(LOADED).flags : [])};
+  download(fileStem() + "_prediction.csv", toCSV(["formula_text", ...ROW_COLUMNS], [row]), "text/csv;charset=utf-8");
+}
+function xyHeader(){
+  return `# ${currentName()} — ${CURRENT.top} ${XRD.prototypes[CURRENT.top].sg}, a = ${CURRENT.a.toFixed(4)} A `
+    + `(${CURRENT.aSrc === "geo" ? "geometric" : CURRENT.aSrc})\n`;
+}
+function exportProfile(){
+  const pr = patternProfile(CURRENT.pattern);
+  download(fileStem() + "_simule.xy", xyHeader()
+    + `# profil simule, Cu K-alpha1 ${XRD.wavelength} A, pseudo-Voigt de largeur ${PROFILE.fwhm} deg ; `
+    + "colonnes : 2theta (deg), intensite (max 100)\n"
+    + pr.tt.map((x, i) => `${x.toFixed(2)} ${pr.I[i].toFixed(3)}`).join("\n") + "\n");
+}
+function exportPeaks(){
+  const rows = CURRENT.pattern.map(p => ({two_theta_deg: p.tt.toFixed(3),
+    d_A: (XRD.wavelength / (2 * Math.sin(p.tt * Math.PI / 360))).toFixed(4),
+    intensity: p.I.toFixed(1), hkl: p.hkl}));
+  download(fileStem() + "_reflexions.csv", toCSV(["two_theta_deg", "d_A", "intensity", "hkl"], rows),
+    "text/csv;charset=utf-8");
+}
+
+/* ---------- measured pattern ---------- */
+let MEAS = null;      // {name, tt, I} — the file loaded by the user
+let MFIT = null;      // compareMeasured() of that file for the current composition
+let MSEL = null;      // prototype whose indexing is drawn and exported
+const fitOf = proto => MFIT && MFIT.fits.find(f => f.proto === proto);
+function renderMeasured(){
+  const has = !!(MEAS && CURRENT);
+  $("m-body").className = has ? "" : "hide";
+  $("m-clear").disabled = !MEAS;
+  if (!has){ MFIT = null; return; }
+  const radiation = $("m-rad").value;
+  MFIT = compareMeasured(MEAS.tt, MEAS.I, CURRENT.frac, {radiation, zero: $("m-zero").checked});
+  const fits = MFIT.fits.filter(f => f.a), best = fits[0], second = fits[1];
+  if (!fitOf(MSEL) || !fitOf(MSEL).a) MSEL = best ? best.proto : null;
+  const verdict = $("m-verdict");
+  if (!best || best.score < 0.5){
+    verdict.innerHTML = `<b class="fxnote-warn">Aucun des prototypes cubiques n'explique cette mesure.</b> `
+      + `${MFIT.found.peaks.length} pic${MFIT.found.peaks.length > 1 ? "s" : ""} détecté${MFIT.found.peaks.length > 1 ? "s" : ""}. `
+      + "Vérifiez le rayonnement choisi ; la phase peut aussi ne pas être cubique.";
+  } else {
+    const tie = second && second.score >= 0.9 * best.score;
+    const same = best.proto === CURRENT.top;
+    verdict.innerHTML = `La mesure s'indexe le mieux en <b style="color:${PROTO_COL[best.proto]}">${PROTO_FR[best.proto]}</b>`
+      + (tie ? `, presque à égalité avec ${PROTO_FR[second.proto]} : la position des pics ne les départage pas` : "")
+      + (same ? " — la famille prédite." : ` — <b class="fxnote-warn">le modèle prédisait ${PROTO_FR[CURRENT.top]}</b>.`);
+  }
+  $("m-fits").innerHTML = `<tr><th>prototype</th><th class="n">a affiné (Å)</th><th class="n">a de départ (Å)</th><th class="n">écart</th>
+      <th class="n">réflexions fortes retrouvées</th><th class="n">signal expliqué</th><th class="n">pics non indexés</th><th class="n">densité à cette maille (g/cm³)</th></tr>`
+    + MFIT.fits.map(f => !f.a
+      ? `<tr><td style="color:${PROTO_COL[f.proto]}">${PROTO_FR[f.proto]}</td><td colspan="7" style="color:var(--ink2)">moins de deux réflexions retrouvées</td></tr>`
+      : `<tr data-proto="${f.proto}" class="${f.proto === MSEL ? "on" : ""}"><td style="color:${PROTO_COL[f.proto]}">${PROTO_FR[f.proto]}</td>
+         <td class="n">${fmt(f.a, 4)} ± ${fmt(f.aTol, 4)}</td><td class="n">${fmt(f.a0, 3)}</td>
+         <td class="n">${(100 * (f.a - f.a0) / f.a0 >= 0 ? "+" : "") + fmt(100 * (f.a - f.a0) / f.a0, 2)} %</td>
+         <td class="n">${f.strongFound} / ${f.nStrong}</td><td class="n">${(100 * f.explained).toFixed(0)} %</td>
+         <td class="n">${f.unindexed.length}</td><td class="n">${fmt(f.rho, 3)}</td></tr>`).join("");
+  $("m-fits").querySelectorAll("tr[data-proto]").forEach(tr => tr.onclick = () => { MSEL = tr.dataset.proto; renderMeasured(); });
+  const f = fitOf(MSEL);
+  $("m-csv").disabled = $("m-lab").disabled = !f;
+  if (!f){ $("m-detail").textContent = ""; $("m-legend").textContent = ""; drawMeasured(null, radiation); return; }
+  /* the prediction against the measurement, for the prototype the model predicted */
+  const mine = fitOf(CURRENT.top);
+  let vs = "";
+  if (mine && mine.a && CURRENT.a){
+    const d = 100 * (CURRENT.a - mine.a) / mine.a, inside = Math.abs(CURRENT.a - mine.a) <= CURRENT.aTol + mine.aTol;
+    vs = ` Maille prédite ${fmt(CURRENT.a, 3)} ± ${fmt(CURRENT.aTol, 2)} Å, affinée ${fmt(mine.a, 4)} Å en ${PROTO_FR[CURRENT.top]} : `
+      + `écart de la prédiction ${d >= 0 ? "+" : ""}${fmt(d, 2)} %, ${inside ? "dans" : "hors de"} l'incertitude annoncée.`;
+  }
+  const un = f.unindexed.slice().sort((x, y) => y.h - x.h);
+  $("m-detail").innerHTML = `<b>${esc(MEAS.name)}</b> en ${PROTO_FR[f.proto]} : ${f.n} réflexion${f.n > 1 ? "s" : ""} indexée${f.n > 1 ? "s" : ""} sur ${f.nPred} attendues, `
+    + `écart quadratique moyen ${fmt(f.rms, 3)}° en 2θ`
+    + (f.fitZero ? `, décalage de zéro ${f.zero >= 0 ? "+" : ""}${fmt(f.zero, 3)}°` : "") + ". "
+    + (un.length ? `<span class="fxnote-warn">${un.length} pic${un.length > 1 ? "s" : ""} que ce prototype n'explique pas : `
+        + un.slice(0, 8).map(u => `${fmt(u.tt, 2)}° (${fmt(u.h, 0)} %)`).join(", ") + (un.length > 8 ? "…" : "")
+        + " — phase secondaire possible, ou distorsion de la maille cubique.</span> "
+      : "Tous les pics détectés sont expliqués par ce prototype. ")
+    + vs + " "
+    + (MFIT.found.stripped ? "La raie Kα₂ a été détectée et retirée avant la recherche des pics. " : "")
+    + ({clean: "", noisy: "Rapport signal sur bruit modéré : l'incertitude affichée est celle établie sur les motifs bruités de validation (0,25 %). ",
+        below: `<span class="fxnote-warn">Mesure plus bruitée que tous les motifs de validation : résultat indicatif.</span> `})[MFIT.found.quality]
+    + "L'incertitude de <i>a</i> n'est jamais inférieure à l'exactitude vérifiée sur des motifs synthétiques ; elle ne l'a pas encore été sur une mesure réelle.";
+  $("m-legend").textContent = "Trait gris : mesure après retrait du fond" + (MFIT.found.stripped ? " et de Kα₂" : "")
+    + `. Bâtons : réflexions du prototype ${PROTO_FR[f.proto]} à la maille affinée. Triangles rouges : pics non indexés. Cliquez une ligne du tableau pour changer de prototype.`;
+  drawMeasured(f, radiation);
+}
+function drawMeasured(f, radiation){
+  const cv = $("mxrd"), ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height, L = 46, R = 12, T = 16, B = 34;
+  ctx.clearRect(0, 0, W, H); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
+  const tt = MEAS.tt, net = MFIT.found.net, mx = MFIT.found.max || 1;
+  const x0 = Math.floor(tt[0] / 5) * 5, x1 = Math.ceil(tt[tt.length - 1] / 5) * 5;
+  const px = t => L + (t - x0) / (x1 - x0) * (W - L - R), py = i => H - B - i / 100 * (H - T - B);
+  ctx.strokeStyle = "#d9dde1"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, H - B); ctx.lineTo(W - R, H - B); ctx.stroke();
+  ctx.fillStyle = "#51585f"; ctx.font = "11px -apple-system,Segoe UI,Arial";
+  const tick = (x1 - x0) > 90 ? 20 : 10;
+  for (let t = Math.ceil(x0 / tick) * tick; t <= x1; t += tick){
+    ctx.strokeStyle = "#eef0f2"; ctx.beginPath(); ctx.moveTo(px(t), T); ctx.lineTo(px(t), H - B); ctx.stroke();
+    ctx.textAlign = "center"; ctx.fillText(t + "°", px(t), H - B + 15);
+  }
+  ctx.textAlign = "right";
+  for (const v of [0, 50, 100]) ctx.fillText(v, L - 6, py(v) + 4);
+  ctx.textAlign = "center"; ctx.fillText("2θ (degrés)", (L + W - R) / 2, H - 6);
+  if (f){
+    const col = PROTO_COL[f.proto], lam = RADIATION[radiation][0];
+    const sticks = simulatePattern(f.proto, CURRENT.frac, f.a, Math.min(x1, 179), lam);
+    ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.fillStyle = "#1d2228";
+    ctx.font = "10px -apple-system,Segoe UI,Arial"; ctx.textAlign = "center";
+    const labelled = new Set([...sticks].sort((a, b) => b.I - a.I).slice(0, 6).map(p => p.hkl));
+    for (const p of sticks){
+      const x = px(p.tt + f.zero);
+      if (x < L || x > W - R) continue;
+      ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.moveTo(x, py(0)); ctx.lineTo(x, py(p.I)); ctx.stroke(); ctx.globalAlpha = 1;
+      if (labelled.has(p.hkl)) ctx.fillText("(" + p.hkl + ")", x, py(Math.min(p.I, 96)) - 4);
+    }
+  }
+  ctx.strokeStyle = "#3a4149"; ctx.lineWidth = 1; ctx.beginPath();
+  for (let i = 0; i < tt.length; i++){
+    const y = py(Math.max(-4, Math.min(104, 100 * net[i] / mx)));
+    if (i) ctx.lineTo(px(tt[i]), y); else ctx.moveTo(px(tt[i]), y);
+  }
+  ctx.stroke();
+  if (f){
+    ctx.fillStyle = "#c0392b";
+    for (const u of f.unindexed){
+      const x = px(u.tt), y = py(Math.min(u.h, 100)) - 6;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 5, y - 9); ctx.lineTo(x + 5, y - 9); ctx.closePath(); ctx.fill();
+    }
+  }
+}
+function loadMeasured(name, text){
+  const d = parsePattern(text), note = $("m-note");
+  const span = d.tt.length ? d.tt[d.tt.length - 1] - d.tt[0] : 0;
+  if (d.tt.length < 100 || span < 10){
+    MEAS = null; renderMeasured();
+    note.className = "note fxnote-warn";
+    note.textContent = `« ${name} » n'a pas été lu comme un diffractogramme : ${d.tt.length} point${d.tt.length > 1 ? "s" : ""} `
+      + "à deux colonnes numériques (2θ, intensité) trouvé" + (d.tt.length > 1 ? "s" : "")
+      + ". Il en faut au moins 100, sur au moins 10° ; les formats binaires (.raw, .brml) doivent d'abord être exportés en texte.";
+    return;
+  }
+  note.className = "note";
+  note.textContent = `${d.tt.length} points de ${fmt(d.tt[0], 2)}° à ${fmt(d.tt[d.tt.length - 1], 2)}°. `
+    + "Positions des pics seulement, prototypes cubiques, une phase à la fois : ce n'est pas un affinement de Rietveld. Le fichier reste sur cet ordinateur.";
+  MEAS = {name, tt: d.tt, I: d.I}; MSEL = null; renderMeasured();
+}
+function exportIndexing(){
+  const f = fitOf(MSEL);
+  const rows = f.matches.map(m => ({hkl: m.hkl, two_theta_obs_deg: m.ttObs.toFixed(4), two_theta_calc_deg: m.ttCalc.toFixed(4),
+      delta_deg: m.delta.toFixed(4), d_obs_A: (RADIATION[$("m-rad").value][0] / (2 * Math.sin((m.ttObs - f.zero) * Math.PI / 360))).toFixed(4),
+      intensity_obs_rel: m.h.toFixed(1), status: "indexed"}))
+    .concat(f.unindexed.map(u => ({hkl: "", two_theta_obs_deg: u.tt.toFixed(4), two_theta_calc_deg: "", delta_deg: "",
+      d_obs_A: (RADIATION[$("m-rad").value][0] / (2 * Math.sin((u.tt - f.zero) * Math.PI / 360))).toFixed(4),
+      intensity_obs_rel: u.h.toFixed(1), status: "unindexed"})))
+    .sort((x, y) => parseFloat(x.two_theta_obs_deg) - parseFloat(y.two_theta_obs_deg));
+  download(fileStem() + "_indexation_" + f.proto + ".csv",
+    `# ${currentName()} — ${MEAS.name} — ${f.proto}, a = ${f.a.toFixed(4)} +/- ${f.aTol.toFixed(4)} A, zero ${f.zero.toFixed(3)} deg\n`
+    + toCSV(["hkl", "two_theta_obs_deg", "two_theta_calc_deg", "delta_deg", "d_obs_A", "intensity_obs_rel", "status"], rows).replace(/^﻿/, ""));
+}
+function exportLabLine(){
+  /* one line of data/lab_results.csv (tools/clean_database.py): what the measurement
+     establishes is filled in, what only the experimenter knows is left empty */
+  const f = fitOf(MSEL), today = new Date().toISOString().slice(0, 10);
+  const row = {id: MEAS.name.replace(/\.[^.]*$/, "").replace(/[^A-Za-z0-9_-]+/g, "-"), date: today,
+    formula_text: currentName(), proto: f.proto, phase: f.unindexed.length ? "multi" : "single",
+    T_C: "", atm: "", a_ang: f.a.toFixed(4), route: "",
+    notes: `indexation automatique de ${MEAS.name} : ${f.n}/${f.nPred} reflexions, ${f.unindexed.length} pic(s) non indexe(s)`
+      + (f.unindexed.length ? " a " + f.unindexed.map(u => u.tt.toFixed(2)).join(" ") + " deg" : "") + " ; a verifier"};
+  download(row.id + "_lab_results.csv", toCSV(["id", "date", "formula_text", "proto", "phase", "T_C", "atm", "a_ang", "route", "notes"], [row]).replace(/^﻿/, ""),
+    "text/csv;charset=utf-8");
+}
+
+/* ---------- batch: a list of formulas ---------- */
+let BATCH = [];
+/* minimal CSV reader: quoted fields, doubled quotes, comma or semicolon or tab */
+function parseCSV(text){
+  const first = text.split(/\r?\n/, 1)[0];
+  const sep = first.includes("\t") ? "\t" : (first.split(";").length > first.split(",").length ? ";" : ",");
+  const rows = []; let row = [], cur = "", q = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (q){
+      if (ch === '"'){ if (text[i+1] === '"'){ cur += '"'; i++; } else q = false; }
+      else cur += ch;
+    } else if (ch === '"' && cur === "") q = true;
+    else if (ch === sep){ row.push(cur); cur = ""; }
+    else if (ch === "\n" || ch === "\r"){
+      if (ch === "\r" && text[i+1] === "\n") i++;
+      row.push(cur); cur = ""; if (row.some(c => c.trim())) rows.push(row); row = [];
+    } else cur += ch;
+  }
+  row.push(cur); if (row.some(c => c.trim())) rows.push(row);
+  return rows;
+}
+/* formulas of a file: the column named formula_text, formula, formule or composition if
+   there is one; otherwise a plain list, one formula per line, whose commas belong to the
+   formula (as tools/heo_predict.py) */
+function formulasOf(text){
+  text = text.replace(/^\ufeff/, "");
+  const rows = parseCSV(text);
+  if (!rows.length) return [];
+  const head = rows[0].map(h => h.trim());
+  const col = ["formula_text", "formula", "formule", "composition"].map(n => head.indexOf(n)).find(i => i >= 0);
+  return col === undefined
+    ? text.split(/\r?\n/).map(t => t.trim().replace(/^"|"$/g, "")).filter(Boolean)
+    : rows.slice(1).map(r => (r[col] || "").trim());
+}
+function runBatch(){
+  /* in the box, one formula per line: commas belong to the formula, as in (Mg,Co,Ni,Cu,Zn)O */
+  const texts = $("b-in").value.split(/\r?\n/).map(t => t.trim()).filter(Boolean);
+  BATCH = texts.map(t => ({formula_text: t, ...predictRow(t)}));
+  renderBatch();
+}
+function renderBatch(){
+  const ok = BATCH.filter(r => !r.error).length;
+  $("b-count").textContent = BATCH.length
+    ? `${ok} prédiction${ok > 1 ? "s" : ""} sur ${BATCH.length} ligne${BATCH.length > 1 ? "s" : ""}` : "";
+  $("b-csv").disabled = !BATCH.length;
+  const num = (v, n) => v === "" ? "—" : fmt(parseFloat(v), n);
+  $("b-out").innerHTML = !BATCH.length ? "" :
+    `<tr><th>formule</th><th>cations lus</th><th>famille</th><th class="n">probabilité</th><th>deuxième hypothèse</th>
+     <th>domaine</th><th class="n">a (Å)</th><th class="n">densité (g/cm³)</th><th class="n">ΔH oxyd. (eV/O)</th><th>remarques</th></tr>`
+    + BATCH.map((r, i) => r.error
+      ? `<tr><td>${esc(r.formula_text)}</td><td colspan="9" class="fxnote-warn">pas de prédiction : ${esc(r.error)}</td></tr>`
+      : `<tr data-i="${i}" style="cursor:pointer"><td>${esc(r.formula_text)}</td><td>${r.cations.replace(/-/g, "·")}</td>
+         <td style="color:${PROTO_COL[r.proto]}">${PROTO_FR[r.proto]}</td><td class="n">${(100*r.p).toFixed(0)} %</td>
+         <td>${PROTO_FR[r.proto_2]} ${(100*r.p_2).toFixed(0)} %</td>
+         <td>${r.in_domain === "1" ? "dans le domaine" : `<span class="fxnote-warn">hors domaine</span>`}</td>
+         <td class="n">${num(r.a_predit, 3)}</td><td class="n">${num(r.rho_xray_g_cm3, 2)}</td>
+         <td class="n">${num(r.dH_ox_eV_per_O, 2)}</td><td>${esc(r.warnings)}</td></tr>`).join("");
+  $("b-out").querySelectorAll("tr[data-i]").forEach(tr => tr.onclick = () => {
+    showTab("design"); loadEx(BATCH[+tr.dataset.i].formula_text); window.scrollTo(0, 0); });
+}
+
 /* ---------- init ---------- */
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
-  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on", x===b));
-  ["design","screen","method"].forEach(t=>$(t).className = t===b.dataset.tab?"":"hide");});
+/* ---------- init ---------- */
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 buildPicker();
 $("f-proto").innerHTML = `<option value="">tous</option>`+
   MODEL.classes.map(c=>`<option value="${c}">${PROTO_FR[c]}</option>`).join("");
 $("methodtext").innerHTML = METHOD_HTML;
-$("btn-equi").onclick=()=>{equimolar(); render();};
-$("btn-clear").onclick=()=>{sel={}; document.querySelectorAll(".el").forEach(b=>b.classList.remove("sel")); render();};
+$("btn-equi").onclick=()=>{equimolar(); LOADED=null; render();};
+$("btn-clear").onclick=()=>{sel={}; LOADED=null; syncPicker(); render();};
 function loadEx(text){ $("fx").value = text; loadFormula(text); }
 $("btn-fx").onclick=()=>loadFormula($("fx").value);
 $("fx").addEventListener("keydown", e=>{ if (e.key==="Enter") loadFormula($("fx").value); });
@@ -345,5 +595,27 @@ $("ex1").onclick=()=>loadEx("(Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O");
 $("ex2").onclick=()=>loadEx("(CrMnFeCoNi)3O4");
 $("ex3").onclick=()=>loadEx("(La0.2Pr0.2Nd0.2Ba0.2Sr0.2)CoO3");
 $("ex4").onclick=()=>loadEx("(Na0.2Bi0.2Ba0.2Sr0.2Ca0.2)TiO3");
+$("x-pred").onclick=exportPrediction;
+$("x-xy").onclick=exportProfile;
+$("x-peaks").onclick=exportPeaks;
+$("b-run").onclick=runBatch;
+$("b-csv").onclick=()=>download("predictions_heo.csv", toCSV(["formula_text", ...ROW_COLUMNS], BATCH), "text/csv;charset=utf-8");
+$("b-file").onchange=e=>{
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { $("b-in").value = formulasOf(String(rd.result)).join("\n"); runBatch(); };
+  rd.readAsText(f); e.target.value = "";
+};
+$("m-file").onchange=e=>{
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => loadMeasured(f.name, String(rd.result));
+  rd.readAsText(f); e.target.value = "";
+};
+$("m-rad").onchange=renderMeasured;
+$("m-zero").onchange=renderMeasured;
+$("m-clear").onclick=()=>{ MEAS = null; renderMeasured(); };
+$("m-csv").onclick=exportIndexing;
+$("m-lab").onclick=exportLabLine;
 renderCands();
 loadEx("(Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O");
