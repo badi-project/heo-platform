@@ -32,6 +32,12 @@ LATTICE_MAE_PCT = 1.93
 MIN_CATIONS = 4          # the page refuses to predict below four cations; so does this
 TRAINED_MIN_CATIONS = 5  # every training composition has at least five
 TWO_THETA_MAX = 80.0
+# continuous profile of the simulated pattern (PROFILE in heo_engine.js)
+PROFILE = {"fwhm": 0.15, "step": 0.02, "tt_min": 10.0, "tt_max": 80.0, "eta": 0.5}
+# columns of the flat record of a prediction (ROW_COLUMNS in heo_engine.js)
+ROW_COLUMNS = ["cations", "frac", "proto", "p", "proto_2", "p_2", "in_domain", "ad", "n_base",
+               "a_predit", "a_tol_pct", "a_source", "rho_xray_g_cm3", "rho_tol_pct",
+               "dH_ox_eV_per_O", "p_rocksalt_thermo", "flags", "warnings", "error"]
 M_OXYGEN = 15.999
 AVOGADRO_A3 = 0.602214076   # Avogadro constant x 1e-24: cm3 per cubic angstrom, per mole
 
@@ -176,10 +182,11 @@ class Predictor:
         self._known = None
 
     def context(self):
+        self.known_entries([])
         return {"ELEM": self.elements, "PROPS": self.bundle["props"], "ONEHOT": self.onehot,
                 "FEATNAMES": self.featnames, "MODEL": self.model, "AD": self.ad,
                 "LATTICE": self.lattice, "XRD": self.xrd, "THERMO": self.thermo,
-                "REPORT_FEATS": []}
+                "DBSET": self._known, "REPORT_FEATS": []}
 
     # -- database lookup -----------------------------------------------------------
     def known_entries(self, cations):
@@ -352,6 +359,30 @@ class Predictor:
             p["intensity"] = 100 * p["intensity"] / mx
         return sorted((p for p in peaks if p["intensity"] > 0.4), key=lambda p: p["two_theta"])
 
+    def profile(self, pattern, fwhm=None, step=None, tt_min=None, tt_max=None, eta=None):
+        """Continuous profile of a stick pattern: pseudo-Voigt peaks of constant width on
+        a regular 2-theta grid, scaled to 100. Returns the list of (2-theta, intensity).
+        The width is instrumental, not predicted. Mirrors patternProfile()."""
+        o = dict(PROFILE)
+        for k, v in (("fwhm", fwhm), ("step", step), ("tt_min", tt_min), ("tt_max", tt_max),
+                     ("eta", eta)):
+            if v is not None:
+                o[k] = v
+        n = round((o["tt_max"] - o["tt_min"]) / o["step"])
+        xs, ys = [], []
+        for i in range(n + 1):
+            x = o["tt_min"] + i * o["step"]
+            y = 0.0
+            for p in pattern:
+                u = (x - p["two_theta"]) / o["fwhm"]
+                u2 = u * u
+                y += p["intensity"] * (o["eta"] / (1 + 4 * u2)
+                                       + (1 - o["eta"]) * math.exp(-4 * math.log(2) * u2))
+            xs.append(x)
+            ys.append(y)
+        mx = max(ys) if ys else 0.0
+        return [(x, 100 * y / mx if mx > 0 else 0.0) for x, y in zip(xs, ys)]
+
     # -- input -----------------------------------------------------------------------
     def read(self, composition):
         """Formula string or {element: amount} -> (fractions, flags, formula text)."""
@@ -361,7 +392,7 @@ class Predictor:
         else:
             text = str(composition).strip()
             raw = formula.cation_fractions(text, self.elements)
-            flags = list(formula.parse(text, self.elements).flags)
+            flags = sorted(formula.parse(text, self.elements).flags)
         unknown = sorted(e for e in raw if e not in self.elements)
         if unknown:
             raise PredictionError("cation sans propriétés tabulées : " + ", ".join(unknown))
@@ -373,6 +404,40 @@ class Predictor:
                                   f"il en faut au moins {MIN_CATIONS}")
         tot = features.nsum(raw[e] for e in sorted(raw))
         return {e: raw[e] / tot for e in sorted(raw)}, flags, text
+
+    # -- flat record -----------------------------------------------------------------
+    def record(self, composition):
+        """One line of a table of predictions: every value as text, in ROW_COLUMNS order.
+        An input that cannot be predicted gives an empty line with its reason in ``error``
+        instead of an exception. Mirrors predictRow() of heo_engine.js character for
+        character (tools/parity_check.py), so the page and the command line export the
+        same file."""
+        row = {k: "" for k in ROW_COLUMNS}
+        try:
+            r = self.predict(composition, pattern=False)
+        except PredictionError as exc:
+            row["error"] = str(exc)
+            return row
+        order = list(r["probabilities"].items())
+        lat, th = r["lattice"], r["thermo"]
+        row.update({
+            "cations": "-".join(r["fractions"]),
+            "frac": json.dumps({e: round(x, 6) for e, x in r["fractions"].items()}),
+            "proto": r["family"], "p": f"{r['probability']:.4f}",
+            "proto_2": order[1][0], "p_2": f"{order[1][1]:.4f}",
+            "in_domain": str(int(r["in_domain"])), "ad": f"{r['ad_distance']:.3f}",
+            "n_base": str(r["known_entries"]),
+            "flags": ";".join(r["flags"]), "warnings": " ; ".join(r["warnings"]),
+        })
+        if lat:
+            row.update({"a_predit": f"{lat['a']:.4f}", "a_tol_pct": f"{lat['uncertainty_pct']:.2f}",
+                        "a_source": lat["source"],
+                        "rho_xray_g_cm3": f"{lat['density_g_cm3']:.3f}",
+                        "rho_tol_pct": f"{lat['density_uncertainty_pct']:.1f}"})
+        if th and th["covered"]:
+            row.update({"dH_ox_eV_per_O": f"{th['dh_ox_eV_per_O']:.3f}",
+                        "p_rocksalt_thermo": f"{th['p_rocksalt']:.3f}"})
+        return row
 
     # -- prediction ------------------------------------------------------------------
     def predict(self, composition, pattern=True):

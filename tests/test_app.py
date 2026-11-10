@@ -51,6 +51,45 @@ console.log(JSON.stringify(cases.map(refCell)));
     assert 'rel="noopener noreferrer"' in cells[5]
 
 
+def test_the_page_predicts_on_the_exact_fractions_of_the_formula():
+    """Regression: loadFormula() rounded the fractions to six decimals before predicting.
+    On 39 database formulas a value crossed a tree threshold and the displayed probability
+    left the model's by up to 17 points. The page now reads through readComposition(),
+    whose records tools/parity_check.py compares with Python on every formula."""
+    ui = read("app", "heo_ui.js")
+    assert "1e6" not in ui and "readComposition(text)" in ui
+    assert "normalizeFractions(sel)" in ui
+
+
+def test_an_unread_formula_clears_the_previous_result():
+    """Regression: after a formula that could not be read, the result of the previous
+    formula stayed on screen."""
+    ui = read("app", "heo_ui.js")
+    branch = ui[ui.index("if (c.error){"):ui.index("/* exact fractions")]
+    assert "sel = {}" in branch and "render()" in branch
+
+
+@needs_node
+def test_batch_helpers_of_the_page():
+    """CSV reading and writing of the batch tab, outside the browser."""
+    ui = read("app", "heo_ui.js")
+    start, stop = ui.index("const csvCell ="), ui.index("const currentName")
+    start2, stop2 = ui.index("function parseCSV"), ui.index("function runBatch")
+    driver = ui[start:stop] + ui[start2:stop2] + """
+console.log(JSON.stringify({
+  header: formulasOf('id;formule;note\\nA1;(FeCoNiCrMn)3O4;x\\nA2;"(Mg,Co,Ni,Cu,Zn)O";\\n'),
+  plain: formulasOf('\\ufeff(FeCoNiCrMn)3O4\\r\\n\\n(Mg,Co,Ni,Cu,Zn)O\\n'),
+  csv: toCSV(["a", "b"], [{a: 'x,y', b: 'he said "no"'}, {a: 1}]),
+}));
+"""
+    out = subprocess.run(["node", "--input-type=module", "-e", driver],
+                         capture_output=True, text=True, check=True)
+    got = json.loads(out.stdout)
+    assert got["header"] == ["(FeCoNiCrMn)3O4", "(Mg,Co,Ni,Cu,Zn)O"]
+    assert got["plain"] == ["(FeCoNiCrMn)3O4", "(Mg,Co,Ni,Cu,Zn)O"]
+    assert got["csv"] == '\ufeffa,b\n"x,y","he said ""no"""\n1,\n'
+
+
 def test_every_external_link_sets_noreferrer():
     html = read("app", "heo_designer.html")
     assert html.count('target="_blank"') == html.count('rel="noopener noreferrer"')

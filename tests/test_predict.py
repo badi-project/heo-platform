@@ -121,11 +121,52 @@ def test_cli_batch_keeps_columns_and_reports_bad_lines(tmp_path):
 
 
 def test_cli_batch_reads_a_plain_list(tmp_path):
+    """No header: one formula per line, and the commas of a formula are not separators."""
     src = tmp_path / "liste.txt"
-    src.write_text("(FeCoNiCrMn)3O4\n\n(Ce0.2Zr0.2Hf0.2Sn0.2Ti0.2)O2\n", encoding="utf-8")
+    src.write_text("(FeCoNiCrMn)3O4\n\n(Ce0.2Zr0.2Hf0.2Sn0.2Ti0.2)O2\n(Mg,Co,Ni,Cu,Zn)O\n",
+                   encoding="utf-8")
     out = run_cli("--csv", str(src))
     rows = list(csv.DictReader(out.stdout.splitlines()))
-    assert [r["proto"] for r in rows] == ["spinel", "fluorite"]
+    assert [r["proto"] for r in rows] == ["spinel", "fluorite", "rocksalt"]
+    assert rows[2]["formula_text"] == "(Mg,Co,Ni,Cu,Zn)O"
+
+
+def test_record_is_text_in_fixed_columns_and_never_raises():
+    rec = P.record("(FeCoNiCrMn)3O4")
+    assert list(rec) == predict.ROW_COLUMNS and all(isinstance(v, str) for v in rec.values())
+    assert rec["proto"] == "spinel" and rec["a_source"] == "chgnet" and rec["error"] == ""
+    assert rec["frac"] == '{"Co": 0.2, "Cr": 0.2, "Fe": 0.2, "Mn": 0.2, "Ni": 0.2}'
+    bad = P.record("hello")
+    assert bad["proto"] == "" and "non lue" in bad["error"]
+
+
+def test_flags_do_not_depend_on_the_hash_seed():
+    """Regression: the flags came out of a set in arbitrary order, so the same file could
+    be exported differently from one run to the next."""
+    text = "[Lix(BaSrCaMg)(1−x)/4]TiO3"
+    seen = set()
+    for seed in ("0", "1", "2", "3"):
+        out = subprocess.run([sys.executable, CLI, text, "--json"], capture_output=True,
+                             text=True, env={**os.environ, "PYTHONHASHSEED": seed})
+        seen.add(tuple(json.loads(out.stdout)["flags"]))
+    assert len(seen) == 1 and list(next(iter(seen))) == sorted(next(iter(seen)))
+
+
+def test_profile_and_xy_export(tmp_path):
+    r = P.predict("(FeCoNiCrMn)3O4")
+    prof = P.profile(r["pattern"])
+    assert len(prof) == 3501 and prof[0][0] == 10.0 and abs(prof[-1][0] - 80.0) < 1e-9
+    top = max(prof, key=lambda xy: xy[1])
+    strongest = max(r["pattern"], key=lambda p: p["intensity"])
+    assert top[1] == 100 and abs(top[0] - strongest["two_theta"]) <= 0.02
+    dst = tmp_path / "motif.xy"
+    out = run_cli("(FeCoNiCrMn)3O4", "--xy", str(dst))
+    assert out.returncode == 0, out.stderr
+    lines = dst.read_text(encoding="utf-8").splitlines()
+    assert lines[0].startswith("# (FeCoNiCrMn)3O4") and "a = 8.33" in lines[0]
+    data = [ln.split() for ln in lines if not ln.startswith("#")]
+    assert len(data) == 3501 and all(len(d) == 2 for d in data)
+    assert run_cli("Li(NiCoMnAlFe)O2", "--xy", str(dst)).returncode != 0   # no cubic prototype
 
 
 def test_batch_on_the_database_agrees_with_the_training_labels(tmp_path):

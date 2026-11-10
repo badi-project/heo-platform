@@ -11,6 +11,7 @@ const FAMS = [
   ["Bloc p", e => ELEM[e].group>=13],
 ];
 let sel = {};   // element -> fraction
+const TABS = ["design", "batch", "screen", "method"];
 
 const $ = id => document.getElementById(id);
 const fmt = (v, n=3) => (v===null||v===undefined||Number.isNaN(v)) ? "—"
@@ -52,7 +53,7 @@ function buildPicker(){
   host.querySelectorAll(".el").forEach(b=>b.onclick=()=>{
     const e=b.dataset.el;
     if (e in sel) delete sel[e]; else sel[e]=0;
-    equimolar(); render();
+    LOADED=null; equimolar(); render();
   });
 }
 function equimolar(){ const k=Object.keys(sel); k.forEach(e=>sel[e]=1/k.length); }
@@ -69,22 +70,28 @@ const FLAG_FR = {
 function syncPicker(){
   document.querySelectorAll(".el").forEach(b=>b.classList.toggle("sel", b.dataset.el in sel));
 }
+let LOADED = null;   // formula text the current selection was read from, if any
+function showTab(name){
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.tab===name));
+  TABS.forEach(t=>$(t).className = t===name?"":"hide");
+}
 function loadFormula(text){
-  const fr = FX.cationFractions(text);
-  const els = Object.keys(fr);
-  const note = $("fxnote");
-  const unknown = els.filter(e => !(e in ELEM));
-  if (els.length < 2 || unknown.length){
+  const c = readComposition(text), note = $("fxnote");
+  if (c.error){
+    /* the previous result must not stay on screen under a formula that was not read */
+    const lower = /[a-z]/.test(text) && !/[A-Z]/.test(text);
     note.className = "note fxnote-warn";
-    note.textContent = unknown.length
-      ? `Cation sans propriétés tabulées : ${unknown.join(", ")}. Prédiction impossible.`
-      : "Formule non lue : écrivez-la comme dans un article, par exemple La(CrMnFeCoNi)O3.";
+    note.textContent = c.error.charAt(0).toUpperCase() + c.error.slice(1) + "."
+      + (lower ? " Les symboles chimiques s'écrivent avec leur majuscule : Fe, Co, Ni." : "");
+    sel = {}; LOADED = null; syncPicker(); render();
     return;
   }
-  sel = {}; for (const e of els) sel[e] = Math.round(fr[e]*1e6)/1e6;
-  const flags = FX.parse(text).flags.map(f => FLAG_FR[f]).filter(Boolean);
+  /* exact fractions: they are shown rounded in the boxes below, never stored rounded */
+  sel = {...c.frac}; LOADED = c.text;
+  const els = Object.keys(c.frac);
+  const flags = c.flags.map(f => FLAG_FR[f]).filter(Boolean);
   note.className = "note";
-  note.textContent = "Lu : " + els.map(e => `${e} ${(100*fr[e]).toFixed(1).replace(".", ",")} %`).join(" · ")
+  note.textContent = "Lu : " + els.map(e => `${e} ${(100*c.frac[e]).toFixed(1).replace(".", ",")} %`).join(" · ")
     + (flags.length ? ` — ${flags.join(" ; ")}.` : ".");
   syncPicker(); render();
 }
@@ -97,9 +104,9 @@ function renderChips(){
      <button class="x" data-del="${e}">×</button></div>`).join("")
     || `<div class="note">Aucun cation sélectionné.</div>`;
   $("chips").querySelectorAll("input").forEach(i=>i.onchange=()=>{
-    sel[i.dataset.el]=Math.max(0,parseFloat(i.value)||0); render();});
+    sel[i.dataset.el]=Math.max(0,parseFloat(i.value)||0); LOADED=null; render();});
   $("chips").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
-    delete sel[b.dataset.del]; equimolar(); render();});
+    delete sel[b.dataset.del]; LOADED=null; equimolar(); render();});
   const s=Object.values(sel).reduce((a,b)=>a+b,0);
   $("sumnote").textContent = k.length
     ? `Somme = ${s.toFixed(3)} — les fractions sont renormalisées à 1 avant le calcul.`
@@ -162,7 +169,9 @@ function render(){
   const s=Object.values(sel).reduce((a,b)=>a+b,0);
   if (els.length<4 || s<=0){ $("out").className="hide"; $("empty").className="card"; return; }
   $("empty").className="hide"; $("out").className="";
-  const frac={}; els.forEach(e=>frac[e]=sel[e]/s);
+  /* same normalisation as readComposition() and src/predict.py: a formula gives the same
+     numbers here, in the batch table and on the command line */
+  const frac=normalizeFractions(sel);
   const r=predict(frac); CURRENT=r;
 
   $("topclass").textContent = PROTO_FR[r.top];
@@ -219,6 +228,7 @@ function render(){
     `<dt>${DESC_FR[n]||n}</dt><dd>${fmt(r.desc[n], DESC_DEC[n]??3)}</dd>`).join("");
   renderThermo(r);
 
+  $("x-xy").disabled = $("x-peaks").disabled = !r.pattern.length;
   if (r.pattern.length){
     const tol = tt => { const th=tt*Math.PI/360; return Math.abs(2*Math.tan(th)*(aPct/100))*180/Math.PI; };
     drawXRD(r.pattern, tol);
@@ -310,23 +320,122 @@ function renderCands(){
     const k=th.dataset.k; if(k===sortKey) sortDir*=-1; else {sortKey=k; sortDir=(k==="c"||k==="t")?1:-1;}
     renderCands();});
   $("cands").querySelectorAll("tr[data-c]").forEach(tr=>tr.onclick=()=>{
-    sel={}; tr.dataset.c.split("-").forEach(e=>sel[e]=0); equimolar();
-    document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.tab==="design"));
-    ["design","screen","method"].forEach(t=>$(t).className = t==="design"?"":"hide");
-    document.querySelectorAll(".el").forEach(b=>b.classList.toggle("sel", b.dataset.el in sel));
+    sel={}; tr.dataset.c.split("-").forEach(e=>sel[e]=0); equimolar(); LOADED=null;
+    showTab("design"); syncPicker();
     render(); window.scrollTo(0,0);});
 }
 
+/* ---------- exports ---------- */
+/* Everything is built in the page and handed to the browser as a download: the file
+   stays self-contained and nothing leaves the computer. */
+function download(name, text, mime){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type: mime || "text/plain;charset=utf-8"}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const csvCell = v => /[",\n;]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
+/* the byte-order mark makes spreadsheet software read the accents; tools/heo_predict.py
+   reads the file back with or without it */
+const toCSV = (cols, rows) => "﻿" + [cols, ...rows.map(r => cols.map(c => r[c] ?? ""))]
+  .map(line => line.map(csvCell).join(",")).join("\n") + "\n";
+const currentName = () => LOADED || Object.keys(CURRENT.frac).map(e =>
+  e + Number(CURRENT.frac[e].toFixed(4))).join(" ");
+const fileStem = () => Object.keys(CURRENT.frac).join("") + "_" + CURRENT.top;
+function exportPrediction(){
+  const row = {formula_text: currentName(), ...recordOf(CURRENT, LOADED ? FX.parse(LOADED).flags : [])};
+  download(fileStem() + "_prediction.csv", toCSV(["formula_text", ...ROW_COLUMNS], [row]), "text/csv;charset=utf-8");
+}
+function xyHeader(){
+  return `# ${currentName()} — ${CURRENT.top} ${XRD.prototypes[CURRENT.top].sg}, a = ${CURRENT.a.toFixed(4)} A `
+    + `(${CURRENT.aSrc === "geo" ? "geometric" : CURRENT.aSrc})\n`;
+}
+function exportProfile(){
+  const pr = patternProfile(CURRENT.pattern);
+  download(fileStem() + "_simule.xy", xyHeader()
+    + `# profil simule, Cu K-alpha1 ${XRD.wavelength} A, pseudo-Voigt de largeur ${PROFILE.fwhm} deg ; `
+    + "colonnes : 2theta (deg), intensite (max 100)\n"
+    + pr.tt.map((x, i) => `${x.toFixed(2)} ${pr.I[i].toFixed(3)}`).join("\n") + "\n");
+}
+function exportPeaks(){
+  const rows = CURRENT.pattern.map(p => ({two_theta_deg: p.tt.toFixed(3),
+    d_A: (XRD.wavelength / (2 * Math.sin(p.tt * Math.PI / 360))).toFixed(4),
+    intensity: p.I.toFixed(1), hkl: p.hkl}));
+  download(fileStem() + "_reflexions.csv", toCSV(["two_theta_deg", "d_A", "intensity", "hkl"], rows),
+    "text/csv;charset=utf-8");
+}
+
+/* ---------- batch: a list of formulas ---------- */
+let BATCH = [];
+/* minimal CSV reader: quoted fields, doubled quotes, comma or semicolon or tab */
+function parseCSV(text){
+  const first = text.split(/\r?\n/, 1)[0];
+  const sep = first.includes("\t") ? "\t" : (first.split(";").length > first.split(",").length ? ";" : ",");
+  const rows = []; let row = [], cur = "", q = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (q){
+      if (ch === '"'){ if (text[i+1] === '"'){ cur += '"'; i++; } else q = false; }
+      else cur += ch;
+    } else if (ch === '"' && cur === "") q = true;
+    else if (ch === sep){ row.push(cur); cur = ""; }
+    else if (ch === "\n" || ch === "\r"){
+      if (ch === "\r" && text[i+1] === "\n") i++;
+      row.push(cur); cur = ""; if (row.some(c => c.trim())) rows.push(row); row = [];
+    } else cur += ch;
+  }
+  row.push(cur); if (row.some(c => c.trim())) rows.push(row);
+  return rows;
+}
+/* formulas of a file: the column named formula_text, formula, formule or composition if
+   there is one; otherwise a plain list, one formula per line, whose commas belong to the
+   formula (as tools/heo_predict.py) */
+function formulasOf(text){
+  text = text.replace(/^\ufeff/, "");
+  const rows = parseCSV(text);
+  if (!rows.length) return [];
+  const head = rows[0].map(h => h.trim());
+  const col = ["formula_text", "formula", "formule", "composition"].map(n => head.indexOf(n)).find(i => i >= 0);
+  return col === undefined
+    ? text.split(/\r?\n/).map(t => t.trim().replace(/^"|"$/g, "")).filter(Boolean)
+    : rows.slice(1).map(r => (r[col] || "").trim());
+}
+function runBatch(){
+  /* in the box, one formula per line: commas belong to the formula, as in (Mg,Co,Ni,Cu,Zn)O */
+  const texts = $("b-in").value.split(/\r?\n/).map(t => t.trim()).filter(Boolean);
+  BATCH = texts.map(t => ({formula_text: t, ...predictRow(t)}));
+  renderBatch();
+}
+function renderBatch(){
+  const ok = BATCH.filter(r => !r.error).length;
+  $("b-count").textContent = BATCH.length
+    ? `${ok} prédiction${ok > 1 ? "s" : ""} sur ${BATCH.length} ligne${BATCH.length > 1 ? "s" : ""}` : "";
+  $("b-csv").disabled = !BATCH.length;
+  const num = (v, n) => v === "" ? "—" : fmt(parseFloat(v), n);
+  $("b-out").innerHTML = !BATCH.length ? "" :
+    `<tr><th>formule</th><th>cations lus</th><th>famille</th><th class="n">probabilité</th><th>deuxième hypothèse</th>
+     <th>domaine</th><th class="n">a (Å)</th><th class="n">densité (g/cm³)</th><th class="n">ΔH oxyd. (eV/O)</th><th>remarques</th></tr>`
+    + BATCH.map((r, i) => r.error
+      ? `<tr><td>${esc(r.formula_text)}</td><td colspan="9" class="fxnote-warn">pas de prédiction : ${esc(r.error)}</td></tr>`
+      : `<tr data-i="${i}" style="cursor:pointer"><td>${esc(r.formula_text)}</td><td>${r.cations.replace(/-/g, "·")}</td>
+         <td style="color:${PROTO_COL[r.proto]}">${PROTO_FR[r.proto]}</td><td class="n">${(100*r.p).toFixed(0)} %</td>
+         <td>${PROTO_FR[r.proto_2]} ${(100*r.p_2).toFixed(0)} %</td>
+         <td>${r.in_domain === "1" ? "dans le domaine" : `<span class="fxnote-warn">hors domaine</span>`}</td>
+         <td class="n">${num(r.a_predit, 3)}</td><td class="n">${num(r.rho_xray_g_cm3, 2)}</td>
+         <td class="n">${num(r.dH_ox_eV_per_O, 2)}</td><td>${esc(r.warnings)}</td></tr>`).join("");
+  $("b-out").querySelectorAll("tr[data-i]").forEach(tr => tr.onclick = () => {
+    showTab("design"); loadEx(BATCH[+tr.dataset.i].formula_text); window.scrollTo(0, 0); });
+}
+
 /* ---------- init ---------- */
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
-  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on", x===b));
-  ["design","screen","method"].forEach(t=>$(t).className = t===b.dataset.tab?"":"hide");});
+/* ---------- init ---------- */
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 buildPicker();
 $("f-proto").innerHTML = `<option value="">tous</option>`+
   MODEL.classes.map(c=>`<option value="${c}">${PROTO_FR[c]}</option>`).join("");
 $("methodtext").innerHTML = METHOD_HTML;
-$("btn-equi").onclick=()=>{equimolar(); render();};
-$("btn-clear").onclick=()=>{sel={}; document.querySelectorAll(".el").forEach(b=>b.classList.remove("sel")); render();};
+$("btn-equi").onclick=()=>{equimolar(); LOADED=null; render();};
+$("btn-clear").onclick=()=>{sel={}; LOADED=null; syncPicker(); render();};
 function loadEx(text){ $("fx").value = text; loadFormula(text); }
 $("btn-fx").onclick=()=>loadFormula($("fx").value);
 $("fx").addEventListener("keydown", e=>{ if (e.key==="Enter") loadFormula($("fx").value); });
@@ -334,5 +443,16 @@ $("ex1").onclick=()=>loadEx("(Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O");
 $("ex2").onclick=()=>loadEx("(CrMnFeCoNi)3O4");
 $("ex3").onclick=()=>loadEx("(La0.2Pr0.2Nd0.2Ba0.2Sr0.2)CoO3");
 $("ex4").onclick=()=>loadEx("(Na0.2Bi0.2Ba0.2Sr0.2Ca0.2)TiO3");
+$("x-pred").onclick=exportPrediction;
+$("x-xy").onclick=exportProfile;
+$("x-peaks").onclick=exportPeaks;
+$("b-run").onclick=runBatch;
+$("b-csv").onclick=()=>download("predictions_heo.csv", toCSV(["formula_text", ...ROW_COLUMNS], BATCH), "text/csv;charset=utf-8");
+$("b-file").onchange=e=>{
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { $("b-in").value = formulasOf(String(rd.result)).join("\n"); runBatch(); };
+  rd.readAsText(f); e.target.value = "";
+};
 renderCands();
 loadEx("(Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O");

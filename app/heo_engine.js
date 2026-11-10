@@ -694,3 +694,99 @@ function predict(frac0) {
     desc: Object.fromEntries(REPORT_FEATS.map(n => [n, x[FEATNAMES.indexOf(n)]])),
   };
 }
+
+/* ---------- reading an input: mirror of Predictor.read() in src/predict.py ---------- */
+const MIN_CATIONS = 4, TRAINED_MIN_CATIONS = 5;
+/* formula text -> {text, frac, flags}, or {error} with the reason no prediction is
+   possible. The fractions are the exact ones of the formula, renormalised with the same
+   compensated sum as Python: rounding them, as the page did until now, moved a value
+   across a tree threshold for a few dozen database formulas. */
+function readComposition(text) {
+  const t = String(text === null || text === undefined ? "" : text).trim();
+  const raw = FX.cationFractions(t);
+  const els = Object.keys(raw).sort();
+  const unknown = els.filter(e => !Object.prototype.hasOwnProperty.call(ELEM, e));
+  if (unknown.length) return { error: "cation sans propriétés tabulées : " + unknown.join(", ") };
+  if (els.length < 2)
+    return { error: "formule non lue : écrivez-la comme dans un article, par exemple La(CrMnFeCoNi)O3" };
+  if (els.length < MIN_CATIONS)
+    return { error: `${els.length} cations lus (${els.join(", ")}) : il en faut au moins ${MIN_CATIONS}` };
+  return { text: t, frac: normalizeFractions(raw), flags: FX.parse(t).flags };
+}
+function normalizeFractions(amounts) {
+  const els = Object.keys(amounts).filter(e => amounts[e] > 0).sort();
+  const tot = nsum(els.map(e => amounts[e]));
+  const frac = {};
+  for (const e of els) frac[e] = amounts[e] / tot;
+  return frac;
+}
+function predictionWarnings(r) {
+  const w = [], n = Object.keys(r.frac).length;
+  if (!r.inDomain)
+    w.push("hors du domaine d'applicabilité : le modèle extrapole, la probabilité n'a pas de valeur");
+  if (n < TRAINED_MIN_CATIONS)
+    w.push(`${n} cations : le modèle est entraîné sur ${TRAINED_MIN_CATIONS} cations ou plus`);
+  if (r.order[0].p - r.order[1].p < 0.25)
+    w.push(`prédiction peu tranchée entre ${r.top} et ${r.order[1].c}`);
+  return w;
+}
+
+/* ---------- flat record of a prediction: mirror of Predictor.record() ---------- */
+/* One line of the batch table and of its CSV export. Same columns and same formatting as
+   tools/heo_predict.py --csv; tools/parity_check.py compares the two character for
+   character on every formula of the database. */
+const ROW_COLUMNS = ["cations", "frac", "proto", "p", "proto_2", "p_2", "in_domain", "ad", "n_base",
+  "a_predit", "a_tol_pct", "a_source", "rho_xray_g_cm3", "rho_tol_pct", "dH_ox_eV_per_O",
+  "p_rocksalt_thermo", "flags", "warnings", "error"];
+function recordOf(r, flags) {
+  const row = {};
+  for (const k of ROW_COLUMNS) row[k] = "";
+  const els = Object.keys(r.frac), th = r.thermo, covered = !!(th && th.covered);
+  row.cations = els.join("-");
+  row.frac = "{" + els.map(e => `"${e}": ${Number(r.frac[e].toFixed(6))}`).join(", ") + "}";
+  row.proto = r.top; row.p = r.order[0].p.toFixed(4);
+  row.proto_2 = r.order[1].c; row.p_2 = r.order[1].p.toFixed(4);
+  row.in_domain = r.inDomain ? "1" : "0"; row.ad = r.adDistance.toFixed(3);
+  row.n_base = String((typeof DBSET !== "undefined" && DBSET[row.cations]) || 0);
+  if (r.a) {
+    row.a_predit = r.a.toFixed(4); row.a_tol_pct = r.aPct.toFixed(2);
+    row.a_source = r.aSrc === "geo" ? "geometric" : r.aSrc;
+    row.rho_xray_g_cm3 = r.rho.toFixed(3); row.rho_tol_pct = r.rhoPct.toFixed(1);
+  }
+  if (covered) { row.dH_ox_eV_per_O = th.dh.toFixed(3); row.p_rocksalt_thermo = th.pRocksalt.toFixed(3); }
+  row.flags = (flags || []).join(";");
+  row.warnings = predictionWarnings(r).join(" ; ");
+  return row;
+}
+function predictRow(text) {
+  const c = readComposition(text);
+  if (c.error) {
+    const row = {};
+    for (const k of ROW_COLUMNS) row[k] = "";
+    row.error = c.error;
+    return row;
+  }
+  return recordOf(predict(c.frac), c.flags);
+}
+
+/* ---------- continuous profile of the simulated pattern ---------- */
+/* Pseudo-Voigt peaks of constant width on a regular 2-theta grid, scaled to 100: what a
+   diffractometer file looks like, for export (.xy) and for the comparison with a measured
+   pattern. The width is instrumental, not predicted — it only makes the sticks comparable. */
+const PROFILE = { fwhm: 0.15, step: 0.02, ttMin: 10, ttMax: 80, eta: 0.5 };
+function patternProfile(peaks, opt) {
+  const o = { ...PROFILE, ...(opt || {}) };
+  const n = Math.round((o.ttMax - o.ttMin) / o.step), tt = [], I = [];
+  let mx = 0;
+  for (let i = 0; i <= n; i++) {
+    const x = o.ttMin + i * o.step;
+    let y = 0;
+    for (const p of peaks) {
+      const u = (x - p.tt) / o.fwhm, u2 = u * u;
+      y += p.I * (o.eta / (1 + 4 * u2) + (1 - o.eta) * Math.exp(-4 * Math.LN2 * u2));
+    }
+    tt.push(x); I.push(y);
+    if (y > mx) mx = y;
+  }
+  return { tt, I: I.map(y => (mx > 0 ? 100 * y / mx : 0)) };
+}

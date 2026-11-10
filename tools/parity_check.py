@@ -122,7 +122,7 @@ def prediction_parity():
     discrete disagreements and the largest numerical gap per quantity."""
     import csv
     P = predict.Predictor()
-    fracs = []
+    fracs, texts = [], formula_cases()
     with open(os.path.join(ROOT, "data", "heo_database.csv"), encoding="utf-8") as fh:
         for r in csv.DictReader(fh):
             try:
@@ -130,18 +130,29 @@ def prediction_parity():
             except predict.PredictionError:
                 pass
     fracs += [p["frac"] for p in P.bundle["probe"]]
+    profiled = fracs[::25]
     out = subprocess.run(["node", os.path.join(ROOT, "tools", "parity_js.mjs"), "predict"],
-                         input=json.dumps({"context": P.context(), "fracs": fracs}),
+                         input=json.dumps({"context": P.context(), "fracs": fracs,
+                                           "texts": texts, "profiles": profiled}),
                          capture_output=True, text=True, check=True)
+    result = json.loads(out.stdout)
     classes = P.model["classes"]
     src = {"geometric": "geo", "chgnet": "chgnet"}
     gap = {"probs": 0.0, "ad": 0.0, "a": 0.0, "two_theta": 0.0, "intensity": 0.0, "dh": 0.0,
-           "density": 0.0}
+           "density": 0.0, "profile": 0.0}
     bad = []
+    # flat records (batch table, CSV export): text against text
+    rows_off = [t for t, js in zip(texts, result["rows"]) if P.record(t) != js]
+    for frac, js in zip(profiled, result["profiles"]):
+        py = [y for _, y in P.profile(P.predict(frac)["pattern"])]
+        if len(py) != len(js):
+            bad.append("profile " + "-".join(frac))
+        else:
+            gap["profile"] = max([gap["profile"]] + [abs(u - v) for u, v in zip(py, js)])
 
     def worst(key, u, v):
         gap[key] = max(gap[key], abs(u - v))
-    for frac, js in zip(fracs, json.loads(out.stdout)):
+    for frac, js in zip(fracs, result["full"]):
         py = P.predict(frac)
         name = "-".join(frac)
         for i, c in enumerate(classes):
@@ -170,7 +181,7 @@ def prediction_parity():
                 ok = th["direct"] == t["direct"] and th["verdict"] == t["verdict"]
         if not ok:
             bad.append(name)
-    return len(fracs), bad, gap
+    return len(fracs), bad, gap, (len(texts), rows_off, len(profiled))
 
 
 def max_abs(a, b):
@@ -184,7 +195,7 @@ def main(check=False):
     py_probs, py_feats = python_side(bundle, elements)
     js = js_side()
     n_formulas, formula_mismatch, d_formula = formula_parity(elements)
-    n_pred, pred_mismatch, gap = prediction_parity()
+    n_pred, pred_mismatch, gap, (n_rows, rows_off, n_prof) = prediction_parity()
     d_probs = max_abs(py_probs, js["probs"])
     d_feats = max_abs(py_feats, js["feats"])
     # the probe stores probabilities in display order (classes_order), the model emits
@@ -217,6 +228,10 @@ def main(check=False):
         f"densite {gap['density']:.1e} g/cm3,",
         f"  position des pics {gap['two_theta']:.1e} deg, intensite {gap['intensity']:.1e}, "
         f"thermodynamique {gap['dh']:.1e} (tolerance {TOL_PRED:.0e})",
+        f"  ligne de tableau (export CSV de la page et de tools/heo_predict.py), {n_rows} formules : "
+        f"{len(rows_off)} ligne(s) differente(s), caractere pour caractere",
+        f"  profil continu du diffractogramme, {n_prof} compositions : ecart maximal "
+        f"{gap['profile']:.1e} (tolerance {TOL_PRED:.0e})",
         "",
         "genere par tools/parity_check.py",
     ]
@@ -230,6 +245,8 @@ def main(check=False):
         (d_formula <= TOL_JS, f"formula fractions differ by {d_formula:.3e}"),
         (not pred_mismatch, "src/predict.py and heo_engine.js disagree on: "
                             + "; ".join(pred_mismatch[:5])),
+        (not rows_off, "flat records differ between src/predict.py and heo_engine.js on: "
+                       + "; ".join(repr(t) for t in rows_off[:5])),
         (gap["probs"] <= TOL_JS, f"full-prediction probabilities differ by {gap['probs']:.3e}"),
         (max(gap[k] for k in gap if k != "probs") <= TOL_PRED,
          "full prediction differs: " + ", ".join(f"{k} {v:.3e}" for k, v in gap.items())),
