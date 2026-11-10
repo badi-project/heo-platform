@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 import sync_app  # noqa: E402
 # the thermo payload and the lattice-model error are shared with the Python predictor
-from predict import LATTICE_MAE_PCT, thermo_payload  # noqa: E402
+from predict import LATTICE_MAE_PCT, lattice_payload, thermo_payload  # noqa: E402
 
 HTML = os.path.join(ROOT, "app", "heo_designer.html")
 REPORT_FEATS = ["s_config", "delta_r", "delta_X_rel", "mean_ox", "redox_flex", "r_A", "r_B",
@@ -136,7 +136,6 @@ def thermo_fill(th):
 def build(check=False):
     bundle = read_json("app", "heo_model.json")
     elem = read_json("data", "reference", "element_properties.json")
-    latt = read_json("data", "reference", "lattice_model.json")
     xrd = read_json("data", "reference", "xrd_prototypes.json")
     db = read_csv("data", "heo_database.csv")
     cands = read_csv("data", "heo_candidats.csv")
@@ -147,7 +146,7 @@ def build(check=False):
     payload = {
         "ELEM": elem, "PROPS": bundle["props"], "ONEHOT": bundle["onehot"],
         "FEATNAMES": bundle["featnames"], "MODEL": bundle["model"], "AD": bundle["ad"],
-        "LATTICE": {**latt, "mae_pct": LATTICE_MAE_PCT}, "XRD": xrd,
+        "LATTICE": lattice_payload(ROOT), "XRD": xrd,
         "DB": [{"c": r["cations"], "p": r["proto"], "s": r["phase"],
                 "d": r["doi"] if r["doi"] else None} for r in db],
         "DBSET": dict(Counter(r["sysk"] for r in db)),

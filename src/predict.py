@@ -13,7 +13,7 @@ files (app/heo_model.json, data/reference/, data/thermo/):
     r = p.predict("(FeCoNiCrMn)3O4")
     r["family"], r["probability"], r["lattice"]["a"], r["in_domain"]
 
-``tools/predict.py`` is the command-line front end (one formula, or a CSV file).
+``tools/heo_predict.py`` is the command-line front end (one formula, or a CSV file).
 ``tools/parity_check.py`` compares every number returned here with the JavaScript engine.
 """
 import csv
@@ -32,6 +32,8 @@ LATTICE_MAE_PCT = 1.93
 MIN_CATIONS = 4          # the page refuses to predict below four cations; so does this
 TRAINED_MIN_CATIONS = 5  # every training composition has at least five
 TWO_THETA_MAX = 80.0
+M_OXYGEN = 15.999
+AVOGADRO_A3 = 0.602214076   # Avogadro constant x 1e-24: cm3 per cubic angstrom, per mole
 
 
 class PredictionError(ValueError):
@@ -47,6 +49,18 @@ def _read_json(root, *parts):
 def _read_csv(root, *parts):
     with open(os.path.join(root, *parts), encoding="utf-8", newline="") as fh:
         return list(csv.DictReader(fh))
+
+
+def lattice_payload(root=ROOT):
+    """Constants of the lattice models in the form the page embeds (``LATTICE``): the
+    geometric model, its error, and the density error observed per lattice model on the
+    high-entropy oxides of measured lattice parameter (tools/validate_density.py)."""
+    out = {**_read_json(root, "data", "reference", "lattice_model.json"),
+           "mae_pct": LATTICE_MAE_PCT}
+    path = os.path.join(root, "data", "reference", "density_validation.json")
+    if os.path.exists(path):
+        out["rho"] = _read_json(root, "data", "reference", "density_validation.json")
+    return out
 
 
 # ------------------------------------------------------------- thermo payload ----
@@ -156,8 +170,7 @@ class Predictor:
         self.onehot = bundle["onehot"]
         self.ad = bundle["ad"]
         self.elements = _read_json(root, "data", "reference", "element_properties.json")
-        self.lattice = {**_read_json(root, "data", "reference", "lattice_model.json"),
-                        "mae_pct": LATTICE_MAE_PCT}
+        self.lattice = lattice_payload(root)
         self.xrd = _read_json(root, "data", "reference", "xrd_prototypes.json")
         self.thermo = thermo_payload(root)
         self._known = None
@@ -257,6 +270,34 @@ class Predictor:
                 "verdict": "rocksalt" if p > 0.7 else "spinel" if p < 0.3 else "boundary",
                 "system": exact}
 
+    # -- theoretical density -------------------------------------------------------
+    def xray_density(self, proto, frac, a):
+        """Theoretical (X-ray) density in g/cm3: mass of the prototype cell over its
+        volume. Every cation site carries the composition (split between A and B for
+        ordered prototypes) and every oxygen site is full. Exact once ``a`` is known —
+        pass a measured lattice parameter to get the reference density of a sintered
+        pellet; with a predicted ``a`` the relative error is three times that of ``a``.
+        Oxygen vacancies are not modelled: a fluorite rich in trivalent cations is lighter
+        than this value (QC/density_validation.txt)."""
+        P = self.xrd["prototypes"].get(proto)
+        if not P or not a:
+            return None
+        occ = self._site_occupancies(proto, frac)
+        mass = 0.0
+        for t in P["nsites"]:
+            m = 0.0
+            for el in occ[t]:
+                m += occ[t][el] * (M_OXYGEN if el == "O" else self.elements[el]["mass"])
+            mass += P["nsites"][t] * m
+        return mass / (AVOGADRO_A3 * a * a * a)
+
+    def density_uncertainty_pct(self, source, lattice_pct):
+        """Relative uncertainty of a density computed from a predicted lattice parameter:
+        three times that of the lattice parameter, or the mean error observed for this
+        lattice model on measured high-entropy oxides when that is larger."""
+        seen = (self.lattice.get("rho") or {}).get("geo" if source == "geometric" else source)
+        return max(3 * lattice_pct, seen["mae_pct"] if seen else 0.0)
+
     # -- powder pattern ------------------------------------------------------------
     def _f_atom(self, el, s):
         s2 = s * s
@@ -353,8 +394,12 @@ class Predictor:
             a, pct, src = a_th, self.thermo["lat"]["mae_pct"], "chgnet"
         lattice = None
         if a is not None:
+            rho = self.xray_density(top, frac, a)
+            rho_pct = self.density_uncertainty_pct(src, pct)
             lattice = {"a": a, "uncertainty_pct": pct, "uncertainty_A": a * pct / 100,
-                       "source": src, "space_group": self.xrd["prototypes"][top]["sg"]}
+                       "source": src, "space_group": self.xrd["prototypes"][top]["sg"],
+                       "density_g_cm3": rho, "density_uncertainty_pct": rho_pct,
+                       "density_uncertainty_g_cm3": rho * rho_pct / 100}
 
         warnings = []
         if not in_domain:

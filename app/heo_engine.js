@@ -229,6 +229,31 @@ function simulatePattern(proto, frac, a, ttMax) {
     .sort((x, y) => x.tt - y.tt);
 }
 
+/* ---------- theoretical (X-ray) density ---------- */
+/* Mass of the prototype cell over its volume, in g/cm3: every cation site carries the
+   composition (split between A and B for ordered prototypes), every oxygen site is full.
+   Exact once a is known. With a predicted a, the uncertainty is three times that of a, or
+   the mean error observed for that lattice model on measured high-entropy oxides when it
+   is larger (LATTICE.rho, written by tools/validate_density.py).
+   Oxygen vacancies are not modelled: a fluorite rich in trivalent cations is lighter. */
+const M_OXYGEN = 15.999, AVOGADRO_A3 = 0.602214076;   /* N_A x 1e-24 cm3 per cubic angstrom */
+function xrayDensity(proto, frac, a) {
+  const P = XRD.prototypes[proto];
+  if (!P || !a) return null;
+  const occ = siteOccupancies(proto, frac);
+  let mass = 0;
+  for (const t in P.nsites) {
+    let m = 0;
+    for (const el in occ[t]) m += occ[t][el] * (el === "O" ? M_OXYGEN : ELEM[el].mass);
+    mass += P.nsites[t] * m;
+  }
+  return mass / (AVOGADRO_A3 * a * a * a);
+}
+function densityUncertaintyPct(aSrc, aPct) {
+  const seen = (LATTICE.rho || {})[aSrc];
+  return Math.max(3 * aPct, seen ? seen.mae_pct : 0);
+}
+
 /* ---------- formula parser: mirror of src/formula.py ---------- */
 /* Reads a formula as written in a paper — (Na0.2Bi0.2Ba0.2Sr0.2Ca0.2)TiO3,
    La(CrMnFeCoNi)O3, (FeCoNiCrMn)3O4, Co-Cr-Fe-Mn-Ni ... — into cation fractions, so
@@ -657,10 +682,13 @@ function predict(frac0) {
   let a = predictA(top, frac), aPct = LATTICE.mae_pct, aSrc = a ? "geo" : null;
   const aTh = thermoLattice(top, frac);
   if (aTh !== null) { a = aTh; aPct = THERMO.lat.mae_pct; aSrc = "chgnet"; }
+  const rho = xrayDensity(top, frac, a);
   return {
     frac, x, probs, order, top,
     adDistance: d, inDomain: d <= AD.threshold,
     a, aPct, aSrc, aTol: a ? a * aPct / 100 : null,
+    rho, rhoPct: rho ? densityUncertaintyPct(aSrc, aPct) : null,
+    rhoTol: rho ? rho * densityUncertaintyPct(aSrc, aPct) / 100 : null,
     pattern: a ? simulatePattern(top, frac, a, 80) : [],
     thermo: thermoOx(frac),
     desc: Object.fromEntries(REPORT_FEATS.map(n => [n, x[FEATNAMES.indexOf(n)]])),

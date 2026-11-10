@@ -1,5 +1,5 @@
 """Tests of the Python prediction engine (src/predict.py) and its command line
-(tools/predict.py). Numerical agreement with the JavaScript engine on the whole database
+(tools/heo_predict.py). Numerical agreement with the JavaScript engine on the whole database
 is the job of tools/parity_check.py (tests/test_app.py runs it); these tests pin the
 behaviour of the Python side on its own."""
 import csv
@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.join(ROOT, "src"))
 import predict  # noqa: E402
 
 P = predict.Predictor()
-CLI = os.path.join(ROOT, "tools", "predict.py")
+CLI = os.path.join(ROOT, "tools", "heo_predict.py")
 
 
 def run_cli(*args, cwd=None):

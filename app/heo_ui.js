@@ -197,11 +197,21 @@ function render(){
       + `Écart absolu moyen sur les spinelles HEO mesurés : ${fmt(aPct, 2)} % (modèle géométrique : ${fmt(LATTICE.mae_pct, 1)} %).`
     : `Modèle géométrique à partir des rayons de Shannon, recalé sur un composé de référence par prototype. `
       + `Écart absolu moyen mesuré sur les valeurs expérimentales disponibles : ${fmt(LATTICE.mae_pct, 1)} %.`;
+  /* density: what the stated uncertainty rests on, from tools/validate_density.py */
+  const seen = (LATTICE.rho || {})[aSrc];
+  $("rhonote").textContent = !r.rho ? "" :
+    "Densité théorique : masse de la maille du prototype, sous-réseau d'oxygène complet, divisée par son volume. "
+    + (seen ? `Sur les ${seen.n} oxydes à haute entropie de maille mesurée traités par ce modèle de maille, `
+        + `l'écart moyen est de ${fmt(seen.mae_pct, 1)} % (maximum ${fmt(seen.max_pct, 1)} %)`
+        + (seen.met ? ". " : " : valeur indicative. ")
+      : "Aucune maille mesurée ne permet de la vérifier pour cette famille. ")
+    + "Avec une maille mesurée, elle est exacte.";
   const A=r.a;
   $("latt").innerHTML = A
     ? `<dt>prototype</dt><dd>${PROTO_FR[r.top]} — ${XRD.prototypes[r.top].sg}</dd>
        <dt>paramètre <i>a</i></dt><dd>${fmt(A,3)} ± ${fmt(r.aTol,2)} Å</dd>
        <dt>volume de maille</dt><dd>${fmt(A**3,1)} Å³</dd>
+       <dt>densité théorique</dt><dd>${fmt(r.rho,2)} ± ${fmt(r.rhoTol,2)} g/cm³</dd>
        <dt>cations / maille</dt><dd>${Object.entries(XRD.prototypes[r.top].nsites).filter(([t])=>t[0]!=="O").map(([t,n])=>t+" : "+n).join(", ")}</dd>`
     : `<dt>—</dt><dd>pas de prototype cubique pour cette famille</dd>`;
 

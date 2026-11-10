@@ -1,0 +1,16 @@
+{
+ "chgnet": {
+  "n": 4,
+  "mae_pct": 1.52,
+  "max_pct": 2.72,
+  "criterion_pct": 2.0,
+  "met": true
+ },
+ "geo": {
+  "n": 2,
+  "mae_pct": 10.68,
+  "max_pct": 14.66,
+  "criterion_pct": 6.0,
+  "met": false
+ }
+}

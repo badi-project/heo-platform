@@ -6,7 +6,7 @@ probabilites figees du probe (modele scikit-learn exporte par tools/train_model.
   ecart maximal 1.110e-16 (tolerance 1e-09), 0 changement(s) de classe predite
 analyseur de formules, 1086 formules (base + cas de test) : 0 ensemble(s) de cations differents, ecart maximal de fraction 0.000e+00 (tolerance 1e-12)
 prediction complete, src/predict.py vs heo_engine.js, 1272 compositions (base + probe) : 0 desaccord(s) de famille, de domaine, de modele de maille ou d'indices hkl
-  ecarts maximaux : probabilite 2.2e-16 (tolerance 1e-12), distance au domaine 8.9e-16, maille 1.8e-15 A,
+  ecarts maximaux : probabilite 2.2e-16 (tolerance 1e-12), distance au domaine 8.9e-16, maille 1.8e-15 A, densite 2.7e-15 g/cm3,
   position des pics 0.0e+00 deg, intensite 7.1e-14, thermodynamique 4.4e-16 (tolerance 1e-09)
 
 genere par tools/parity_check.py

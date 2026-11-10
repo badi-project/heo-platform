@@ -37,7 +37,7 @@ if (process.argv[2] === "predict") {
   runInContext(
     `globalThis.run = frac => { const r = predict(frac);
        return { probs: r.probs, top: r.top, ad: r.adDistance, inDomain: r.inDomain,
-                a: r.a, aPct: r.aPct, aSrc: r.aSrc, pattern: r.pattern, thermo: r.thermo }; };`,
+                a: r.a, aPct: r.aPct, aSrc: r.aSrc, rho: r.rho, pattern: r.pattern, thermo: r.thermo }; };`,
     full);
   process.stdout.write(JSON.stringify(job.fracs.map(f => full.run(f))));
 } else if (process.argv[2] === "formulas") {

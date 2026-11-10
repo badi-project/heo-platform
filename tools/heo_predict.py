@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Predict from the command line, without the browser.
 
-    python tools/predict.py "(FeCoNiCrMn)3O4"                 # one formula, readable report
-    python tools/predict.py "(FeCoNiCrMn)3O4" --peaks         # ... with the reflection list
-    python tools/predict.py "La(CrMnFeCoNi)O3" --json         # machine-readable
-    python tools/predict.py --csv formules.csv --out predictions.csv    # a whole file
+    python tools/heo_predict.py "(FeCoNiCrMn)3O4"                 # one formula, readable report
+    python tools/heo_predict.py "(FeCoNiCrMn)3O4" --peaks         # ... with the reflection list
+    python tools/heo_predict.py "La(CrMnFeCoNi)O3" --json         # machine-readable
+    python tools/heo_predict.py --csv formules.csv --out predictions.csv    # a whole file
 
 The CSV file holds one formula per line, written as in a paper, in a column named
 ``formula_text``, ``formula``, ``formule`` or ``composition`` (or chosen with --column);
@@ -33,7 +33,7 @@ SOURCE_FR = {"chgnet": "potentiel CHGNet calibré sur spinelles binaires",
              "geometric": "modèle géométrique, rayons de Shannon"}
 FORMULA_COLUMNS = ("formula_text", "formula", "formule", "composition")
 OUT_COLUMNS = ["cations", "frac", "proto", "p", "proto_2", "p_2", "in_domain", "ad", "n_base",
-               "a_predit", "a_tol_pct", "a_source", "dH_ox_eV_per_O", "p_rocksalt_thermo",
+               "a_predit", "a_tol_pct", "a_source", "rho_xray_g_cm3", "rho_tol_pct", "dH_ox_eV_per_O", "p_rocksalt_thermo",
                "flags", "warnings", "error"]
 
 
@@ -59,6 +59,8 @@ def report(r, peaks=False):
     if lat:
         out.append(f"  maille : a = {fr(lat['a'])} ± {fr(lat['uncertainty_A'], 2)} Å "
                    f"({lat['space_group']} ; {SOURCE_FR[lat['source']]})")
+        out.append(f"  densité théorique : {fr(lat['density_g_cm3'], 2)} ± "
+                   f"{fr(lat['density_uncertainty_g_cm3'], 2)} g/cm³ (sous-réseau d'oxygène complet)")
     else:
         out.append("  maille : pas de prototype cubique pour cette famille")
     th = r["thermo"]
@@ -94,6 +96,8 @@ def row(r):
         "a_predit": f"{lat['a']:.4f}" if lat else "",
         "a_tol_pct": f"{lat['uncertainty_pct']:.2f}" if lat else "",
         "a_source": lat["source"] if lat else "",
+        "rho_xray_g_cm3": f"{lat['density_g_cm3']:.3f}" if lat else "",
+        "rho_tol_pct": f"{lat['density_uncertainty_pct']:.1f}" if lat else "",
         "dH_ox_eV_per_O": f"{th['dh_ox_eV_per_O']:.3f}" if covered else "",
         "p_rocksalt_thermo": f"{th['p_rocksalt']:.3f}" if covered else "",
         "flags": ";".join(r["flags"]), "warnings": " ; ".join(r["warnings"]), "error": "",

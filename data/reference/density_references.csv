@@ -1,0 +1,7 @@
+compound,proto,frac,a_ang,rho_ref_g_cm3,kind,source
+MgO (periclase),rocksalt,"{""Mg"": 1.0}",4.211,3.581,calculated,https://www.mindat.org/min-3161.html
+MgO (periclase),rocksalt,"{""Mg"": 1.0}",4.211,3.56,measured,https://www.mindat.org/min-3161.html
+Fe3O4 (magnetite),spinel,"{""Fe"": 1.0}",8.397,5.20,calculated,https://www.handbookofmineralogy.org/pdfs/magnetite.pdf
+Fe3O4 (magnetite),spinel,"{""Fe"": 1.0}",8.397,5.175,measured,https://www.handbookofmineralogy.org/pdfs/magnetite.pdf
+SrTiO3,perovskite,"{""Sr"": 0.5, ""Ti"": 0.5}",3.905,5.12,single crystal,https://surfacenet.de/files/kr_Strontium_Titanate.php
+CeO2,fluorite,"{""Ce"": 1.0}",5.4112,7.22,calculated,https://unit.aist.go.jp/mmri/ja/organization/db-nomura/common/struc-coord/CeO2-c.html

@@ -154,6 +154,7 @@ def prediction_parity():
               and (th is None) == (js["thermo"] is None))
         if ok and lat:
             worst("a", lat["a"], js["a"])
+            worst("density", lat["density_g_cm3"], js["rho"])
             ok = src[lat["source"]] == js["aSrc"]
         if ok:
             for u, v in zip(py["pattern"], js["pattern"]):
@@ -212,7 +213,8 @@ def main(check=False):
         f"(base + probe) : {len(pred_mismatch)} desaccord(s) de famille, de domaine, de "
         f"modele de maille ou d'indices hkl",
         f"  ecarts maximaux : probabilite {gap['probs']:.1e} (tolerance {TOL_JS:.0e}), "
-        f"distance au domaine {gap['ad']:.1e}, maille {gap['a']:.1e} A,",
+        f"distance au domaine {gap['ad']:.1e}, maille {gap['a']:.1e} A, "
+        f"densite {gap['density']:.1e} g/cm3,",
         f"  position des pics {gap['two_theta']:.1e} deg, intensite {gap['intensity']:.1e}, "
         f"thermodynamique {gap['dh']:.1e} (tolerance {TOL_PRED:.0e})",
         "",
