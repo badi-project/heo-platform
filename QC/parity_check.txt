@@ -10,5 +10,6 @@ prediction complete, src/predict.py vs heo_engine.js, 1272 compositions (base + 
   position des pics 0.0e+00 deg, intensite 7.1e-14, thermodynamique 4.4e-16 (tolerance 1e-09)
   ligne de tableau (export CSV de la page et de tools/heo_predict.py), 1086 formules : 0 ligne(s) differente(s), caractere pour caractere
   profil continu du diffractogramme, 51 compositions : ecart maximal 3.6e-14 (tolerance 1e-09)
+  diffractogramme mesure (pics, indexation, maille affinee), 7 motifs synthetiques : ecart maximal 1.6e-14 (tolerance 1e-09)
 
 genere par tools/parity_check.py

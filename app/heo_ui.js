@@ -247,6 +247,7 @@ function render(){
       <td>${refCell(r2.d)}</td></tr>`).join("")
     || `<tr><td colspan="5">Aucun système partageant au moins 3 cations.</td></tr>`)
     + `<tr><td colspan="5" class="caveat">${PHASE_CAVEAT}</td></tr>`;
+  renderMeasured();
 }
 
 /* ---------- computed thermodynamics (thermo/, CHGNet) ---------- */
@@ -365,6 +366,157 @@ function exportPeaks(){
     "text/csv;charset=utf-8");
 }
 
+/* ---------- measured pattern ---------- */
+let MEAS = null;      // {name, tt, I} — the file loaded by the user
+let MFIT = null;      // compareMeasured() of that file for the current composition
+let MSEL = null;      // prototype whose indexing is drawn and exported
+const fitOf = proto => MFIT && MFIT.fits.find(f => f.proto === proto);
+function renderMeasured(){
+  const has = !!(MEAS && CURRENT);
+  $("m-body").className = has ? "" : "hide";
+  $("m-clear").disabled = !MEAS;
+  if (!has){ MFIT = null; return; }
+  const radiation = $("m-rad").value;
+  MFIT = compareMeasured(MEAS.tt, MEAS.I, CURRENT.frac, {radiation, zero: $("m-zero").checked});
+  const fits = MFIT.fits.filter(f => f.a), best = fits[0], second = fits[1];
+  if (!fitOf(MSEL) || !fitOf(MSEL).a) MSEL = best ? best.proto : null;
+  const verdict = $("m-verdict");
+  if (!best || best.score < 0.5){
+    verdict.innerHTML = `<b class="fxnote-warn">Aucun des prototypes cubiques n'explique cette mesure.</b> `
+      + `${MFIT.found.peaks.length} pic${MFIT.found.peaks.length > 1 ? "s" : ""} détecté${MFIT.found.peaks.length > 1 ? "s" : ""}. `
+      + "Vérifiez le rayonnement choisi ; la phase peut aussi ne pas être cubique.";
+  } else {
+    const tie = second && second.score >= 0.9 * best.score;
+    const same = best.proto === CURRENT.top;
+    verdict.innerHTML = `La mesure s'indexe le mieux en <b style="color:${PROTO_COL[best.proto]}">${PROTO_FR[best.proto]}</b>`
+      + (tie ? `, presque à égalité avec ${PROTO_FR[second.proto]} : la position des pics ne les départage pas` : "")
+      + (same ? " — la famille prédite." : ` — <b class="fxnote-warn">le modèle prédisait ${PROTO_FR[CURRENT.top]}</b>.`);
+  }
+  $("m-fits").innerHTML = `<tr><th>prototype</th><th class="n">a affiné (Å)</th><th class="n">a de départ (Å)</th><th class="n">écart</th>
+      <th class="n">réflexions fortes retrouvées</th><th class="n">signal expliqué</th><th class="n">pics non indexés</th><th class="n">densité à cette maille (g/cm³)</th></tr>`
+    + MFIT.fits.map(f => !f.a
+      ? `<tr><td style="color:${PROTO_COL[f.proto]}">${PROTO_FR[f.proto]}</td><td colspan="7" style="color:var(--ink2)">moins de deux réflexions retrouvées</td></tr>`
+      : `<tr data-proto="${f.proto}" class="${f.proto === MSEL ? "on" : ""}"><td style="color:${PROTO_COL[f.proto]}">${PROTO_FR[f.proto]}</td>
+         <td class="n">${fmt(f.a, 4)} ± ${fmt(f.aTol, 4)}</td><td class="n">${fmt(f.a0, 3)}</td>
+         <td class="n">${(100 * (f.a - f.a0) / f.a0 >= 0 ? "+" : "") + fmt(100 * (f.a - f.a0) / f.a0, 2)} %</td>
+         <td class="n">${f.strongFound} / ${f.nStrong}</td><td class="n">${(100 * f.explained).toFixed(0)} %</td>
+         <td class="n">${f.unindexed.length}</td><td class="n">${fmt(f.rho, 3)}</td></tr>`).join("");
+  $("m-fits").querySelectorAll("tr[data-proto]").forEach(tr => tr.onclick = () => { MSEL = tr.dataset.proto; renderMeasured(); });
+  const f = fitOf(MSEL);
+  $("m-csv").disabled = $("m-lab").disabled = !f;
+  if (!f){ $("m-detail").textContent = ""; $("m-legend").textContent = ""; drawMeasured(null, radiation); return; }
+  /* the prediction against the measurement, for the prototype the model predicted */
+  const mine = fitOf(CURRENT.top);
+  let vs = "";
+  if (mine && mine.a && CURRENT.a){
+    const d = 100 * (CURRENT.a - mine.a) / mine.a, inside = Math.abs(CURRENT.a - mine.a) <= CURRENT.aTol + mine.aTol;
+    vs = ` Maille prédite ${fmt(CURRENT.a, 3)} ± ${fmt(CURRENT.aTol, 2)} Å, affinée ${fmt(mine.a, 4)} Å en ${PROTO_FR[CURRENT.top]} : `
+      + `écart de la prédiction ${d >= 0 ? "+" : ""}${fmt(d, 2)} %, ${inside ? "dans" : "hors de"} l'incertitude annoncée.`;
+  }
+  const un = f.unindexed.slice().sort((x, y) => y.h - x.h);
+  $("m-detail").innerHTML = `<b>${esc(MEAS.name)}</b> en ${PROTO_FR[f.proto]} : ${f.n} réflexion${f.n > 1 ? "s" : ""} indexée${f.n > 1 ? "s" : ""} sur ${f.nPred} attendues, `
+    + `écart quadratique moyen ${fmt(f.rms, 3)}° en 2θ`
+    + (f.fitZero ? `, décalage de zéro ${f.zero >= 0 ? "+" : ""}${fmt(f.zero, 3)}°` : "") + ". "
+    + (un.length ? `<span class="fxnote-warn">${un.length} pic${un.length > 1 ? "s" : ""} que ce prototype n'explique pas : `
+        + un.slice(0, 8).map(u => `${fmt(u.tt, 2)}° (${fmt(u.h, 0)} %)`).join(", ") + (un.length > 8 ? "…" : "")
+        + " — phase secondaire possible, ou distorsion de la maille cubique.</span> "
+      : "Tous les pics détectés sont expliqués par ce prototype. ")
+    + vs + " "
+    + (MFIT.found.stripped ? "La raie Kα₂ a été détectée et retirée avant la recherche des pics. " : "")
+    + ({clean: "", noisy: "Rapport signal sur bruit modéré : l'incertitude affichée est celle établie sur les motifs bruités de validation (0,25 %). ",
+        below: `<span class="fxnote-warn">Mesure plus bruitée que tous les motifs de validation : résultat indicatif.</span> `})[MFIT.found.quality]
+    + "L'incertitude de <i>a</i> n'est jamais inférieure à l'exactitude vérifiée sur des motifs synthétiques ; elle ne l'a pas encore été sur une mesure réelle.";
+  $("m-legend").textContent = "Trait gris : mesure après retrait du fond" + (MFIT.found.stripped ? " et de Kα₂" : "")
+    + `. Bâtons : réflexions du prototype ${PROTO_FR[f.proto]} à la maille affinée. Triangles rouges : pics non indexés. Cliquez une ligne du tableau pour changer de prototype.`;
+  drawMeasured(f, radiation);
+}
+function drawMeasured(f, radiation){
+  const cv = $("mxrd"), ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height, L = 46, R = 12, T = 16, B = 34;
+  ctx.clearRect(0, 0, W, H); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
+  const tt = MEAS.tt, net = MFIT.found.net, mx = MFIT.found.max || 1;
+  const x0 = Math.floor(tt[0] / 5) * 5, x1 = Math.ceil(tt[tt.length - 1] / 5) * 5;
+  const px = t => L + (t - x0) / (x1 - x0) * (W - L - R), py = i => H - B - i / 100 * (H - T - B);
+  ctx.strokeStyle = "#d9dde1"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, H - B); ctx.lineTo(W - R, H - B); ctx.stroke();
+  ctx.fillStyle = "#51585f"; ctx.font = "11px -apple-system,Segoe UI,Arial";
+  const tick = (x1 - x0) > 90 ? 20 : 10;
+  for (let t = Math.ceil(x0 / tick) * tick; t <= x1; t += tick){
+    ctx.strokeStyle = "#eef0f2"; ctx.beginPath(); ctx.moveTo(px(t), T); ctx.lineTo(px(t), H - B); ctx.stroke();
+    ctx.textAlign = "center"; ctx.fillText(t + "°", px(t), H - B + 15);
+  }
+  ctx.textAlign = "right";
+  for (const v of [0, 50, 100]) ctx.fillText(v, L - 6, py(v) + 4);
+  ctx.textAlign = "center"; ctx.fillText("2θ (degrés)", (L + W - R) / 2, H - 6);
+  if (f){
+    const col = PROTO_COL[f.proto], lam = RADIATION[radiation][0];
+    const sticks = simulatePattern(f.proto, CURRENT.frac, f.a, Math.min(x1, 179), lam);
+    ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.fillStyle = "#1d2228";
+    ctx.font = "10px -apple-system,Segoe UI,Arial"; ctx.textAlign = "center";
+    const labelled = new Set([...sticks].sort((a, b) => b.I - a.I).slice(0, 6).map(p => p.hkl));
+    for (const p of sticks){
+      const x = px(p.tt + f.zero);
+      if (x < L || x > W - R) continue;
+      ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.moveTo(x, py(0)); ctx.lineTo(x, py(p.I)); ctx.stroke(); ctx.globalAlpha = 1;
+      if (labelled.has(p.hkl)) ctx.fillText("(" + p.hkl + ")", x, py(Math.min(p.I, 96)) - 4);
+    }
+  }
+  ctx.strokeStyle = "#3a4149"; ctx.lineWidth = 1; ctx.beginPath();
+  for (let i = 0; i < tt.length; i++){
+    const y = py(Math.max(-4, Math.min(104, 100 * net[i] / mx)));
+    if (i) ctx.lineTo(px(tt[i]), y); else ctx.moveTo(px(tt[i]), y);
+  }
+  ctx.stroke();
+  if (f){
+    ctx.fillStyle = "#c0392b";
+    for (const u of f.unindexed){
+      const x = px(u.tt), y = py(Math.min(u.h, 100)) - 6;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 5, y - 9); ctx.lineTo(x + 5, y - 9); ctx.closePath(); ctx.fill();
+    }
+  }
+}
+function loadMeasured(name, text){
+  const d = parsePattern(text), note = $("m-note");
+  const span = d.tt.length ? d.tt[d.tt.length - 1] - d.tt[0] : 0;
+  if (d.tt.length < 100 || span < 10){
+    MEAS = null; renderMeasured();
+    note.className = "note fxnote-warn";
+    note.textContent = `« ${name} » n'a pas été lu comme un diffractogramme : ${d.tt.length} point${d.tt.length > 1 ? "s" : ""} `
+      + "à deux colonnes numériques (2θ, intensité) trouvé" + (d.tt.length > 1 ? "s" : "")
+      + ". Il en faut au moins 100, sur au moins 10° ; les formats binaires (.raw, .brml) doivent d'abord être exportés en texte.";
+    return;
+  }
+  note.className = "note";
+  note.textContent = `${d.tt.length} points de ${fmt(d.tt[0], 2)}° à ${fmt(d.tt[d.tt.length - 1], 2)}°. `
+    + "Positions des pics seulement, prototypes cubiques, une phase à la fois : ce n'est pas un affinement de Rietveld. Le fichier reste sur cet ordinateur.";
+  MEAS = {name, tt: d.tt, I: d.I}; MSEL = null; renderMeasured();
+}
+function exportIndexing(){
+  const f = fitOf(MSEL);
+  const rows = f.matches.map(m => ({hkl: m.hkl, two_theta_obs_deg: m.ttObs.toFixed(4), two_theta_calc_deg: m.ttCalc.toFixed(4),
+      delta_deg: m.delta.toFixed(4), d_obs_A: (RADIATION[$("m-rad").value][0] / (2 * Math.sin((m.ttObs - f.zero) * Math.PI / 360))).toFixed(4),
+      intensity_obs_rel: m.h.toFixed(1), status: "indexed"}))
+    .concat(f.unindexed.map(u => ({hkl: "", two_theta_obs_deg: u.tt.toFixed(4), two_theta_calc_deg: "", delta_deg: "",
+      d_obs_A: (RADIATION[$("m-rad").value][0] / (2 * Math.sin((u.tt - f.zero) * Math.PI / 360))).toFixed(4),
+      intensity_obs_rel: u.h.toFixed(1), status: "unindexed"})))
+    .sort((x, y) => parseFloat(x.two_theta_obs_deg) - parseFloat(y.two_theta_obs_deg));
+  download(fileStem() + "_indexation_" + f.proto + ".csv",
+    `# ${currentName()} — ${MEAS.name} — ${f.proto}, a = ${f.a.toFixed(4)} +/- ${f.aTol.toFixed(4)} A, zero ${f.zero.toFixed(3)} deg\n`
+    + toCSV(["hkl", "two_theta_obs_deg", "two_theta_calc_deg", "delta_deg", "d_obs_A", "intensity_obs_rel", "status"], rows).replace(/^﻿/, ""));
+}
+function exportLabLine(){
+  /* one line of data/lab_results.csv (tools/clean_database.py): what the measurement
+     establishes is filled in, what only the experimenter knows is left empty */
+  const f = fitOf(MSEL), today = new Date().toISOString().slice(0, 10);
+  const row = {id: MEAS.name.replace(/\.[^.]*$/, "").replace(/[^A-Za-z0-9_-]+/g, "-"), date: today,
+    formula_text: currentName(), proto: f.proto, phase: f.unindexed.length ? "multi" : "single",
+    T_C: "", atm: "", a_ang: f.a.toFixed(4), route: "",
+    notes: `indexation automatique de ${MEAS.name} : ${f.n}/${f.nPred} reflexions, ${f.unindexed.length} pic(s) non indexe(s)`
+      + (f.unindexed.length ? " a " + f.unindexed.map(u => u.tt.toFixed(2)).join(" ") + " deg" : "") + " ; a verifier"};
+  download(row.id + "_lab_results.csv", toCSV(["id", "date", "formula_text", "proto", "phase", "T_C", "atm", "a_ang", "route", "notes"], [row]).replace(/^﻿/, ""),
+    "text/csv;charset=utf-8");
+}
+
 /* ---------- batch: a list of formulas ---------- */
 let BATCH = [];
 /* minimal CSV reader: quoted fields, doubled quotes, comma or semicolon or tab */
@@ -454,5 +606,16 @@ $("b-file").onchange=e=>{
   rd.onload = () => { $("b-in").value = formulasOf(String(rd.result)).join("\n"); runBatch(); };
   rd.readAsText(f); e.target.value = "";
 };
+$("m-file").onchange=e=>{
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => loadMeasured(f.name, String(rd.result));
+  rd.readAsText(f); e.target.value = "";
+};
+$("m-rad").onchange=renderMeasured;
+$("m-zero").onchange=renderMeasured;
+$("m-clear").onclick=()=>{ MEAS = null; renderMeasured(); };
+$("m-csv").onclick=exportIndexing;
+$("m-lab").onclick=exportLabLine;
 renderCands();
 loadEx("(Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O");

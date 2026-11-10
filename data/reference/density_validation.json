@@ -1,4 +1,10 @@
 {
+ "reference": {
+  "n": 6,
+  "max_pct": 0.71,
+  "criterion_pct": 1.0,
+  "met": true
+ },
  "chgnet": {
   "n": 4,
   "mae_pct": 1.52,

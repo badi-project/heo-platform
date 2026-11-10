@@ -204,6 +204,16 @@ def build(check=False):
         "screen_novel_in": thousands(scr["novel_in_domain"]),
     }
     fill.update(thermo_fill(payload["THERMO"]))
+    # density and lattice-refinement validations (tools/validate_density.py,
+    # tools/validate_xrd_fit.py): the page quotes their figures, never hand-typed ones
+    rho = payload["LATTICE"]["rho"]
+    fit = read_json("data", "reference", "xrd_fit_validation.json")["set2_untouched"]
+    fill.update({
+        "rho_ref_max": fr_num(rho["reference"]["max_pct"], 2),
+        "rho_chgnet_mae": fr_num(rho["chgnet"]["mae_pct"], 1), "rho_chgnet_n": rho["chgnet"]["n"],
+        "rho_geo_mae": fr_num(rho["geo"]["mae_pct"], 1), "rho_geo_n": rho["geo"]["n"],
+        "fit_clean_max": fr_num(fit["clean_max_pct"], 3), "fit_noisy_max": fr_num(fit["noisy_max_pct"], 2),
+    })
     method = open(os.path.join(ROOT, "app", "method_template.html"), encoding="utf-8").read()
     for k, v in fill.items():
         method = method.replace("{{" + k + "}}", str(v))

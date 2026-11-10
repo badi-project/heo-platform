@@ -8,7 +8,7 @@
    src/predict.py, and a list of compositions — and prints what predict() returns for
    each: the complete prediction, to be compared with src/predict.py — plus the flat
    record of each formula in "texts" and the continuous profile of each composition in
-   "profiles".
+   "profiles", and the indexing of each measured pattern in "measured".
    Called by tools/parity_check.py; not used by the page itself. */
 import { readFileSync } from "node:fs";
 import { createContext, runInContext } from "node:vm";
@@ -43,12 +43,18 @@ if (process.argv[2] === "predict") {
     full);
   runInContext(
     `globalThis.rows = texts => texts.map(predictRow);
-     globalThis.prof = frac => { const r = predict(frac); return patternProfile(r.pattern).I; };`,
+     globalThis.prof = frac => { const r = predict(frac); return patternProfile(r.pattern).I; };
+     globalThis.fitm = m => { const c = compareMeasured(m.tt, m.I, m.frac, { radiation: m.radiation, zero: m.zero });
+       return { peaks: c.found.peaks, fits: c.fits.map(f => ({ proto: f.proto, a: f.a, a0: f.a0,
+         sigma: f.sigmaA ?? null, zero: f.zero ?? null, rms: f.rms ?? null, n: f.n, nPred: f.nPred,
+         explained: f.explained ?? null, score: f.score ?? null, rho: f.rho,
+         unindexed: (f.unindexed || []).map(u => u.tt), hkl: (f.matches || []).map(x => x.hkl) })) }; };`,
     full);
   process.stdout.write(JSON.stringify({
     full: job.fracs.map(f => full.run(f)),
     rows: full.rows(job.texts || []),
     profiles: (job.profiles || []).map(f => full.prof(f)),
+    measured: (job.measured || []).map(m => full.fitm(m)),
   }));
 } else if (process.argv[2] === "formulas") {
   /* formula-parser parity: a JSON list of formula strings on stdin */

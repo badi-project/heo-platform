@@ -5,6 +5,7 @@
     python tools/heo_predict.py "(FeCoNiCrMn)3O4" --peaks         # ... with the reflection list
     python tools/heo_predict.py "La(CrMnFeCoNi)O3" --json         # machine-readable
     python tools/heo_predict.py "(FeCoNiCrMn)3O4" --xy motif.xy   # simulated profile, 2 columns
+    python tools/heo_predict.py "(FeCoNiCrMn)3O4" --measured scan.xy    # index a measured pattern
     python tools/heo_predict.py --csv formules.csv --out predictions.csv    # a whole file
 
 The CSV file holds one formula per line, written as in a paper, in a column named
@@ -24,6 +25,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
+import xrdfit  # noqa: E402
 from predict import ROW_COLUMNS, PredictionError, Predictor  # noqa: E402
 
 PROTO_FR = {"spinel": "spinelle", "perovskite": "pérovskite", "rocksalt": "rocksalt (NaCl)",
@@ -95,6 +97,49 @@ def write_xy(predictor, r, path):
     print(f"diffractogramme simulé -> {path}", file=sys.stderr)
 
 
+def measured(predictor, r, path, radiation, zero, quiet=False):
+    """Index a measured pattern on every cubic prototype and print what the page prints."""
+    tt, counts = xrdfit.read_pattern(path)
+    if len(tt) < 100 or tt[-1] - tt[0] < 10:
+        raise SystemExit(f"{path} : {len(tt)} point(s) à deux colonnes (2θ, intensité) ; "
+                         "il en faut au moins 100 sur au moins 10°")
+    found, fits = xrdfit.compare_measured(predictor, tt, counts, r["fractions"], radiation, zero)
+    summary = {"file": os.path.basename(path), "points": len(tt), "radiation": radiation,
+               "peaks": len(found["peaks"]), "kalpha2_removed": found["stripped"],
+               "signal_to_noise": found["snr"], "quality": found["quality"],
+               "fits": [{k: f.get(k) for k in ("proto", "a", "a_uncertainty", "sigma_a", "a0", "zero",
+                                               "rms", "n", "n_pred", "strong_found", "n_strong",
+                                               "explained", "score", "density_g_cm3")}
+                        | {"unindexed": [round(u["tt"], 3) for u in f.get("unindexed") or []]}
+                        for f in fits]}
+    if quiet:
+        return summary
+    ok = [f for f in fits if f["a"]]
+    print(f"  mesure {summary['file']} : {len(tt)} points de {fr(tt[0], 2)}° à {fr(tt[-1], 2)}°, "
+          f"{len(found['peaks'])} pics, rayonnement {radiation}"
+          + (", raie Kα2 retirée" if found["stripped"] else ""))
+    if not ok or ok[0]["score"] < 0.5:
+        print("  ! aucun des prototypes cubiques n'explique cette mesure "
+              "(rayonnement ? phase non cubique ?)")
+    for f in ok:
+        un = f["unindexed"]
+        print(f"    {PROTO_FR[f['proto']]:<16s} a = {fr(f['a'], 4)} ± {fr(f['a_uncertainty'], 4)} Å "
+              f"(départ {fr(f['a0'])}) ; réflexions fortes {f['strong_found']}/{f['n_strong']} ; "
+              f"signal expliqué {fr(100 * f['explained'], 0)} % ; densité {fr(f['density_g_cm3'])} g/cm³ ; "
+              + (f"{len(un)} pic(s) non indexé(s) : " + ", ".join(fr(u["tt"], 2) + "°" for u in un[:8])
+                 if un else "tous les pics expliqués"))
+    if ok and ok[0]["score"] >= 0.5:
+        best = ok[0]
+        tie = len(ok) > 1 and ok[1]["score"] >= 0.9 * best["score"]
+        print(f"  la mesure s'indexe le mieux en {PROTO_FR[best['proto']]}"
+              + (f", presque à égalité avec {PROTO_FR[ok[1]['proto']]}" if tie else "")
+              + (" — la famille prédite" if best["proto"] == r["family"]
+                 else f" — le modèle prédisait {PROTO_FR[r['family']]}"))
+    if found["quality"] == "below":
+        print("  ! mesure plus bruitée que tous les motifs de validation : résultat indicatif")
+    return summary
+
+
 def predictor_profile():
     from predict import PROFILE
     return PROFILE
@@ -151,6 +196,13 @@ def main(argv=None):
     ap.add_argument("--out", metavar="FICHIER", help="fichier CSV de sortie (défaut : écran)")
     ap.add_argument("--json", action="store_true", help="sortie JSON complète")
     ap.add_argument("--peaks", action="store_true", help="liste les réflexions simulées")
+    ap.add_argument("--measured", metavar="FICHIER",
+                    help="diffractogramme mesuré (2θ, intensité) à indexer sur les prototypes "
+                         "cubiques ; affine la maille")
+    ap.add_argument("--radiation", default="Cu", choices=sorted(xrdfit.RADIATION),
+                    help="rayonnement de la mesure (défaut : Cu)")
+    ap.add_argument("--no-zero", action="store_true",
+                    help="ne pas ajuster le décalage de zéro de la mesure")
     ap.add_argument("--xy", metavar="FICHIER",
                     help="écrit le diffractogramme simulé (2θ, intensité) d'une formule")
     args = ap.parse_args(argv)
@@ -159,22 +211,26 @@ def main(argv=None):
     predictor = Predictor()
     if args.csv:
         return batch(predictor, args.csv, args.out, args.column)
-    if args.xy and len(args.formulas) != 1:
-        ap.error("--xy s'emploie avec une seule formule")
+    if (args.xy or args.measured) and len(args.formulas) != 1:
+        ap.error("--xy et --measured s'emploient avec une seule formule")
     status, results = 0, []
     for text in args.formulas:
         try:
             r = predictor.predict(text)
-            results.append(r)
-            if args.xy:
-                write_xy(predictor, r, args.xy)
-            if not args.json:
-                print(report(r, peaks=args.peaks))
         except PredictionError as exc:
             status = 1
             results.append({"formula": text, "error": str(exc)})
             if not args.json:
                 print(f"{text}\n  ! pas de prédiction : {exc}")
+            continue
+        results.append(r)
+        if not args.json:
+            print(report(r, peaks=args.peaks))
+        if args.xy:
+            write_xy(predictor, r, args.xy)
+        if args.measured:
+            r["measured"] = measured(predictor, r, args.measured, args.radiation,
+                                     not args.no_zero, quiet=args.json)
     if args.json:
         print(json.dumps(results[0] if len(results) == 1 else results, ensure_ascii=False,
                          indent=1))

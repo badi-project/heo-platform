@@ -36,6 +36,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
+import features  # noqa: E402
 import predict  # noqa: E402
 
 TOL_CONTENT_PCT = 1.0
@@ -109,11 +110,13 @@ def build():
         lines.append(f"   {sysk:<20s} {proto:<10s} {a_exp:8.4f}  {a_pred:8.4f}  {src:<10s} "
                      f"{rho_exp:10.3f}  {rho_pred:13.3f}   {err:+5.2f} %")
     lines.append("")
-    summary = {}
+    summary = {"reference": {"n": len(read_csv("data", "reference", "density_references.csv")),
+                             "max_pct": round(worst_a, 2), "criterion_pct": TOL_CONTENT_PCT,
+                             "met": ok_a}}
     for src, label in (("chgnet", "spinelles, modele CHGNet"), ("geometric", "modele geometrique")):
         if not errs[src]:
             continue
-        mae = sum(errs[src]) / len(errs[src])
+        mae = features.nsum(errs[src]) / len(errs[src])
         ok = mae <= TOL_MAE_PCT[src]
         # keys are the model names of the page (aSrc in heo_engine.js)
         summary["geo" if src == "geometric" else src] = {

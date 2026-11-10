@@ -199,11 +199,11 @@ function siteOccupancies(proto, frac) {
   return occ;
 }
 
-function simulatePattern(proto, frac, a, ttMax) {
+function simulatePattern(proto, frac, a, ttMax, lambda) {
   const P = XRD.prototypes[proto];
   if (!P) return [];
   const occ = siteOccupancies(proto, frac);
-  const lam = XRD.wavelength, sMax = Math.sin((ttMax / 2) * Math.PI / 180);
+  const lam = lambda || XRD.wavelength, sMax = Math.sin((ttMax / 2) * Math.PI / 180);
   const acc = {};
   for (const e of P.refl) {
     const st = lam * Math.sqrt(e.q2) / (2 * a);
@@ -220,10 +220,10 @@ function simulatePattern(proto, frac, a, ttMax) {
     const I = (Fr * Fr + Fi * Fi) * lp * e.n;
     const tt = (2 * th * 180 / Math.PI).toFixed(3);
     acc[tt] = (acc[tt] || 0) + I;
-    if (!acc["hkl_" + tt]) acc["hkl_" + tt] = e.hkl.join("");
+    if (!acc["hkl_" + tt]) { acc["hkl_" + tt] = e.hkl.join(""); acc["q2_" + tt] = e.q2; }
   }
-  const peaks = Object.keys(acc).filter(k => !k.startsWith("hkl_"))
-    .map(k => ({ tt: parseFloat(k), I: acc[k], hkl: acc["hkl_" + k] }));
+  const peaks = Object.keys(acc).filter(k => !k.includes("_"))
+    .map(k => ({ tt: parseFloat(k), I: acc[k], hkl: acc["hkl_" + k], q2: acc["q2_" + k] }));
   const mx = Math.max(...peaks.map(p => p.I), 1e-30);
   return peaks.map(p => ({ ...p, I: 100 * p.I / mx })).filter(p => p.I > 0.4)
     .sort((x, y) => x.tt - y.tt);
@@ -789,4 +789,306 @@ function patternProfile(peaks, opt) {
     if (y > mx) mx = y;
   }
   return { tt, I: I.map(y => (mx > 0 ? 100 * y / mx : 0)) };
+}
+
+/* ---------- measured powder pattern: peaks, indexing, lattice refinement ---------- */
+/* Mirror of src/xrdfit.py (tools/parity_check.py compares the two on synthetic patterns).
+   The prediction gives a prototype and a starting lattice parameter; a measured pattern
+   gives peak positions. Indexing the peaks on the cubic prototype and refining a by least
+   squares answers the experimental questions: is the predicted family the one observed,
+   what is the real lattice parameter, and which peaks does the family not explain. */
+const RADIATION = {            /* K-alpha1, K-alpha2, K-beta wavelengths in angstrom */
+  Cu: [1.54056, 1.54439, 1.39222], Co: [1.78897, 1.79285, 1.62079],
+  Mo: [0.70930, 0.71359, 0.63229], Cr: [2.28970, 2.29361, 2.08487],
+  Fe: [1.93604, 1.93998, 1.75661],
+};
+const XFIT = { smooth: 0.04, background: 1.2, isolate: 0.08, nSigma: 6, minRel: 0.02,
+  window: 0.06, gridStep: 0.0005, tolSearch: 0.25, tolAssign: 0.20, tolFinal: 0.10,
+  minPred: 2, strong: 10, tolLine: 0.12, edge: 0.3, asymmetry: 0.12,
+  valley: 0.5, prominence: 0.3,
+  /* accuracy of the refined lattice parameter established on synthetic patterns
+     (QC/xrd_fit_validation.txt), by signal-to-noise ratio of the strongest peak: the
+     quoted uncertainty is never below it, whatever the statistical error of the fit */
+  snrClean: 500, accClean: 5e-4, accNoisy: 2.5e-3, snrMin: 70 };
+const DEG = 180 / Math.PI;
+const median = arr => { const v = Array.from(arr).sort((a, b) => a - b), m = v.length >> 1;
+  return v.length ? (v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2) : 0; };
+
+/* value of a regularly sampled curve at 2-theta x, by linear interpolation */
+function sampleAt(tt, y, x) {
+  const n = tt.length, pos = (x - tt[0]) / ((tt[n - 1] - tt[0]) / (n - 1));
+  if (pos <= 0) return y[0];
+  if (pos >= n - 1) return y[n - 1];
+  const i = Math.floor(pos);
+  return y[i] + (pos - i) * (y[i + 1] - y[i]);
+}
+/* 2-theta where wavelength lam2 puts the line that lam1 puts at x */
+const shiftLine = (x, lam1, lam2) => { const st = Math.sin(x / (2 * DEG)) * lam2 / lam1;
+  return st < 1 ? 2 * Math.asin(st) * DEG : NaN; };
+
+/* Is the K-alpha2 line in the data? A K-alpha1 peak alone is symmetric; with K-alpha2 it
+   carries half its height again on the high-angle side. Median, over the strongest peaks
+   above 40 degrees, of (signal at the K-alpha2 position - signal at the mirror position)
+   over the peak height: about 0 without K-alpha2, 0.2 to 0.5 with it. */
+function kalpha2Asymmetry(tt, net, peaks, rad) {
+  const hmax = Math.max(...peaks.map(p => p.h), 0);
+  const top = peaks.filter(p => p.tt >= 40 && p.h >= 0.1 * hmax)
+    .sort((a, b) => b.h - a.h || a.tt - b.tt).slice(0, 8);
+  const r = [];
+  for (const p of top) {
+    const d = shiftLine(p.tt, rad[0], rad[1]) - p.tt;
+    if (Number.isNaN(d) || p.tt + d > tt[tt.length - 1]) continue;
+    r.push((sampleAt(tt, net, p.tt + d) - sampleAt(tt, net, p.tt - d)) / p.h);
+  }
+  return r.length >= 2 ? median(r) : 0;
+}
+
+/* Rachinger correction: remove from each point half of the K-alpha1 signal found where
+   K-alpha1 puts the line that K-alpha2 puts here. What remains is the K-alpha1 pattern,
+   whose peak tops are no longer pulled towards high angles. */
+function stripKalpha2(tt, y, rad) {
+  const n = tt.length, step = (tt[n - 1] - tt[0]) / (n - 1), out = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const pos = (shiftLine(tt[i], rad[1], rad[0]) - tt[0]) / step;
+    let c = 0;
+    if (pos > 0 && i > 0) {
+      const k = Math.min(Math.floor(pos), i - 1), f = Math.min(pos - k, 1);
+      c = k + 1 <= i - 1 ? out[k] + f * (out[k + 1] - out[k]) : out[k];
+    }
+    out[i] = y[i] - 0.5 * c;
+  }
+  return out;
+}
+
+/* local maxima of the net signal above the noise; position from the parabola through
+   the three points at the top. level is the smoothed raw signal, background included. */
+function pickPeaks(tt, net, noise, level) {
+  const n = tt.length, step = (tt[n - 1] - tt[0]) / (n - 1);
+  let mx = 0;
+  for (let i = 0; i < n; i++) if (net[i] > mx) mx = net[i];
+  /* the net signal is mostly background: its median and spread measure what the noise
+     leaves after smoothing and background removal, better than the raw scatter does */
+  const base = median(net), dev = new Array(n);
+  for (let i = 0; i < n; i++) dev[i] = Math.abs(net[i] - base);
+  const spread = 1.4826 * median(dev);
+  const wp = Math.max(1, Math.round(XFIT.isolate / step));
+  const wv = Math.max(1, Math.round(XFIT.valley / step));
+  const floor = Math.max(base + XFIT.nSigma * Math.max(spread, noise), XFIT.minRel * mx);
+  const levelMed = Math.max(median(level), 1e-300);
+  const peaks = [];
+  for (let i = 1; i < n - 1; i++) {
+    if (net[i] < floor) continue;
+    let top = true;
+    for (let j = Math.max(0, i - wp); j <= Math.min(n - 1, i + wp) && top; j++)
+      if (net[j] > net[i] || (net[j] === net[i] && j < i)) top = false;
+    if (!top) continue;
+    /* prominence: a bump of the noise on the tail of a strong peak is a local maximum
+       too, but it does not rise above the valley that separates it from that peak */
+    let valley = -Infinity;
+    for (const dir of [-1, 1]) {
+      let low = net[i];
+      for (let j = i + dir; j >= 0 && j < n && Math.abs(j - i) <= wv && net[j] <= net[i]; j += dir)
+        if (net[j] < low) low = net[j];
+      if (low > valley) valley = low;
+    }
+    /* counting noise grows as the square root of the signal: on the flank of a strong
+       peak it is larger than on the background where "noise" was measured */
+    const local = noise * Math.sqrt(Math.max(level[i], 0) / levelMed);
+    if (net[i] - valley < Math.max(XFIT.prominence * net[i], XFIT.nSigma * local)) continue;
+    const y0 = net[i - 1], y1 = net[i], y2 = net[i + 1], den = y0 - 2 * y1 + y2;
+    const dx = den < 0 ? 0.5 * (y0 - y2) / den : 0;
+    peaks.push({ tt: tt[i] + dx * step, h: y1 - 0.25 * (y0 - y2) * dx });
+  }
+  return { peaks, max: mx };
+}
+
+/* peaks of a measured pattern: moving average, SNIP background, K-alpha2 removed when
+   the data carry it, then the peak search. rad = [K-alpha1, K-alpha2, K-beta]. */
+function findPeaks(tt, I, rad) {
+  rad = rad || RADIATION.Cu;
+  const n = tt.length, step = (tt[n - 1] - tt[0]) / (n - 1);
+  const ws = Math.max(1, Math.round(XFIT.smooth / step));
+  const sm = new Array(n);
+  for (let i = 0; i < n; i++) {
+    let acc = 0, k = 0;
+    for (let j = Math.max(0, i - ws); j <= Math.min(n - 1, i + ws); j++) { acc += I[j]; k++; }
+    sm[i] = acc / k;
+  }
+  const resid = new Array(n);
+  for (let i = 0; i < n; i++) resid[i] = Math.abs(I[i] - sm[i]);
+  const noise = 1.4826 * median(resid) / Math.sqrt(2 * ws + 1);
+  let bg = sm.slice();
+  for (let p = Math.max(1, Math.round(XFIT.background / step)); p >= 1; p--) {
+    const nb = bg.slice();
+    for (let i = p; i < n - p; i++) nb[i] = Math.min(bg[i], (bg[i - p] + bg[i + p]) / 2);
+    bg = nb;
+  }
+  let net = new Array(n);
+  for (let i = 0; i < n; i++) net[i] = sm[i] - bg[i];
+  let found = pickPeaks(tt, net, noise, sm);
+  const asym = kalpha2Asymmetry(tt, net, found.peaks, rad), stripped = asym > XFIT.asymmetry;
+  if (stripped) { net = stripKalpha2(tt, net, rad); found = pickPeaks(tt, net, noise, sm); }
+  return { peaks: found.peaks, net, noise, max: found.max, asym, stripped };
+}
+
+const ttOf = (a, q2, lam) => { const st = lam * Math.sqrt(q2) / (2 * a);
+  return st < 1 ? 2 * Math.asin(st) * DEG : NaN; };
+
+/* nearest measured peak to each reflection within tol, each measured peak used once */
+function assignPeaks(peaks, refl, a, lam, zero, tol) {
+  const pairs = [];
+  refl.forEach((r, ri) => {
+    const tc = ttOf(a, r.q2, lam) + zero;
+    if (Number.isNaN(tc)) return;
+    let best = -1, bd = tol;
+    for (let j = 0; j < peaks.length; j++) {
+      const d = Math.abs(peaks[j].tt - tc);
+      if (d <= bd) { bd = d; best = j; }
+    }
+    if (best >= 0) pairs.push({ ri, j: best, d: bd });
+  });
+  pairs.sort((x, y) => x.d - y.d || x.ri - y.ri);
+  const usedPeak = new Set(), out = [];
+  for (const p of pairs) if (!usedPeak.has(p.j)) { usedPeak.add(p.j); out.push(p); }
+  return out.sort((x, y) => x.ri - y.ri);
+}
+
+/* least squares on 2-theta: lattice parameter and, if asked, a zero shift */
+function fitLattice(peaks, refl, pairs, a, lam, withZero) {
+  let zero = 0, cov = 0;
+  const fitZero = withZero && pairs.length >= 4;
+  for (let it = 0; it < 6; it++) {
+    let saa = 0, saz = 0, szz = 0, ra = 0, rz = 0;
+    for (const p of pairs) {
+      const tc = ttOf(a, refl[p.ri].q2, lam);
+      const d = -2 * DEG * Math.tan(tc / (2 * DEG)) / a;       /* d(2theta)/da */
+      const res = peaks[p.j].tt - zero - tc;
+      saa += d * d; saz += d; szz += 1; ra += d * res; rz += res;
+    }
+    if (fitZero) {
+      const det = saa * szz - saz * saz;
+      a += (ra * szz - rz * saz) / det; zero += (saa * rz - saz * ra) / det;
+      cov = szz / det;
+    } else { a += ra / saa; cov = 1 / saa; }
+  }
+  let ss = 0;
+  for (const p of pairs) ss += (peaks[p.j].tt - zero - ttOf(a, refl[p.ri].q2, lam)) ** 2;
+  const dof = pairs.length - (fitZero ? 2 : 1);
+  return { a, zero, rms: Math.sqrt(ss / pairs.length),
+    sigmaA: dof > 0 ? Math.sqrt(ss / dof * cov) : null, fitZero };
+}
+
+/* index the measured peaks on one prototype and refine its lattice parameter.
+   a0 is the starting value (the prediction); the search explores a0 x (1 +/- window). */
+function refineLattice(found, proto, frac, a0, opt) {
+  const o = opt || {}, rad = RADIATION[o.radiation || "Cu"], lam = rad[0];
+  const peaks = found.peaks;
+  if (!peaks.length || !a0 || !XRD.prototypes[proto]) return null;
+  const lo = o.ttMin, hi = o.ttMax;
+  /* reflections that can fall in the measured range for any lattice parameter explored */
+  const every = simulatePattern(proto, frac, a0 * (1 - XFIT.window), 180, lam);
+  const all = every.filter(r => r.I >= XFIT.minPred);
+  const inRange = (a, zero) => all.filter(r => { const t = ttOf(a, r.q2, lam) + zero;
+    return t >= lo && t <= hi; });
+  const hmax = Math.max(...peaks.map(p => p.h));
+  let best = null;
+  const nGrid = Math.round(XFIT.window / XFIT.gridStep);
+  for (let g = -nGrid; g <= nGrid; g++) {
+    const a = a0 * (1 + g * XFIT.gridStep);
+    let score = 0;
+    for (const r of inRange(a, 0)) {
+      const tc = ttOf(a, r.q2, lam);
+      let bd = XFIT.tolSearch, bh = 0;
+      for (const p of peaks) { const d = Math.abs(p.tt - tc); if (d < bd) { bd = d; bh = p.h; } }
+      if (bh > 0) score += Math.sqrt(r.I) * (1 - (bd / XFIT.tolSearch) ** 2) * Math.sqrt(bh / hmax);
+    }
+    if (best === null || score > best.score + 1e-12) best = { a, score };
+  }
+  let refl = inRange(best.a, 0);
+  let pairs = assignPeaks(peaks, refl, best.a, lam, 0, XFIT.tolAssign);
+  if (pairs.length < 2) return { proto, a: null, n: pairs.length, nPred: refl.length };
+  let fit = fitLattice(peaks, refl, pairs, best.a, lam, o.zero !== false);
+  refl = inRange(fit.a, fit.zero);
+  pairs = assignPeaks(peaks, refl, fit.a, lam, fit.zero, XFIT.tolFinal);
+  if (pairs.length < 2) return { proto, a: null, n: pairs.length, nPred: refl.length };
+  fit = fitLattice(peaks, refl, pairs, fit.a, lam, o.zero !== false);
+
+  const matched = new Set(pairs.map(p => p.j));
+  const matches = pairs.map(p => { const r = refl[p.ri], tc = ttOf(fit.a, r.q2, lam) + fit.zero;
+    return { hkl: r.hkl, q2: r.q2, I: r.I, ttObs: peaks[p.j].tt, ttCalc: tc,
+             delta: peaks[p.j].tt - tc, h: 100 * peaks[p.j].h / hmax }; });
+  /* a measured peak sitting where K-alpha2 or K-beta puts an indexed reflection belongs
+     to that reflection, not to another phase */
+  const lines = [];
+  for (const m of matches) for (const k of [1, 2]) {
+    const t = ttOf(fit.a, m.q2, rad[k]);
+    if (!Number.isNaN(t)) lines.push(t + fit.zero);
+  }
+  /* so does a peak sitting on a reflection too weak to take part in the fit */
+  for (const r of every) if (r.I < XFIT.minPred) {
+    const t = ttOf(fit.a, r.q2, lam);
+    if (!Number.isNaN(t)) lines.push(t + fit.zero);
+  }
+  const unindexed = [];
+  let explained = 0, total = 0;
+  peaks.forEach((p, j) => {
+    total += p.h;
+    if (matched.has(j) || lines.some(t => Math.abs(t - p.tt) <= XFIT.tolLine)) explained += p.h;
+    else unindexed.push({ tt: p.tt, h: 100 * p.h / hmax });
+  });
+  /* a strong reflection is expected only clear of the ends of the scan */
+  const strong = refl.filter(r => { const t = ttOf(fit.a, r.q2, lam) + fit.zero;
+    return r.I >= XFIT.strong && t >= lo + XFIT.edge && t <= hi - XFIT.edge; });
+  const strongFound = strong.filter(r => matches.some(m => m.q2 === r.q2)).length;
+  return { proto, a: fit.a, sigmaA: fit.sigmaA, zero: fit.zero, fitZero: fit.fitZero,
+    rms: fit.rms, n: pairs.length, nPred: refl.length, nStrong: strong.length, strongFound,
+    stripped: found.stripped,
+    explained: total > 0 ? explained / total : 0, matches, unindexed,
+    score: (strong.length ? strongFound / strong.length : 0) * (total > 0 ? explained / total : 0) };
+}
+
+/* the same measured pattern indexed on every cubic prototype, best explanation first:
+   each one starts from the lattice parameter the platform predicts for it */
+function compareMeasured(tt, I, frac, opt) {
+  const found = findPeaks(tt, I, RADIATION[(opt || {}).radiation || "Cu"]);
+  found.snr = found.noise > 0 ? found.max / found.noise : Infinity;
+  found.quality = found.snr >= XFIT.snrClean ? "clean" : found.snr >= XFIT.snrMin ? "noisy" : "below";
+  const acc = found.quality === "clean" ? XFIT.accClean : XFIT.accNoisy;
+  const o = { ...(opt || {}), ttMin: tt[0], ttMax: tt[tt.length - 1] };
+  const out = [];
+  for (const proto of MODEL.classes) {
+    if (!XRD.prototypes[proto]) continue;
+    const aTh = thermoLattice(proto, frac);
+    const a0 = aTh !== null ? aTh : predictA(proto, frac);
+    const r = refineLattice(found, proto, frac, a0, o);
+    if (r) out.push({ ...r, a0, rho: r.a ? xrayDensity(proto, frac, r.a) : null,
+      aTol: r.a ? Math.max(r.sigmaA || 0, acc * r.a) : null });
+  }
+  out.sort((x, y) => (y.score || 0) - (x.score || 0) || x.proto.localeCompare(y.proto));
+  return { found, fits: out };
+}
+
+/* text of a diffractometer export -> {tt, I}: two columns (2-theta, intensity) separated
+   by spaces, tabs, commas or semicolons, decimal point or comma; or PANalytical .xrdml */
+function parsePattern(text) {
+  const tt = [], I = [];
+  if (/<xrdMeasurement/.test(text)) {
+    const pos = /<positions[^>]*axis="2Theta"[^>]*>\s*<startPosition>([^<]+)<\/startPosition>\s*<endPosition>([^<]+)<\/endPosition>/.exec(text);
+    const cnt = /<(?:intensities|counts)[^>]*>([^<]+)<\/(?:intensities|counts)>/.exec(text);
+    if (pos && cnt) {
+      const y = cnt[1].trim().split(/\s+/).map(Number), a = parseFloat(pos[1]), b = parseFloat(pos[2]);
+      y.forEach((v, i) => { tt.push(a + (b - a) * i / (y.length - 1)); I.push(v); });
+    }
+  } else for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || /^[#;!%'"*a-zA-Z_]/.test(line)) continue;
+    let tok;
+    if (/[;\t]/.test(line)) tok = line.split(/[;\t]+/).map(t => t.trim().replace(",", "."));
+    else if (/\s/.test(line)) tok = line.split(/\s+/).map(t => t.replace(/,$/, "").replace(",", "."));
+    else tok = line.split(",");
+    const x = parseFloat(tok[0]), y = parseFloat(tok[1]);
+    if (tok.length >= 2 && Number.isFinite(x) && Number.isFinite(y)) { tt.push(x); I.push(y); }
+  }
+  const order = tt.map((_, i) => i).sort((i, j) => tt[i] - tt[j]);
+  return { tt: order.map(i => tt[i]), I: order.map(i => I[i]) };
 }

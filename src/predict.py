@@ -325,16 +325,17 @@ class Predictor:
                 occ[t] = {"O": 1} if t[0] == "O" else frac
         return occ
 
-    def simulate_pattern(self, proto, frac, a, tt_max=TWO_THETA_MAX):
+    def simulate_pattern(self, proto, frac, a, tt_max=TWO_THETA_MAX, lam=None):
         """Kinematic powder pattern of the cubic prototype: positions from ``a``,
-        intensities from the site occupancies. Mirrors simulatePattern() term for term."""
+        intensities from the site occupancies; ``lam`` defaults to Cu K-alpha1. Each
+        reflection carries q2 = h2 + k2 + l2. Mirrors simulatePattern() term for term."""
         P = self.xrd["prototypes"].get(proto)
         if not P:
             return []
         occ = self._site_occupancies(proto, frac)
-        lam = self.xrd["wavelength"]
+        lam = lam or self.xrd["wavelength"]
         s_max = math.sin((tt_max / 2) * math.pi / 180)
-        acc, hkl = {}, {}
+        acc, hkl, q2 = {}, {}, {}
         for e in P["refl"]:
             st = lam * math.sqrt(e["q2"]) / (2 * a)
             if st > s_max or st >= 1:
@@ -352,8 +353,10 @@ class Predictor:
             inten = (fr * fr + fi * fi) * lp * e["n"]
             tt = f"{2 * th * 180 / math.pi:.3f}"
             acc[tt] = acc.get(tt, 0) + inten
-            hkl.setdefault(tt, "".join(str(h) for h in e["hkl"]))
-        peaks = [{"two_theta": float(k), "intensity": v, "hkl": hkl[k]} for k, v in acc.items()]
+            if tt not in hkl:
+                hkl[tt], q2[tt] = "".join(str(h) for h in e["hkl"]), e["q2"]
+        peaks = [{"two_theta": float(k), "intensity": v, "hkl": hkl[k], "q2": q2[k]}
+                 for k, v in acc.items()]
         mx = max([p["intensity"] for p in peaks] + [1e-30])
         for p in peaks:
             p["intensity"] = 100 * p["intensity"] / mx
@@ -368,7 +371,7 @@ class Predictor:
                      ("eta", eta)):
             if v is not None:
                 o[k] = v
-        n = round((o["tt_max"] - o["tt_min"]) / o["step"])
+        n = int(math.floor((o["tt_max"] - o["tt_min"]) / o["step"] + 0.5))   # Math.round
         xs, ys = [], []
         for i in range(n + 1):
             x = o["tt_min"] + i * o["step"]

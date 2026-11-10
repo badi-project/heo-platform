@@ -45,5 +45,11 @@ jobs:
       - name: Page payload is up to date with data and model
         run: python tools/build_app.py --check
 
-      - name: Python / JavaScript numerical parity (descriptors, model, formula parser)
+      - name: Python / JavaScript numerical parity (descriptors, model, formula parser, full prediction, measured-pattern fit)
         run: python tools/parity_check.py --check
+
+      - name: Density validation report is up to date and its cell-content criterion met
+        run: python tools/validate_density.py --check
+
+      - name: Lattice-refinement validation report is up to date and its criteria met
+        run: python tools/validate_xrd_fit.py --check

@@ -30,6 +30,7 @@ sys.path.insert(0, os.path.join(ROOT, "src"))
 import features  # noqa: E402
 import formula  # noqa: E402
 import predict  # noqa: E402
+import xrdfit  # noqa: E402
 
 TOL_JS = 1e-12      # Python vs JavaScript, same algorithm in two languages
 TOL_FROZEN = 1e-9   # exported trees vs the scikit-learn probabilities frozen in the probe
@@ -131,15 +132,17 @@ def prediction_parity():
                 pass
     fracs += [p["frac"] for p in P.bundle["probe"]]
     profiled = fracs[::25]
+    measured = measured_cases(P)
     out = subprocess.run(["node", os.path.join(ROOT, "tools", "parity_js.mjs"), "predict"],
                          input=json.dumps({"context": P.context(), "fracs": fracs,
-                                           "texts": texts, "profiles": profiled}),
+                                           "texts": texts, "profiles": profiled,
+                                           "measured": measured}),
                          capture_output=True, text=True, check=True)
     result = json.loads(out.stdout)
     classes = P.model["classes"]
     src = {"geometric": "geo", "chgnet": "chgnet"}
     gap = {"probs": 0.0, "ad": 0.0, "a": 0.0, "two_theta": 0.0, "intensity": 0.0, "dh": 0.0,
-           "density": 0.0, "profile": 0.0}
+           "density": 0.0, "profile": 0.0, "fit": 0.0}
     bad = []
     # flat records (batch table, CSV export): text against text
     rows_off = [t for t, js in zip(texts, result["rows"]) if P.record(t) != js]
@@ -181,7 +184,54 @@ def prediction_parity():
                 ok = th["direct"] == t["direct"] and th["verdict"] == t["verdict"]
         if not ok:
             bad.append(name)
-    return len(fracs), bad, gap, (len(texts), rows_off, len(profiled))
+    for case, js in zip(measured, result["measured"]):
+        found, fits = xrdfit.compare_measured(P, case["tt"], case["I"], case["frac"],
+                                              case["radiation"], case["zero"])
+        name = "measured " + case["name"]
+        ok = (len(found["peaks"]) == len(js["peaks"])
+              and [f["proto"] for f in fits] == [f["proto"] for f in js["fits"]])
+        if ok:
+            for u, v in zip(found["peaks"], js["peaks"]):
+                worst("fit", u["tt"], v["tt"])
+            for f, g in zip(fits, js["fits"]):
+                ok = ok and (f["a"] is None) == (g["a"] is None) and f["n"] == g["n"]
+                if ok and f["a"] is not None:
+                    for u, v in ((f["a"], g["a"]), (f["zero"], g["zero"]), (f["rms"], g["rms"]),
+                                 (f["score"], g["score"]), (f["density_g_cm3"], g["rho"])):
+                        worst("fit", u, v)
+                    ok = ([m["hkl"] for m in f["matches"]] == g["hkl"]
+                          and len(f["unindexed"]) == len(g["unindexed"]))
+        if not ok:
+            bad.append(name)
+    return len(fracs), bad, gap, (len(texts), rows_off, len(profiled), len(measured))
+
+
+def measured_cases(P):
+    """Synthetic laboratory patterns of known lattice parameter, built on the Python side
+    and handed to both engines: one per cubic prototype, with K-alpha2, background, noise
+    and a zero shift, one with a foreign phase, one with cobalt radiation."""
+    eq = lambda *els: {e: 1 / len(els) for e in sorted(els)}  # noqa: E731
+    mix = lambda d: {e: v / sum(d.values()) for e, v in sorted(d.items())}  # noqa: E731
+    specs = [
+        ("spinelle", "spinel", eq("Co", "Cr", "Fe", "Mn", "Ni"), 8.328, {}),
+        ("rocksalt", "rocksalt", eq("Co", "Cu", "Mg", "Ni", "Zn"), 4.236, {"zero": 0.06}),
+        ("fluorine", "fluorite", eq("Ce", "Hf", "Sn", "Ti", "Zr"), 5.25, {"fwhm": 0.25}),
+        ("pyrochlore", "pyrochlore",
+         mix({"La": 1, "Nd": 1, "Sm": 1, "Eu": 1, "Gd": 1, "Zr": 5}), 10.62, {}),
+        ("perovskite", "perovskite",
+         mix({"La": 5, "Cr": 1, "Mn": 1, "Fe": 1, "Co": 1, "Ni": 1}), 3.89,
+         {"counts": 800.0, "background": 400.0, "fwhm": 0.3, "step": 0.04}),
+        ("spinelle + phase etrangere", "spinel", eq("Al", "Cu", "Fe", "Ni", "Zn"), 8.2453,
+         {"extra": [(33.15, 12.0), (49.5, 8.0)]}),
+        ("spinelle, cobalt", "spinel", eq("Co", "Cr", "Fe", "Mn", "Ni"), 8.328,
+         {"radiation": "Co", "tt_min": 20.0, "tt_max": 90.0}),
+    ]
+    out = []
+    for name, proto, frac, a, kw in specs:
+        tt, counts = xrdfit.synthetic_pattern(P, proto, frac, a, **kw)
+        out.append({"name": name, "tt": tt, "I": counts, "frac": frac,
+                    "radiation": kw.get("radiation", "Cu"), "zero": True})
+    return out
 
 
 def max_abs(a, b):
@@ -195,7 +245,7 @@ def main(check=False):
     py_probs, py_feats = python_side(bundle, elements)
     js = js_side()
     n_formulas, formula_mismatch, d_formula = formula_parity(elements)
-    n_pred, pred_mismatch, gap, (n_rows, rows_off, n_prof) = prediction_parity()
+    n_pred, pred_mismatch, gap, (n_rows, rows_off, n_prof, n_meas) = prediction_parity()
     d_probs = max_abs(py_probs, js["probs"])
     d_feats = max_abs(py_feats, js["feats"])
     # the probe stores probabilities in display order (classes_order), the model emits
@@ -232,6 +282,8 @@ def main(check=False):
         f"{len(rows_off)} ligne(s) differente(s), caractere pour caractere",
         f"  profil continu du diffractogramme, {n_prof} compositions : ecart maximal "
         f"{gap['profile']:.1e} (tolerance {TOL_PRED:.0e})",
+        f"  diffractogramme mesure (pics, indexation, maille affinee), {n_meas} motifs "
+        f"synthetiques : ecart maximal {gap['fit']:.1e} (tolerance {TOL_PRED:.0e})",
         "",
         "genere par tools/parity_check.py",
     ]

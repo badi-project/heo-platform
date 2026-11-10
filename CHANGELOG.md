@@ -4,6 +4,55 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## [Non publié]
 
+### Ajouté — la plateforme devient un outil de travail
+
+- **Moteur de prédiction Python** (`src/predict.py`, bibliothèque standard) et **ligne de
+  commande** (`tools/heo_predict.py`) : une formule ou un fichier CSV entier, sortie
+  lisible, JSON ou CSV. La prédiction complète n'existait que dans la page. Les deux
+  moteurs sont comparés sur 1 272 compositions : 0 désaccord, écart de probabilité
+  2 × 10⁻¹⁶ ; les lignes de tableau des 1 086 formules sont identiques caractère pour
+  caractère (`QC/parity_check.txt`).
+- **Densité théorique** (rayons X) de la phase prédite, dans la page et en ligne de
+  commande. Avec la maille mesurée de quatre oxydes de référence sourcés, écart maximal
+  0,71 % (critère 1 %). Avec la maille prédite : 1,5 % sur les spinelles (critère 2 %,
+  atteint), 10,7 % sur les deux rocksalt du modèle géométrique (**critère de 6 % non
+  atteint**) — `tools/validate_density.py`, `QC/density_validation.txt`. L'incertitude
+  affichée est la plus grande de la propagation et de l'erreur observée.
+- **Onglet « Lot de formules »** : liste collée ou fichier CSV, tableau des prédictions,
+  export CSV identique à celui de la ligne de commande.
+- **Exports** depuis le concepteur : prédiction (.csv), profil de diffraction simulé
+  (.xy), réflexions avec distances interréticulaires (.csv).
+- **Comparaison à un diffractogramme mesuré** (`src/xrdfit.py`, page et `--measured`) :
+  lecture des fichiers à deux colonnes et .xrdml, retrait du fond et de la raie Kα₂,
+  indexation sur les cinq prototypes cubiques, affinement de la maille avec décalage de
+  zéro, signalement des pics non indexés, export de l'indexation et d'une ligne pour
+  `data/lab_results.csv`. Sur un jeu de motifs synthétiques jamais vu pendant la mise au
+  point : maille à 0,017 % près (motifs propres), 0,14 % (motifs bruités), 4 raies
+  étrangères sur 4 signalées, aucune fausse alerte (`tools/validate_xrd_fit.py`,
+  `QC/xrd_fit_validation.txt`). **Validé sur motifs synthétiques seulement** : le dépôt
+  ne contient aucun diffractogramme réel.
+
+### Corrigé
+
+- **La page arrondissait à six décimales les fractions lues dans une formule** avant de
+  prédire. Sur 39 des 1 072 formules lisibles de la base, une valeur franchissait un
+  seuil d'arbre et la probabilité affichée s'écartait de celle du modèle, jusqu'à
+  17 points, sans changer la famille. La page lit maintenant par `readComposition()`,
+  miroir de `Predictor.read()` ; vérifié dans un navigateur sur les 1 072 formules.
+- **Résultat périmé** : après une formule illisible, la page laissait à l'écran le
+  résultat de la formule précédente. Elle l'efface et donne la raison.
+- Le choix du modèle de maille et l'enthalpie d'oxydation étaient calculés dans
+  `heo_ui.js` ; ils sont dans `heo_engine.js`, seul endroit comparé à Python.
+
+### Constaté, non corrigé
+
+- **Modèle géométrique de maille** : sa table de rayons ne porte qu'une valence par
+  élément. Sur les deux rocksalt à haute entropie de maille mesurée, l'erreur est de
+  +2,3 % et −4,5 % (annoncé : 1,9 % en moyenne, spinelles compris). Aucune maille
+  mesurée de pérovskite, fluorine ou pyrochlore à haute entropie ne figure dans la base :
+  l'erreur du modèle n'y a jamais été mesurée. Une table de rayons par valence et par
+  coordinence, validée sur des mailles mesurées sourcées, est l'étape suivante.
+
 ### Ajouté — étapes 1 à 3 : thermodynamique calculée, réductibilité, boucle active
 
 - **`thermo/` : grandeurs physiques calculées par potentiel interatomique appris**
