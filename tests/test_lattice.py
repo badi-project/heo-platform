@@ -187,3 +187,31 @@ def test_check_mode_of_the_validation_script():
     out = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "validate_lattice.py"), "--check"],
                          capture_output=True, text=True)
     assert out.returncode == 0, out.stdout + out.stderr
+
+
+# ------------------------------------------------------- learned correction (step 4) ----
+
+def test_learned_correction_verdict_follows_its_own_criteria():
+    c = json.load(open(os.path.join(ROOT, "data", "reference", "lattice_correction.json"),
+                       encoding="utf-8"))
+    report = open(os.path.join(ROOT, "QC", "lattice_correction.txt"), encoding="utf-8").read()
+    gain = c["step3"]["all"] - c["judged"]["all"]
+    assert c["gain_point"] == pytest.approx(gain, abs=2e-4)
+    assert c["criteria"]["gain"] == (gain >= 0.1 and gain / c["step3"]["all"] >= 0.15)
+    assert c["integrated"] == (c["criteria"]["gain"] and c["criteria"]["family"])
+    # the published outcome: not integrated, and the report says so in words
+    assert not c["integrated"] and "NON INTEGREE" in report
+    assert sum(c["chosen"].values()) == c["n_groups"]
+    # what the report's reading states about the flexible models
+    for name in ("M2 ridge", "M3 gradient boosting"):
+        assert c["candidates"][name]["fluorite"] > c["step3"]["fluorite"]
+    # the platform therefore predicts with the geometric model alone
+    lat = P.predict("(LaNdSmEuGd)2Zr2O7")["lattice"]
+    assert lat["a"] == lattice.predict("pyrochlore", P.read("(LaNdSmEuGd)2Zr2O7")[0], E)["a"]
+
+
+def test_learned_correction_report_is_reproducible():
+    pytest.importorskip("sklearn")
+    out = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "learn_lattice_correction.py"),
+                          "--check"], capture_output=True, text=True)
+    assert out.returncode == 0, out.stdout + out.stderr

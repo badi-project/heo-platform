@@ -60,6 +60,18 @@ def read_csv(*p):
         return list(csv.DictReader(fh))
 
 
+def correction_fill():
+    """Figures of the learned lattice correction (tools/learn_lattice_correction.py). The
+    method page states that it was tried and not retained; the build stops if the verdict
+    ever changes, because the text and the engines would then have to change too."""
+    c = read_json("data", "reference", "lattice_correction.json")
+    if c["integrated"]:
+        raise SystemExit("lattice_correction.json: the correction is now integrated; "
+                         "update src/lattice.py, heo_engine.js and method_template.html")
+    return {"corr_base": fr_num(c["step3"]["all"], 2), "corr_judged": fr_num(c["judged"]["all"], 2),
+            "corr_gain": fr_num(c["gain_point"], 2), "corr_n": c["n_heo"], "corr_groups": c["n_groups"]}
+
+
 def fr_num(v, n=3):
     return f"{v:.{n}f}".replace(".", ",")
 
@@ -213,6 +225,7 @@ def build(check=False):
         **{f"latm_{k}": fr_num(fam[f]["heo"]["mae_pct"], 2)
            for k, f in (("rs", "rocksalt"), ("sp", "spinel"), ("fl", "fluorite"),
                         ("pv", "perovskite"), ("py", "pyrochlore"))},
+        **correction_fill(),
         "lat_sel_n": lv["spinel_selection"]["n"],
         "lat_sel_chgnet": fr_num(lv["spinel_selection"]["chgnet"]["mae_pct"], 2),
         "lat_sel_geo": fr_num(lv["spinel_selection"]["geometric"]["mae_pct"], 2),

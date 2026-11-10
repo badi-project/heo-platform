@@ -30,6 +30,11 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
   par le modèle géométrique (10,7 % auparavant, sur deux rocksalt).
 - La colonne `a_predit` des candidats criblés est recalculée ; ni les candidats ni leurs
   probabilités ne changent.
+- **Correction apprise de la maille : essayée, non intégrée**
+  (`tools/learn_lattice_correction.py`, `QC/lattice_correction.txt`). Jugée hors
+  échantillon, un groupe de sources retiré à chaque tour, avec des critères écrits
+  d'avance : 0,53 → 0,49 %, soit 0,04 point de gain pour 0,1 exigé, et la fluorine se
+  dégrade de 0,15 point. Le meilleur candidat seul, un biais par famille, atteint 0,45 %.
 - Parité Python / JavaScript étendue au modèle de maille : 6 492 cas, écart nul, notes
   identiques au caractère près.
 

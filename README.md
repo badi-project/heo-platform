@@ -150,6 +150,7 @@ caractère) et sur l'indexation de sept motifs mesurés synthétiques (`QC/parit
 | Densité avec la maille prédite, modèle géométrique, 50 HEO mesurés | écart moyen 1,6 % (critère 6 %), maximum 12,6 % (rocksalt au Sr) | idem |
 | Maille prédite, 48 oxydes simples de référence | écart moyen 0,23 à 0,44 % selon la famille (porte : 1 %) | `QC/lattice_validation.txt` |
 | Maille prédite, 63 HEO de maille mesurée, protocole écrit avant le calcul | 0,53 % ; pyrochlore 0,23, fluorine 0,27 (validation non aveugle), pérovskite 0,48, spinelle 0,70, rocksalt 1,18 (**non atteint**) | idem |
+| Correction apprise de la maille (biais, ridge, gradient boosting), hors échantillon par groupe de sources | 0,53 → 0,49 % : gain de 0,04 point, **sous le seuil de 0,1 point ; non intégrée** | `QC/lattice_correction.txt` |
 | Dispersion entre laboratoires sur une même composition | 0,02 à 0,14 % en moyenne ; jusqu'à 1,5 % d'étendue pour (CoCrFeMnNi)₃O₄ | `QC/lattice_dataset.txt` |
 | Maille affinée sur motifs synthétiques propres (jeu vierge, 6 cas) | écart maximal 0,017 % (critère 0,05 %) | `QC/xrd_fit_validation.txt` |
 | Idem, motifs bruités | écart maximal 0,14 % (critère 0,25 %) | idem |
@@ -204,6 +205,7 @@ python tools/make_figures.py            # figures 4 et 5
 python tools/build_app.py               # données et textes de la page, puis ré-inlining du JS
 python tools/lattice_dataset.py         # mailles mesurées : contrôle, dispersion (QC/lattice_dataset.txt)
 python tools/validate_lattice.py        # modèle de maille (QC/lattice_validation.txt)
+python tools/learn_lattice_correction.py  # correction apprise de la maille (QC/lattice_correction.txt)
 python tools/validate_density.py        # densité théorique (QC/density_validation.txt)
 python tools/validate_xrd_fit.py        # affinement de maille (QC/xrd_fit_validation.txt)
 python tools/parity_check.py            # parité Python / JavaScript (nécessite node >= 20)

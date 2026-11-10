@@ -1,0 +1,61 @@
+{
+ "n_compositions": 111,
+ "n_heo": 63,
+ "n_groups": 20,
+ "step3": {
+  "all": 0.534953,
+  "rocksalt": 1.180875,
+  "spinel": 0.697622,
+  "fluorite": 0.272966,
+  "perovskite": 0.48315,
+  "pyrochlore": 0.23189
+ },
+ "judged": {
+  "all": 0.493115,
+  "rocksalt": 0.949638,
+  "spinel": 0.652635,
+  "fluorite": 0.424577,
+  "perovskite": 0.280539,
+  "pyrochlore": 0.141661
+ },
+ "candidates": {
+  "M1 biais par famille": {
+   "all": 0.453646,
+   "rocksalt": 0.949638,
+   "spinel": 0.652635,
+   "fluorite": 0.300248,
+   "perovskite": 0.280539,
+   "pyrochlore": 0.141661
+  },
+  "M2 ridge": {
+   "all": 0.493818,
+   "rocksalt": 0.800679,
+   "spinel": 0.69122,
+   "fluorite": 0.416057,
+   "perovskite": 0.375208,
+   "pyrochlore": 0.172864
+  },
+  "M3 gradient boosting": {
+   "all": 0.485885,
+   "rocksalt": 0.578578,
+   "spinel": 0.722309,
+   "fluorite": 0.498539,
+   "perovskite": 0.359913,
+   "pyrochlore": 0.150269
+  }
+ },
+ "chosen": {
+  "M0 aucune correction": 0,
+  "M1 biais par famille": 19,
+  "M2 ridge": 0,
+  "M3 gradient boosting": 1
+ },
+ "gain_point": 0.041838,
+ "gain_rel": 0.078208,
+ "worst_family_loss": 0.1516,
+ "criteria": {
+  "gain": false,
+  "family": false
+ },
+ "integrated": false
+}

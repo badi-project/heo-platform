@@ -93,6 +93,13 @@ correction de lacunes de la fluorine a été ajoutée après la lecture des rés
 pas aveugle. Pour les {{lat_sel_n}} spinelles dont CHGNet couvre tous les cations, sa maille
 ({{lat_sel_chgnet}} %) reste préférée au modèle géométrique ({{lat_sel_geo}} %). L'incertitude affichée
 est l'écart moyen de la famille.</p>
+<p><b>Correction apprise : essayée, non retenue.</b> Un régresseur du résidu du modèle géométrique
+(biais par famille, régression ridge, gradient boosting) a été jugé hors échantillon, un groupe de
+sources retiré à chaque tour, selon des critères écrits d'avance. Il ramène l'écart de {{corr_base}} %
+à {{corr_judged}} % : un gain de {{corr_gain}} point, sous le seuil de 0,1 point exigé, et la fluorine
+se dégrade. La plateforme garde donc le modèle géométrique seul
+(<code>QC/lattice_correction.txt</code>). Avec {{corr_n}} oxydes mesurés venant de {{corr_groups}}
+groupes de sources, il n'y a pas assez de données pour apprendre plus qu'un biais par famille.</p>
 <h3>Diffractogramme</h3>
 <p>Le diffractogramme est calculé à partir des facteurs de structure exacts des prototypes, validés
 contre <code>pymatgen</code>. Occupations supposées aléatoires sur tous les sites cationiques, sauf
