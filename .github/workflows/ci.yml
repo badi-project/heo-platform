@@ -53,3 +53,6 @@ jobs:
 
       - name: Lattice-refinement validation report is up to date and its criteria met
         run: python tools/validate_xrd_fit.py --check
+
+      - name: Measured-lattice dataset is valid and its report up to date
+        run: python tools/lattice_dataset.py --check

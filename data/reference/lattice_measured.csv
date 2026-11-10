@@ -1,0 +1,133 @@
+id,group,proto,formula_text,a_ang,abc_ang,space_group,phase_note,synthesis,source,source_detail
+RS01,heo,rocksalt,(Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O,4.2381,,Fm-3m,single,solid state,10.1039/d6ma00097e,LeBail fit (text)
+RS02,heo,rocksalt,(Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)O,4.2365,,Fm-3m,single,sintered,10.1039/d3nr05176e,ESI Table S1
+RS03,heo,rocksalt,(Co0.2Cu0.2Mg0.2Ni0.2Zn0.2)O,4.236,,Fm-3m,single,nanocrystalline,arXiv:2004.11684,Table 1 footnote a
+RS04,heo,rocksalt,(Co0.25Mg0.25Ni0.25Zn0.25)O,4.231,,Fm-3m,single,nanocrystalline (flame spray),arXiv:2004.11684,Table 1 footnote b
+RS05,heo,rocksalt,(Ni0.2Cu0.2Zn0.2Co0.2Mg0.2)O,4.237,,Fm-3m,single,solid state 1223 K quenched,arXiv:2510.09342,Table I
+RS06,heo,rocksalt,(Ni0.4Cu0.2Zn0.2Co0.2)O,4.229,,Fm-3m,single,solid state 1223 K quenched,arXiv:2510.09342,Table I (MO13)
+RS07,heo,rocksalt,(Ni0.18Cu0.18Zn0.18Co0.18Mg0.18Li0.1)O,4.199,,Fm-3m,single,solid state 1223 K quenched,arXiv:2510.09342,Table I (MO17)
+RS08,heo,rocksalt,(Ni0.18Cu0.18Zn0.18Co0.18Mg0.18Na0.1)O,4.236,,Fm-3m,single,solid state 1223 K quenched,arXiv:2510.09342,Table I
+RS09,heo,rocksalt,(Ni0.18Cu0.18Zn0.18Co0.18Mg0.18K0.1)O,4.233,,Fm-3m,single,solid state 1223 K quenched,arXiv:2510.09342,Table I
+RS10,heo,rocksalt,(Mg0.17Co0.17Ni0.17Cu0.17Zn0.17Li0.075Ga0.075)O,4.2204,,Fm-3m,trace spinel <2 %,solid state,arXiv:1602.07842,Supporting Table 1
+RS11,heo,rocksalt,(Mg0.2Co0.2Ni0.2Cu0.2Li0.1Ga0.1)O,4.2057,,Fm-3m,trace spinel <2 %,solid state,arXiv:1602.07842,Supporting Table 1
+RS12,heo,rocksalt,(Mg0.2Co0.2Fe0.2Ni0.2Zn0.2)O,4.22,,Fm-3m,single,solid state 1070 C in N2,10.26907/mrsej-24304,text (4.22 +/- 0.01)
+RS13,heo,rocksalt,(Mg0.2Mn0.2Fe0.2Co0.2Ni0.2)O,4.2831,,Fm-3m,single,oxalate route inert atmosphere,10.1126/sciadv.adi8809,Table 1 (neutron POWGEN 300 K)
+RS14,heo,rocksalt,(Cu0.2Zn0.2Ni0.2Co0.2Sr0.2)O,4.24,,Fm-3m,single,,10.1021/acs.inorgchem.5c05015,abstract (4.24(4))
+RS15,heo,rocksalt,(Fe0.2Co0.2Mn0.2Mg0.2Zn0.2)O,4.29,,Fm-3m,single,colloidal nanocrystals,10.1021/jacs.5c06732,heo_database.csv evidence
+SP01,heo,spinel,(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)3O4,8.328,,Fd-3m,single,sol-gel calcined 900 C,lab:B-001,echantillon interne (thermo/run_spinel_lattice.py)
+SP02,heo,spinel,(Cr0.2Mn0.2Fe0.2Co0.2Ni0.2)3O4,8.3477,,Fd-3m,single,sintered,10.1039/d3nr05176e,ESI Table S1
+SP03,heo,spinel,(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)3O4,8.254,,Fd-3m,single,850 C,10.1039/d5nr05228a,ESI compilation table ref [1]
+SP04,heo,spinel,(Co0.2Fe0.2Mn0.2Ni0.2Cr0.2)3O4,8.377,,Fd-3m,single,800-1100 C,10.1039/d5nr05228a,ESI compilation table ref [4]
+SP05,heo,spinel,(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)3O4,8.346,,Fd-3m,single,950 C,10.1039/d5nr05228a,ESI compilation table ref [5]
+SP06,heo,spinel,(Co0.2Cr0.2Fe0.2Ni0.2Mn0.2)3O4,8.35,,Fd-3m,single,1000 C,10.1039/d5nr05228a,ESI compilation table ref [6]
+SP07,heo,spinel,(Cr0.2Mn0.2Fe0.2Co0.2Ni0.2)3O4,8.321,,Fd-3m,single,900 C,10.1039/d5nr05228a,ESI compilation table ref [8]
+SP08,heo,spinel,(Fe0.2Co0.2Cr0.2Mn0.2Zn0.2)3O4,8.399,,Fd-3m,single,900 C,10.3390/ma13245798,via 10.1039/d5nr05228a ESI ref [2]
+SP09,heo,spinel,(Mg0.2Mn0.2Fe0.2Co0.2Ni0.2)Fe2O4,8.376,,Fd-3m,single,1150 C,10.1039/d5nr05228a,ESI compilation table ref [3]
+SP10,heo,spinel,(Mg0.2Fe0.2Co0.2Ni0.2Cu0.2)Fe2O4,8.372,,Fd-3m,single,1150 C,10.1039/d5nr05228a,ESI compilation table ref [3]
+SP11,heo,spinel,(Mg0.2Fe0.2Co0.2Ni0.2Zn0.2)Fe2O4,8.381,,Fd-3m,single,1150 C,10.1039/d5nr05228a,ESI compilation table ref [3]
+SP12,heo,spinel,(Mn0.2Fe0.2Co0.2Ni0.2Zr0.2)3O4,8.28,,Fd-3m,single,500 C,10.1039/d5nr05228a,ESI compilation table ref [7]
+SP13,heo,spinel,(Cr0.2Mn0.2Fe0.2Co0.2Zn0.2)3O4,8.371,,Fd-3m,single,900 C,10.1039/d5nr05228a,ESI compilation table ref [8]
+SP14,heo,spinel,(Cr0.2Mn0.2Fe0.2Ni0.2Zn0.2)3O4,8.325,,Fd-3m,single,900 C,10.1039/d5nr05228a,ESI compilation table ref [8]
+SP15,heo,spinel,(Mg0.2Ni0.2Fe0.2Co0.2Cu0.2)Fe2O4,8.36,,Fd-3m,single,670 C,10.1039/d5nr05228a,ESI compilation table ref [9]
+SP16,heo,spinel,(Mn0.2Co0.2Ni0.2Cu0.2Fe0.2)Fe2O4,8.38,,Fd-3m,single,900 C,10.1039/d5nr05228a,ESI compilation table ref [10]
+SP17,heo,spinel,(Mn0.2Co0.2Ni0.2Cu0.2Mg0.2)Fe2O4,8.391,,Fd-3m,single,900 C,10.1039/d5nr05228a,ESI compilation table ref [10]
+SP18,heo,spinel,(Al0.1667Cu0.1667Co0.1667Fe0.1667Mn0.1667Ni0.1667)3O4,8.2697,,Fd-3m,single,,10.1002/est2.70002,heo_database.csv evidence
+SP19,heo,spinel,(Cu0.2Ni0.2Zn0.2Al0.2Fe0.2)3O4,8.2453,,Fd-3m,single,,10.1002/est2.527,heo_database.csv evidence
+SP20,heo,spinel,(Cu0.2Ni0.2Fe0.2Mn0.2Co0.2)3O4,8.3602,,Fd-3m,single,sol-gel / coprecipitation,10.1002/est2.538,heo_database.csv evidence
+SP21,heo,spinel,(Mn0.2Co0.2Ni0.2Cu0.2Zn0.2)Cr2O4,8.3261,,Fd-3m,single,1100 C 36 h quenched,arXiv:2605.16106,text (300 K Le Bail)
+SP22,heo,spinel,(Mg0.2Co0.2Ni0.2Cu0.2Zn0.2)Cr2O4,8.3188,,Fd-3m,single,1100 C 36 h quenched,arXiv:2605.16106,text (300 K Le Bail)
+FL01,heo,fluorite,(Hf0.25Zr0.25Ce0.25Y0.25)O2,5.24,,Fm-3m,single,SPS + air anneal,10.1016/j.jeurceramsoc.2018.04.010,Table 1 HEFO1
+FL02,heo,fluorite,(Hf0.25Zr0.25Ce0.25Y0.125Yb0.125)O2,5.23,,Fm-3m,single,SPS + air anneal,10.1016/j.jeurceramsoc.2018.04.010,Table 1 HEFO4A
+FL03,heo,fluorite,(Hf0.2Zr0.2Ce0.2Y0.2Yb0.2)O2,5.24,,Fm-3m,single,SPS + air anneal,10.1016/j.jeurceramsoc.2018.04.010,Table 1 HEFO4B
+FL04,heo,fluorite,(Hf0.25Zr0.25Ce0.25Y0.125Ca0.125)O2,5.25,,Fm-3m,single,SPS + air anneal,10.1016/j.jeurceramsoc.2018.04.010,Table 1 HEFO5A
+FL05,heo,fluorite,(Hf0.25Zr0.25Ce0.25Y0.125Gd0.125)O2,5.25,,Fm-3m,single,SPS + air anneal,10.1016/j.jeurceramsoc.2018.04.010,Table 1 HEFO7A
+FL06,heo,fluorite,(Hf0.2Zr0.2Ce0.2Y0.2Gd0.2)O2,5.28,,Fm-3m,single,SPS + air anneal,10.1016/j.jeurceramsoc.2018.04.010,Table 1 HEFO7B
+FL07,heo,fluorite,(Hf0.25Zr0.25Ce0.25Yb0.125Gd0.125)O2,5.25,,Fm-3m,single,SPS + air anneal,10.1016/j.jeurceramsoc.2018.04.010,Table 1 HEFO8A
+FL08,heo,fluorite,(Hf0.2Zr0.2Ce0.2Yb0.2Gd0.2)O2,5.27,,Fm-3m,single,SPS + air anneal,10.1016/j.jeurceramsoc.2018.04.010,Table 1 HEFO8B
+FL09,heo,fluorite,(Ce0.25La0.25Pr0.25Y0.25)O2,5.4962,,Fm-3m,single,nebulized spray pyrolysis,10.1039/c7dt02077e,ESI Table S1
+FL10,heo,fluorite,(Ce0.25La0.25Pr0.25Sm0.25)O2,5.5276,,Fm-3m,single,nebulized spray pyrolysis,10.1039/c7dt02077e,ESI Table S1
+FL11,heo,fluorite,(Ce0.2La0.2Pr0.2Sm0.2Y0.2)O2,5.5071,,Fm-3m,single,nebulized spray pyrolysis,10.1039/c7dt02077e,ESI Table S1
+FL12,heo,fluorite,(Ce0.1667La0.1667Nd0.1667Pr0.1667Sm0.1667Y0.1667)O2,5.4998,,Fm-3m,single,nebulized spray pyrolysis,10.1039/c7dt02077e,ESI Table S1
+FL13,heo,fluorite,(Ce0.1429Gd0.1429La0.1429Nd0.1429Pr0.1429Sm0.1429Y0.1429)O2,5.5168,,Fm-3m,fluorite 97.1 %,nebulized spray pyrolysis,10.1039/c7dt02077e,ESI Table S1
+FL14,heo,fluorite,(Zr0.2Hf0.2Ce0.2Sn0.2Mn0.2)O2,5.136,,Fm-3m,single,solid state 1500 C,10.1039/d3ta02124f,Table 1
+FL15,heo,fluorite,(Zr0.225Hf0.225Ti0.225Mn0.225Ce0.1)O2,5.052,,Fm-3m,single,solid state 1380 C,10.1039/d3ta02124f,Table 1
+FL16,heo,fluorite,(Zr0.2Hf0.2Ti0.2Mn0.2Ce0.1Ta0.05Fe0.05)O2,5.051,,Fm-3m,single,solid state 1380 C,10.1039/d3ta02124f,Table 1
+FL17,heo,fluorite,(Ce0.2Zr0.2Y0.2La0.2Gd0.2)O2,5.4246,,Fm-3m,single,hydrothermal + 1500 C,10.3390/ma13030558,text (CeZrYGdLa-N)
+FL18,heo,fluorite,(Zr0.2Hf0.2Pr0.2Y0.2La0.2)O2,5.3627,,Fm-3m,single,,10.1016/j.jmst.2021.07.028,Table (CCFO1)
+FL19,heo,fluorite,(La0.1Nd0.1Sm0.1Eu0.1Gd0.1Zr0.25Ce0.25)O2,5.3976,,Fm-3m,single,solid state,10.1016/j.jmst.2021.08.018,Table 1 (F1)
+FL20,heo,fluorite,(La0.1667Nd0.1667Gd0.1667Ce0.5)O2,5.5,,Fm-3m,single,solid state,10.1016/j.jmst.2021.08.018,Table 1 (F3)
+FL21,heo,fluorite,(La0.1Nd0.1Sm0.1Eu0.1Gd0.1Ce0.5)O2,5.4792,,Fm-3m,single,solid state,10.1016/j.jmst.2021.08.018,Table 1 (F4)
+PV01,heo,perovskite,(Gd0.2La0.2Nd0.2Sm0.2Y0.2)CoO3,,5.2964;5.3655;7.5128,Pbnm,single,nebulized spray pyrolysis,10.1016/j.jeurceramsoc.2017.12.058,Table 1
+PV02,heo,perovskite,(Gd0.2La0.2Nd0.2Sm0.2Y0.2)FeO3,,5.4094;5.5936;7.7259,Pbnm,single,nebulized spray pyrolysis,10.1016/j.jeurceramsoc.2017.12.058,Table 1
+PV03,heo,perovskite,(Gd0.2La0.2Nd0.2Sm0.2Y0.2)CrO3,,5.3799;5.5035;7.6614,Pbnm,perovskite 97.7 % + Gd2O3-type,nebulized spray pyrolysis,10.1016/j.jeurceramsoc.2017.12.058,Table 1
+PV04,heo,perovskite,Gd(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3,,5.2958;5.5303;7.5708,Pbnm,single,nebulized spray pyrolysis,10.1016/j.jeurceramsoc.2017.12.058,Table 1
+PV05,heo,perovskite,La(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3,,5.4656;5.5101;7.7424,Pbnm,single,nebulized spray pyrolysis,10.1016/j.jeurceramsoc.2017.12.058,Table 1
+PV06,heo,perovskite,Nd(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3,,5.4087;5.4760;7.6718,Pbnm,single,nebulized spray pyrolysis,10.1016/j.jeurceramsoc.2017.12.058,Table 1
+PV07,heo,perovskite,Sm(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3,,5.3523;5.5024;7.6178,Pbnm,perovskite 98.3 % + Sm2O3-type,nebulized spray pyrolysis,10.1016/j.jeurceramsoc.2017.12.058,Table 1
+PV08,heo,perovskite,(Gd0.2La0.2Nd0.2Sm0.2Y0.2)(Co0.2Cr0.2Fe0.2Mn0.2Ni0.2)O3,,5.3614;5.5012;7.6309,Pbnm,single,nebulized spray pyrolysis,10.1016/j.jeurceramsoc.2017.12.058,Table 1
+PV09,heo,perovskite,La(Cr0.2Mn0.2Fe0.2Co0.2Ni0.2)O3,,5.4747;5.5172;7.7542,Pbnm,single,sintered,10.1039/d3nr05176e,ESI Table S1
+PV10,heo,perovskite,(Ba0.5Sr0.5)(Ti0.3333Zr0.3333Hf0.3333)O3,4.09029,,Pm-3m,single,1673 K 10 h,arXiv:2607.16616,Table 2
+PV11,heo,perovskite,(Ba0.5Sr0.5)(Ti0.3333Zr0.3333Sn0.3333)O3,4.06732,,Pm-3m,single,1653 K 10 h,arXiv:2607.16616,Table 2
+PV12,heo,perovskite,(Ba0.5Sr0.5)(Ga0.3333In0.3333Sn0.3333)O3,4.0931,,Pm-3m,single,1573 K 5 h,arXiv:2607.16616,Table 2
+PY01,heo,pyrochlore,(Yb0.2Tb0.2Gd0.2Dy0.2Er0.2)2Ti2O7,10.1117,,Fd-3m,single,sintered,10.1039/d3nr05176e,ESI Table S1
+PY02,heo,pyrochlore,(La0.2Y0.2Gd0.2Nd0.2Sm0.2)2Zr2O7,10.5892,,Fd-3m,single,glycine-nitrate + pressureless 1450 C,10.1016/j.bsecv.2021.11.002,abstract (PS)
+PY03,heo,pyrochlore,(La0.2Y0.2Gd0.2Nd0.2Sm0.2)2Zr2O7,10.5999,,Fd-3m,single,glycine-nitrate + FAST 1450 C,10.1016/j.bsecv.2021.11.002,abstract (FAST)
+PY04,heo,pyrochlore,(Nd0.2Sm0.2Eu0.2Gd0.2La0.2)2Zr2O7,10.64364,,Fd-3m,single,1500 C 40 h,10.3390/ma15010129,Table 2 (#P-La)
+PY05,heo,pyrochlore,(Nd0.2Sm0.2Eu0.2Gd0.2Dy0.2)2Zr2O7,10.57011,,Fd-3m,single,1500 C 40 h,10.3390/ma15010129,Table 2 (#P-Dy)
+PY06,heo,pyrochlore,(Nd0.2Sm0.2Eu0.2Gd0.2Ho0.2)2Zr2O7,10.55579,,Fd-3m,single,1500 C 40 h,10.3390/ma15010129,Table 2 (#P-Ho)
+PY07,heo,pyrochlore,(Nd0.2Sm0.2Eu0.2Gd0.2Er0.2)2Zr2O7,10.56713,,Fd-3m,single,1500 C 40 h,10.3390/ma15010129,Table 2 (#P-Er)
+PY08,heo,pyrochlore,(Nd0.2Sm0.2Eu0.2Gd0.2Tm0.2)2Zr2O7,10.55427,,Fd-3m,single,1500 C 40 h,10.3390/ma15010129,Table 2 (#P-Tm)
+PY09,heo,pyrochlore,(Nd0.2Sm0.2Eu0.2Gd0.2Yb0.2)2Zr2O7,10.55395,,Fd-3m,single,1500 C 40 h,10.3390/ma15010129,Table 2 (#P-Yb)
+PY10,heo,pyrochlore,(Nd0.2Sm0.2Eu0.2Gd0.2Lu0.2)2Zr2O7,10.54532,,Fd-3m,single,1500 C 40 h,10.3390/ma15010129,Table 2 (#P-Lu)
+PY11,heo,pyrochlore,(La0.2Nd0.2Sm0.2Eu0.2Gd0.2)2Zr2O7,10.6392,,Fd-3m,single,solid state,10.1016/j.jmst.2021.08.018,Table 1 (P1)
+PY12,heo,pyrochlore,(La0.3333Nd0.3333Gd0.3333)2Zr2O7,10.6832,,Fd-3m,single,solid state,10.1016/j.jmst.2021.08.018,Table 1 (P2)
+RF01,reference,rocksalt,MgO,4.211,,Fm-3m,single,mineral (periclase),https://www.mindat.org/min-3161.html,density_references.csv
+RF02,reference,rocksalt,MnO,4.446,,Fm-3m,single,,10.1126/sciadv.adi8809,Table 1 (ref 45)
+RF03,reference,rocksalt,FeO,4.309,,Fm-3m,single,,10.1126/sciadv.adi8809,Table 1 (ref 46)
+RF04,reference,rocksalt,CoO,4.263,,Fm-3m,single,,10.1126/sciadv.adi8809,Table 1 (ref 45)
+RF05,reference,rocksalt,NiO,4.178,,Fm-3m,single,,10.1126/sciadv.adi8809,Table 1 (ref 45)
+RF06,reference,rocksalt,(Ni0.8Cu0.2)O,4.188,,Fm-3m,single,solid state 1223 K,arXiv:2510.09342,Table I
+RF07,reference,rocksalt,(Ni0.6Cu0.2Zn0.2)O,4.211,,Fm-3m,single,solid state 1223 K,arXiv:2510.09342,Table I
+RF08,reference,fluorite,CeO2,5.4135,,Fm-3m,single,nebulized spray pyrolysis,10.1039/c7dt02077e,ESI Table S1
+RF09,reference,fluorite,(Ce0.5Pr0.5)O2,5.4392,,Fm-3m,single,nebulized spray pyrolysis,10.1039/c7dt02077e,ESI Table S1
+RF10,reference,fluorite,(Ce0.3333La0.3333Pr0.3333)O2,5.5203,,Fm-3m,single,nebulized spray pyrolysis,10.1039/c7dt02077e,ESI Table S1
+RF11,reference,fluorite,(La0.5Ce0.5)O2,5.5728,,Fm-3m,single,solid state,10.1016/j.jmst.2021.08.018,Table 1 (F2 La2Ce2O7)
+RF12,reference,perovskite,SrTiO3,3.905,,Pm-3m,single,single crystal,https://surfacenet.de/files/kr_Strontium_Titanate.php,density_references.csv
+RF13,reference,spinel,Fe3O4,8.397,,Fd-3m,single,mineral (magnetite),https://www.handbookofmineralogy.org/pdfs/magnetite.pdf,density_references.csv
+RF14,reference,rocksalt,MgO,4.217,,Fm-3m,single,,10.1126/sciadv.adi8809,Table 1 (ref 45)
+RF15,reference,spinel,MgAl2O4,8.0832,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 38 (ref 36 of the paper)
+RF16,reference,spinel,ZnAl2O4,8.0867,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 78 (ICSD 75629)
+RF17,reference,spinel,CoAl2O4,8.0968,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 8 (ICSD 77743)
+RF18,reference,spinel,FeAl2O4,8.149,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 22 (ref 36 of the paper)
+RF19,reference,spinel,NiAl2O4,8.045,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 58 (ICSD 21117)
+RF20,reference,spinel,MnAl2O4,8.2104,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 47 (ICSD 157282)
+RF21,reference,spinel,CuAl2O4,8.0778,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 15 (ICSD 172130)
+RF22,reference,spinel,MgCr2O4,8.3329,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 40 (ICSD 171106)
+RF23,reference,spinel,ZnCr2O4,8.3291,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 79 (ICSD 171889)
+RF24,reference,spinel,CoCr2O4,8.333,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 10 (ICSD 69503)
+RF25,reference,spinel,MnCr2O4,8.437,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 48 (ICSD 31161)
+RF26,reference,spinel,FeCr2O4,8.378,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 24 (ICSD 43269)
+RF27,reference,spinel,ZnFe2O4,8.4465,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 80 (ICSD 66128)
+RF28,reference,spinel,MgFe2O4,8.36,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 41 (ICSD 172279)
+RF29,reference,spinel,NiFe2O4,8.325,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 61 (ref 36 of the paper)
+RF30,reference,spinel,CoFe2O4,8.35,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 11 (ref 36 of the paper)
+RF31,reference,spinel,MnFe2O4,8.511,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 49 (ICSD 28517)
+RF32,reference,spinel,Fe3O4,8.394,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 25 FeFe2O4 (ref 36 of the paper)
+RF33,reference,spinel,Co3O4,8.0835,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 9 CoCo2O4 (ref 36 of the paper)
+RF34,reference,spinel,MgGa2O4,8.28,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 42 (ICSD 37359)
+RF35,reference,spinel,ZnGa2O4,8.3342,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 81 (ICSD 81105)
+RF36,reference,spinel,NiGa2O4,8.258,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 62 (ICSD 27903)
+RF37,reference,spinel,CoGa2O4,8.3229,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 12 (ICSD 77744)
+RF38,reference,spinel,Mg2TiO4,8.445,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 74 TiMg2O4 (ref 36 of the paper)
+RF39,reference,spinel,Zn2TiO4,8.487,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 76 TiZn2O4 (ref 36 of the paper)
+RF40,reference,spinel,Fe2TiO4,8.521,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 73 TiFe2O4 (ICSD 18186)
+RF41,reference,spinel,Mn2TiO4,8.6806,,Fd-3m,single,,arXiv:1401.6631,Table 1 row 75 TiMn2O4 (ICSD 75377)
+RF42,reference,pyrochlore,La2Zr2O7,10.8019,,Fd-3m,single,solid state,10.1038/s41598-017-12544-8,text (XRD Rietveld)
+RF43,reference,pyrochlore,Nd2Zr2O7,10.6911,,Fd-3m,single,solid state,10.1038/s41598-017-12544-8,text (XRD Rietveld)
+RF44,reference,pyrochlore,Sm2Zr2O7,10.5753,,Fd-3m,single,solid state,10.1038/s41598-017-12544-8,text (XRD Rietveld)
+RF45,reference,pyrochlore,Eu2Zr2O7,10.5533,,Fd-3m,single,solid state,10.1038/s41598-017-12544-8,text (XRD Rietveld)
+RF46,reference,perovskite,LaFeO3,,5.55531;5.5602;7.85114,Pbnm,single,solid state,http://shura.shu.ac.uk/18581/,Table 1 (J. Phys.: Condens. Matter 30(10) 2018)
+RF47,reference,perovskite,NdFeO3,,5.45509;5.57756;7.76423,Pbnm,single,solid state,http://shura.shu.ac.uk/18581/,Table 1 (J. Phys.: Condens. Matter 30(10) 2018)
+RF48,reference,perovskite,SmFeO3,,5.40201;5.59063;7.71054,Pbnm,single,solid state,http://shura.shu.ac.uk/18581/,Table 1 (J. Phys.: Condens. Matter 30(10) 2018)
+RF49,reference,perovskite,EuFeO3,,5.37715;5.59319;7.68806,Pbnm,single,solid state,http://shura.shu.ac.uk/18581/,Table 1 (J. Phys.: Condens. Matter 30(10) 2018)
+RF50,reference,perovskite,GdFeO3,,5.35188;5.59788;7.67091,Pbnm,single,solid state,http://shura.shu.ac.uk/18581/,Table 1 (J. Phys.: Condens. Matter 30(10) 2018)
