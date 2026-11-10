@@ -8,7 +8,10 @@ exported trees, once with app/heo_engine.js under node — and fails if the two 
 disagree by more than the tolerance. It also fails if the exported trees do not
 reproduce the probabilities frozen in the probe by scikit-learn at export time
 (tools/train_model.py), and if the JavaScript formula parser (FX in heo_engine.js)
-reads any database formula differently from src/formula.py.
+reads any database formula differently from src/formula.py. Finally it compares the
+complete prediction — family, applicability domain, lattice parameter, powder pattern,
+computed thermodynamics — between src/predict.py and predict() of heo_engine.js, on every
+readable formula of the database: the command line and the page must give the same answer.
 
     python tools/parity_check.py            # rewrite QC/parity_check.txt
     python tools/parity_check.py --check    # verify only, exit 1 on mismatch
@@ -26,9 +29,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 import features  # noqa: E402
 import formula  # noqa: E402
+import predict  # noqa: E402
 
 TOL_JS = 1e-12      # Python vs JavaScript, same algorithm in two languages
 TOL_FROZEN = 1e-9   # exported trees vs the scikit-learn probabilities frozen in the probe
+TOL_PRED = 1e-9     # complete prediction (domain distance, lattice, pattern, thermo)
 
 
 def tree_value(nodes, x):
@@ -110,6 +115,63 @@ def formula_parity(elements):
     return len(texts), bad, worst
 
 
+def prediction_parity():
+    """Complete prediction, src/predict.py against predict() of heo_engine.js, on every
+    readable formula of the database and on the probe compositions. Both engines receive
+    the same data (Predictor.context()). Returns the number of compositions, the list of
+    discrete disagreements and the largest numerical gap per quantity."""
+    import csv
+    P = predict.Predictor()
+    fracs = []
+    with open(os.path.join(ROOT, "data", "heo_database.csv"), encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            try:
+                fracs.append(P.read(r["formula_text"])[0])
+            except predict.PredictionError:
+                pass
+    fracs += [p["frac"] for p in P.bundle["probe"]]
+    out = subprocess.run(["node", os.path.join(ROOT, "tools", "parity_js.mjs"), "predict"],
+                         input=json.dumps({"context": P.context(), "fracs": fracs}),
+                         capture_output=True, text=True, check=True)
+    classes = P.model["classes"]
+    src = {"geometric": "geo", "chgnet": "chgnet"}
+    gap = {"probs": 0.0, "ad": 0.0, "a": 0.0, "two_theta": 0.0, "intensity": 0.0, "dh": 0.0,
+           "density": 0.0}
+    bad = []
+
+    def worst(key, u, v):
+        gap[key] = max(gap[key], abs(u - v))
+    for frac, js in zip(fracs, json.loads(out.stdout)):
+        py = P.predict(frac)
+        name = "-".join(frac)
+        for i, c in enumerate(classes):
+            worst("probs", py["probabilities"][c], js["probs"][i])
+        worst("ad", py["ad_distance"], js["ad"])
+        lat, th = py["lattice"], py["thermo"]
+        ok = (py["family"] == js["top"] and py["in_domain"] == js["inDomain"]
+              and (lat is None) == (js["a"] is None)
+              and len(py["pattern"]) == len(js["pattern"])
+              and (th is None) == (js["thermo"] is None))
+        if ok and lat:
+            worst("a", lat["a"], js["a"])
+            ok = src[lat["source"]] == js["aSrc"]
+        if ok:
+            for u, v in zip(py["pattern"], js["pattern"]):
+                worst("two_theta", u["two_theta"], v["tt"])
+                worst("intensity", u["intensity"], v["I"])
+                ok = ok and u["hkl"] == v["hkl"]
+        if ok and th:
+            t = js["thermo"]
+            ok = th["covered"] == t["covered"] and th["missing"] == t["missing"]
+            if ok and th["covered"]:
+                worst("dh", th["dh_ox_eV_per_O"], t["dh"])
+                worst("dh", th["p_rocksalt"], t["pRocksalt"])
+                ok = th["direct"] == t["direct"] and th["verdict"] == t["verdict"]
+        if not ok:
+            bad.append(name)
+    return len(fracs), bad, gap
+
+
 def max_abs(a, b):
     return max(abs(u - v) for ra, rb in zip(a, b) for u, v in zip(ra, rb))
 
@@ -121,6 +183,7 @@ def main(check=False):
     py_probs, py_feats = python_side(bundle, elements)
     js = js_side()
     n_formulas, formula_mismatch, d_formula = formula_parity(elements)
+    n_pred, pred_mismatch, gap = prediction_parity()
     d_probs = max_abs(py_probs, js["probs"])
     d_feats = max_abs(py_feats, js["feats"])
     # the probe stores probabilities in display order (classes_order), the model emits
@@ -145,6 +208,13 @@ def main(check=False):
         f"analyseur de formules, {n_formulas} formules (base + cas de test) : "
         f"{len(formula_mismatch)} ensemble(s) de cations differents, "
         f"ecart maximal de fraction {d_formula:.3e} (tolerance {TOL_JS:.0e})",
+        f"prediction complete, src/predict.py vs heo_engine.js, {n_pred} compositions "
+        f"(base + probe) : {len(pred_mismatch)} desaccord(s) de famille, de domaine, de "
+        f"modele de maille ou d'indices hkl",
+        f"  ecarts maximaux : probabilite {gap['probs']:.1e} (tolerance {TOL_JS:.0e}), "
+        f"distance au domaine {gap['ad']:.1e}, maille {gap['a']:.1e} A,",
+        f"  position des pics {gap['two_theta']:.1e} deg, intensite {gap['intensity']:.1e}, "
+        f"thermodynamique {gap['dh']:.1e} (tolerance {TOL_PRED:.0e})",
         "",
         "genere par tools/parity_check.py",
     ]
@@ -156,6 +226,11 @@ def main(check=False):
                                  f"{d_frozen:.3e}: rerun tools/train_model.py"),
         (not formula_mismatch, "formula parser differs on: " + "; ".join(formula_mismatch[:5])),
         (d_formula <= TOL_JS, f"formula fractions differ by {d_formula:.3e}"),
+        (not pred_mismatch, "src/predict.py and heo_engine.js disagree on: "
+                            + "; ".join(pred_mismatch[:5])),
+        (gap["probs"] <= TOL_JS, f"full-prediction probabilities differ by {gap['probs']:.3e}"),
+        (max(gap[k] for k in gap if k != "probs") <= TOL_PRED,
+         "full prediction differs: " + ", ".join(f"{k} {v:.3e}" for k, v in gap.items())),
     ) if not ok]
 
     path = os.path.join(ROOT, "QC", "parity_check.txt")

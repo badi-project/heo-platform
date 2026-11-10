@@ -23,10 +23,12 @@ from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
+sys.path.insert(0, os.path.join(ROOT, "src"))
 import sync_app  # noqa: E402
+# the thermo payload and the lattice-model error are shared with the Python predictor
+from predict import LATTICE_MAE_PCT, thermo_payload  # noqa: E402
 
 HTML = os.path.join(ROOT, "app", "heo_designer.html")
-LATTICE_MAE_PCT = 1.93
 REPORT_FEATS = ["s_config", "delta_r", "delta_X_rel", "mean_ox", "redox_flex", "r_A", "r_B",
                 "goldschmidt_t", "octahedral_factor", "r_shannon_VI_mean"]
 DESC_FR = {
@@ -84,60 +86,6 @@ def screening_stats():
     cap = int(re.search(r"au plus (\d+) par famille", rep).group(1))
     return {"total": total, "quinaries": quin, "senaries": sen, "novel_in_domain": novel_in,
             "pool": pool, "cap": cap}
-
-
-def thermo_payload():
-    """Step-1/2 results for the page (thermo/): the per-cation surrogates and the values
-    computed directly with CHGNet. None when thermo/ has not been run."""
-    d = os.path.join(ROOT, "data", "thermo")
-    if not os.path.exists(os.path.join(d, "oxidation_surrogate.json")):
-        return None
-    s = read_json("data", "thermo", "oxidation_surrogate.json")
-
-    def covered(block):
-        # a cation seen in a single calculated system has an undetermined weight; some
-        # cations are outside the chemistry the descriptor describes (not_covered)
-        n = block.get("n_systems_per_element") or [2] * len(block["elements"])
-        out = block.get("not_covered") or {}
-        return [e for e, k in zip(block["elements"], n) if k >= 2 and e not in out]
-    out = {"ox": {"elements": s["elements"], "cov": covered(s), "h": s["h_eV_per_O"],
-                  "mae": s["loo_mae"],
-                  "b0": s["logistic"]["intercept"], "b1": s["logistic"]["slope"],
-                  "switch": s["logistic"]["switch_eV_per_O"], "auc": s["auc_system"],
-                  "n": s["n_systems"],
-                  "lco_comp": s["leave_cation_out"]["composition"],
-                  "lco_switch": s["leave_cation_out"]["aiguillage"]},
-           "lat": None, "systems": {}}
-    lat = s.get("spinel_lattice")
-    if lat:
-        out["lat"] = {"elements": lat["elements"], "cov": covered(lat), "a": lat["a_i_A"],
-                      "k": lat["k"], "mae_pct": lat["measured_mae_pct"]}
-    k = read_json("data", "thermo", "spinel_calibration.json")["k"]
-    for r in read_csv("data", "thermo", "oxidation_descriptor.csv"):
-        out["systems"][r["system"]] = {"dh": round(float(r["dH_ox_corr_eV_per_O"]), 3),
-                                       "a": round(float(r["a_sp_A"]) * k, 3),
-                                       "frac": json.loads(r["frac"])}
-    bench = read_csv("data", "thermo", "rocksalt_benchmark.csv")
-    if bench:
-        agg = {}
-        for r in bench:
-            agg.setdefault(r["system"], []).append((float(r["dH_mix_meV_atom"]),
-                                                    float(r["sigma_bonds_A"])))
-        th = read_json("data", "thermo", "rocksalt_thresholds.json")
-        th_h, th_s = th["dH_mix_meV_atom"], th["sigma_A"]
-        out["rs_threshold"] = {"dh": th_h, "sigma": th_s}
-        for sysk, v in agg.items():
-            h_ = sum(x for x, _ in v) / len(v)
-            s_ = sum(y for _, y in v) / len(v)
-            e = out["systems"].setdefault(sysk, {})
-            e["rs"] = {"dh": round(h_, 1), "sigma": round(s_, 3),
-                       "single": bool(h_ <= th_h + 1e-9 and s_ <= th_s + 1e-9)}
-    if os.path.exists(os.path.join(d, "vacancy_heo.csv")):
-        for r in read_csv("data", "thermo", "vacancy_heo.csv"):
-            e = out["systems"].setdefault(r["system"], {})
-            e["ev"] = round(float(r["E_vac_mean_eV"]), 2)
-            e["evmin"] = round(float(r["E_vac_min_eV"]), 2)
-    return out
 
 
 def thermo_fill(th):

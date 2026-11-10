@@ -190,16 +190,8 @@ function render(){
     ? `Prédiction peu tranchée : ${PROTO_FR[r.top]} et ${PROTO_FR[second.c]} sont à moins de 25 points. Attendez-vous à un mélange de phases ou à une sensibilité forte à la température de calcination.`
     : `Marge de ${(100*(r.order[0].p-second.p)).toFixed(0)} points sur la deuxième hypothèse (${PROTO_FR[second.c]}).`;
 
-  /* spinel of cations covered by thermo/: the CHGNet lattice parameter, calibrated on
-     binary spinels (0.4 % on measured HEO spinels), replaces the geometric model (1.9 %) */
-  let aPct = LATTICE.mae_pct, aSrc = "geo";
-  if (r.top === "spinel" && THERMO && THERMO.lat && els.every(e => (THERMO.lat.cov || THERMO.lat.elements).includes(e))){
-    const L = THERMO.lat;
-    r.a = L.k * els.reduce((acc, e) => acc + frac[e] * L.a[L.elements.indexOf(e)], 0);
-    aPct = L.mae_pct; aSrc = "chgnet";
-    r.aTol = r.a * aPct / 100;
-    r.pattern = simulatePattern(r.top, frac, r.a, 80);
-  }
+  /* r.aSrc tells which lattice model predict() used (heo_engine.js) */
+  const aPct = r.aPct, aSrc = r.aSrc;
   $("lattnote").textContent = aSrc === "chgnet"
     ? `Potentiel CHGNet, modèle additif par cation calibré sur 17 spinelles binaires de maille connue. `
       + `Écart absolu moyen sur les spinelles HEO mesurés : ${fmt(aPct, 2)} % (modèle géométrique : ${fmt(LATTICE.mae_pct, 1)} %).`
@@ -215,7 +207,7 @@ function render(){
 
   $("desc").innerHTML = REPORT_FEATS.map(n=>
     `<dt>${DESC_FR[n]||n}</dt><dd>${fmt(r.desc[n], DESC_DEC[n]??3)}</dd>`).join("");
-  renderThermo(frac, els, r.inDomain, r.top);
+  renderThermo(r);
 
   if (r.pattern.length){
     const tol = tt => { const th=tt*Math.PI/360; return Math.abs(2*Math.tan(th)*(aPct/100))*180/Math.PI; };
@@ -238,40 +230,27 @@ function render(){
 }
 
 /* ---------- computed thermodynamics (thermo/, CHGNet) ---------- */
-function renderThermo(frac, els, inDomain, top){
+function renderThermo(r){
   const card = $("thermocard");
-  if (!THERMO){ card.className = "hide"; return; }
+  if (!THERMO || !r.thermo){ card.className = "hide"; return; }
   card.className = "card";
-  const ox = THERMO.ox, key = els.slice().sort().join("-");
-  const h = Object.fromEntries(ox.elements.map((e, i) => [e, ox.h[i]]));
-  const cov = ox.cov || ox.elements;
-  const missing = els.filter(e => !cov.includes(e));
+  const ox = THERMO.ox, th = r.thermo, inDomain = r.inDomain;
+  const cov = ox.cov || ox.elements, missing = th.missing;
   const pctFR = v => (100 * v).toFixed(0) + " %";
-  if (missing.length){
+  if (!th.covered){
     $("thermo").innerHTML = `<dt>hors du calcul</dt><dd>cation${missing.length > 1 ? "s" : ""} non couvert${missing.length > 1 ? "s" : ""} : ${missing.join(", ")}</dd>`;
     $("thermonote").textContent = `Le calcul CHGNet couvre les cations ${cov.join(" ")} — `
       + "ceux d'au moins deux systèmes rocksalt ou spinelle calculés. Ailleurs, seule la prédiction statistique s'applique.";
     return;
   }
-  const s = els.reduce((a, e) => a + frac[e], 0);
-  const dh = els.reduce((a, e) => a + frac[e] / s * h[e], 0);
-  const exact = THERMO.systems[key];
-  /* the value computed directly with CHGNet is used when it was computed for this very
-     composition (fractions within 0.02), the additive summary otherwise */
-  const direct = exact && exact.dh !== undefined && exact.frac
-    && els.every(e => Math.abs((exact.frac[e] || 0) - frac[e] / s) < 0.02);
-  const dhUse = direct ? exact.dh : dh;
-  const p = 1 / (1 + Math.exp(-(ox.b0 + ox.b1 * dhUse)));
-  const verdict = p > 0.7 ? "plutôt rocksalt" : p < 0.3 ? "plutôt spinelle" : "zone frontière";
-  const rows = direct
-    ? [`<dt>oxydation rocksalt → spinelle</dt><dd>${fmt(exact.dh, 2)} eV/O, calcul direct de cette composition</dd>`]
-    : [`<dt>oxydation rocksalt → spinelle</dt><dd>${fmt(dh, 2)} ± ${fmt(ox.mae, 2)} eV/O (modèle additif)</dd>`];
+  const exact = th.system, p = th.pRocksalt;
+  const verdict = {rocksalt: "plutôt rocksalt", spinel: "plutôt spinelle", boundary: "zone frontière"}[th.verdict];
+  const rows = th.direct
+    ? [`<dt>oxydation rocksalt → spinelle</dt><dd>${fmt(th.dh, 2)} eV/O, calcul direct de cette composition</dd>`]
+    : [`<dt>oxydation rocksalt → spinelle</dt><dd>${fmt(th.dh, 2)} ± ${fmt(ox.mae, 2)} eV/O (modèle additif)</dd>`];
   rows.push(`<dt>dans l'air, la littérature rapporte</dt><dd>${verdict} (rocksalt ${pctFR(p)})</dd>`);
-  if (top === "spinel" && THERMO.lat && els.every(e => (THERMO.lat.cov || THERMO.lat.elements).includes(e))){
-    const a = THERMO.lat.k * els.reduce((acc, e) =>
-      acc + frac[e] / s * THERMO.lat.a[THERMO.lat.elements.indexOf(e)], 0);
-    rows.push(`<dt>paramètre <i>a</i> si spinelle</dt><dd>${fmt(a, 3)} Å ± ${fmt(THERMO.lat.mae_pct, 1)} %</dd>`);
-  }
+  if (r.aSrc === "chgnet")
+    rows.push(`<dt>paramètre <i>a</i> si spinelle</dt><dd>${fmt(r.a, 3)} Å ± ${fmt(THERMO.lat.mae_pct, 1)} %</dd>`);
   if (exact && exact.rs)
     rows.push(`<dt>rocksalt : mélange, désordre</dt><dd>${fmt(exact.rs.dh, 1)} meV/atome, σ ${fmt(exact.rs.sigma, 3)} Å — `
       + (exact.rs.single ? "dans les seuils du monophasé" : "hors des seuils : multiphasé attendu") + `</dd>`);

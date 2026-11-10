@@ -606,20 +606,63 @@ const FX = (() => {
   return { parse, cationFractions, normalize };
 })();
 
+/* ---------- computed thermodynamics (thermo/, CHGNet surrogates) ---------- */
+/* These two functions used to live in heo_ui.js. They are part of the prediction, not
+   of its display: src/predict.py mirrors them and tools/parity_check.py compares the
+   two, so the page, the batch table and the command line give the same numbers. */
+const hasThermo = () => typeof THERMO !== "undefined" && !!THERMO;
+
+/* spinel made of cations covered by thermo/: additive per-cation model fitted on CHGNet
+   cells and calibrated on binary spinels of known lattice parameter; null otherwise */
+function thermoLattice(proto, frac) {
+  if (proto !== "spinel" || !hasThermo() || !THERMO.lat) return null;
+  const L = THERMO.lat, cov = L.cov || L.elements, els = Object.keys(frac).sort();
+  if (!els.every(e => cov.includes(e))) return null;
+  return L.k * wsum(els.map(e => L.a[L.elements.indexOf(e)]), els.map(e => frac[e]));
+}
+
+/* oxidation enthalpy rocksalt -> spinel (3 MO + O -> M3O4) and the rocksalt / spinel
+   tendency in air it implies. The value computed directly with CHGNet is used when it
+   was computed for this very composition (fractions within 0.02), the additive
+   per-cation summary otherwise. */
+function thermoOx(frac) {
+  if (!hasThermo()) return null;
+  const ox = THERMO.ox, cov = ox.cov || ox.elements, els = Object.keys(frac).sort();
+  const missing = els.filter(e => !cov.includes(e));
+  if (missing.length) return { covered: false, missing };
+  const dhAdd = wsum(els.map(e => ox.h[ox.elements.indexOf(e)]), els.map(e => frac[e]));
+  const exact = THERMO.systems[els.join("-")] || null;
+  const direct = !!(exact && exact.dh !== undefined && exact.frac
+    && els.every(e => Math.abs((exact.frac[e] || 0) - frac[e]) < 0.02));
+  const dh = direct ? exact.dh : dhAdd;
+  const p = 1 / (1 + Math.exp(-(ox.b0 + ox.b1 * dh)));
+  return { covered: true, missing, dh, direct, pRocksalt: p,
+    verdict: p > 0.7 ? "rocksalt" : p < 0.3 ? "spinel" : "boundary", system: exact };
+}
+
 /* ---------- full prediction ---------- */
-function predict(frac) {
+/* frac: {element: cation fraction}, summing to 1. Keys are put in alphabetical order
+   first so that the result does not depend on the order the cations were clicked. */
+function predict(frac0) {
+  const frac = {};
+  for (const e of Object.keys(frac0).sort()) frac[e] = frac0[e];
   const x = featurize(frac);
   const raw = rawPredict(MODEL, x);
   const probs = softmax(raw, MODEL.temperature);
   const order = MODEL.classes.map((c, i) => ({ c, p: probs[i] })).sort((a, b) => b.p - a.p);
   const d = adDistance(x);
   const top = order[0].c;
-  const a = predictA(top, frac);
+  /* lattice parameter: geometric model (Shannon radii), replaced for covered spinels by
+     the CHGNet model, four times more accurate on measured HEO spinels */
+  let a = predictA(top, frac), aPct = LATTICE.mae_pct, aSrc = a ? "geo" : null;
+  const aTh = thermoLattice(top, frac);
+  if (aTh !== null) { a = aTh; aPct = THERMO.lat.mae_pct; aSrc = "chgnet"; }
   return {
-    x, probs, order, top,
+    frac, x, probs, order, top,
     adDistance: d, inDomain: d <= AD.threshold,
-    a, aTol: a ? a * LATTICE.mae_pct / 100 : null,
+    a, aPct, aSrc, aTol: a ? a * aPct / 100 : null,
     pattern: a ? simulatePattern(top, frac, a, 80) : [],
+    thermo: thermoOx(frac),
     desc: Object.fromEntries(REPORT_FEATS.map(n => [n, x[FEATNAMES.indexOf(n)]])),
   };
 }
