@@ -22,8 +22,9 @@ entraîné, le calcul des descripteurs et la simulation de diffractogramme.
 | Pérovskite ou non | **opérationnel** | v1.1 : 98,5 % (Goldschmidt optimisé : 94,6 %) |
 | Rocksalt ou spinelle, cation inconnu du modèle | **complément, hors domaine** | 78,6 % → 81,8 % avec le calcul CHGNet ; aucun gain dans le domaine — §11.3 |
 | Monophasage des rocksalt (Sivak et al.) | **démonstration, 8 systèmes** | 7 / 8 en un-contre-tous — §11.1 |
-| Paramètre de maille des spinelles | **opérationnel, ± 0,5 %** | 0,53 % sur 4 spinelles HEO mesurés — §11.4 |
-| Paramètre de maille, autres familles | **opérationnel, ± 2 %** | écart absolu moyen 1,9 % |
+| Paramètre de maille des spinelles (CHGNet) | **opérationnel, ± 0,5 %** | 0,35 % sur 13 spinelles HEO mesurés — §5, §11.4 |
+| Paramètre de maille, cinq familles (rayons de Shannon) | **opérationnel, ± 0,2 à 1,2 % selon la famille** | 0,53 % sur 63 HEO mesurés (v1.0 : 1,99 %) ; rocksalt 1,18 %, critère de 1 % non atteint — §5 |
+| Correction apprise de la maille | **essayée, non intégrée** | gain hors échantillon de 0,04 point, sous le seuil de 0,1 — §5 |
 | Énergie de lacune d'oxygène | **descripteur validé, activité non prédite** | suit la réductibilité mesurée de 9 oxydes binaires (corrélation de rang 0,93) — §12.2 |
 | Proposition de synthèses informatives | **opérationnel** | 27 % de synthèses en moins que le hasard sur un banc rétrospectif (critère 25 %) — §13 |
 | Diffractogramme de poudre simulé | **opérationnel** | positions et intensités validées contre `pymatgen` |
@@ -177,6 +178,68 @@ seul argument sérieux qu'un tel modèle puisse produire à ce stade.
 calibré sur 17 spinelles binaires : l'échantillon interne tombe à +0,24 %, et la
 confrontation porte sur quatre spinelles HEO mesurés au lieu d'un.
 
+### 5.1 Modèle de maille actuel : rayons par valence et coordinence
+
+Ce qui précède décrit le modèle de la v1.0, conservé comme référence de comparaison
+(`data/reference/lattice_model.json`). Il a été remplacé, pour trois raisons : sa table ne
+portait qu'une valence par élément, il était recalé sur un composé par prototype, et son
+erreur n'avait été mesurée que sur cinq oxydes, aucun pérovskite, fluorine ou pyrochlore.
+
+**Données.** 132 mailles mesurées à température ambiante, 32 sources, chacune citée ligne
+par ligne avec l'endroit où se trouve la valeur (`data/reference/lattice_measured.csv`) :
+84 mesures d'oxydes à haute entropie des cinq familles, soit 63 compositions uniques en
+phase pure, et 48 oxydes simples de référence. Une composition mesurée plusieurs fois
+compte une fois, à la médiane de ses mesures. Deux laboratoires diffèrent de 0,02 à
+0,14 % en moyenne sur une même composition, mais jusqu'à 1,5 % d'étendue pour
+(CoCrFeMnNi)₃O₄ : c'est le plancher (`QC/lattice_dataset.txt`).
+
+**Modèle** (`src/lattice.py`, et `latticeModel()` dans la page, identique sur 6 492 cas).
+Rayons de Shannon (1976) à la valence, à la coordinence et au spin de chaque site
+(`data/reference/shannon_radii.json`). Valences par électroneutralité, en oxydant les
+cations rédox dans un ordre fixé ; sites par classe chimique (pérovskite, pyrochlore) ou
+par préférence tétraédrique (spinelle), échelle qui redonne l'inversion connue des
+spinelles binaires. Une relation publiée par prototype : contact anion-cation (rocksalt),
+contact avec les lacunes d'oxygène en sphères dures (fluorine, Chatzichristodoulou et al.
+2015), Ubic 2007 (pérovskite), O'Neill et Navrotsky 1983 (spinelle), Mouta et al. 2013
+(pyrochlore). Aucune constante n'est ajustée.
+
+**Validation**, selon un protocole commité avant le calcul
+(`data/reference/lattice_protocol.md`, `QC/lattice_validation.txt`) :
+
+| Famille | v1.0 | Modèle actuel | Critère 1 % |
+|---|---|---|---|
+| Toutes (63) | 1,99 % | **0,53 %** | — |
+| Rocksalt (10) | 2,39 % | 1,18 % | non atteint |
+| Spinelle (14) | 2,13 % | 0,70 % | atteint |
+| Fluorine (20) | 1,37 % | 0,27 % | atteint, validation non aveugle |
+| Pérovskite (9) | 2,39 % | 0,48 % | atteint |
+| Pyrochlore (10) | 2,25 % | 0,23 % | atteint |
+
+Sur les références, l'écart reste sous 0,45 % dans chaque famille (porte du protocole :
+1 %). Trois réserves :
+
+- **Rocksalt.** Les compositions au Sr²⁺, K⁺ et Na⁺ ont la maille de la matrice sans ce
+  cation ; le modèle, comme la loi de Vegard, prédit une dilatation que la mesure ne montre
+  pas (+4,6 % pour Sr). Une incorporation partielle est probable. Le modèle n'est pas
+  corrigé ; la prédiction l'avertit.
+- **Fluorine.** La correction des lacunes d'oxygène a été ajoutée après lecture des
+  résidus (amendement A1 du protocole) : sans elle, 1,40 %. Cette validation n'est donc
+  pas aveugle.
+- **Couverture.** 9 pérovskites, dont 6 d'un même article ; 9 pyrochlores sur 10 sont des
+  zirconates.
+
+Pour les 13 spinelles dont CHGNet couvre tous les cations, sa maille (0,35 %) reste
+préférée au modèle géométrique (0,49 %) ; c'est une sélection de modèle, déclarée comme
+telle. L'incertitude affichée par la plateforme est l'écart moyen de la famille.
+
+**Correction apprise : essayée, non intégrée** (`tools/learn_lattice_correction.py`,
+`QC/lattice_correction.txt`). Trois régresseurs du résidu — biais par famille, ridge,
+gradient boosting — ont été jugés hors échantillon, un groupe de sources retiré à chaque
+tour, le candidat étant choisi par validation croisée interne. Résultat : 0,53 → 0,49 %,
+soit 0,04 point pour 0,1 exigé, et la fluorine se dégrade de 0,15 point. Avec 63
+compositions venant de 20 groupes de sources, il n'y a pas de quoi apprendre plus qu'un
+biais par famille.
+
 ## 6. Pourquoi aucune propriété catalytique n'est prédite
 
 Ce n'est pas un manque de temps, c'est une décision. Sur les 1133 échantillons, un gap
@@ -293,7 +356,9 @@ Depuis la v1.1, la procédure est outillée :
    maille et la surface BET sont dans les sections expérimentales, jamais dans les résumés.
    C'est ce qui débloquerait à la fois la confusion rocksalt ↔ spinelle et un vrai
    régresseur de maille. *Toujours ouvert* : le §11.3 montre que la température, quand
-   le résumé la donne, apporte bien l'information manquante.
+   le résumé la donne, apporte bien l'information manquante. Pour la maille, 132 valeurs
+   ont été relevées à la main dans les textes intégraux et leurs annexes (§5.1) ; c'est
+   assez pour valider un modèle physique, pas pour en apprendre un.
 2. **Descripteur physique calculé** par potentiel interatomique appris. *Fait* : §11
    (thermodynamique de phase, maille) et §12 (lacunes d'oxygène).
 3. **Boucle d'apprentissage actif.** *Faite* : §13, branchée sur `data/lab_results.csv`

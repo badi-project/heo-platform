@@ -6,8 +6,9 @@ Chaîne complète allant de la récolte de littérature à une application de de
 autonome : extraction d'une base de données d'oxydes à haute entropie (HEO) à partir
 de 2 189 notices bibliographiques, stœchiométrie relue dans les formules écrites,
 134 descripteurs compositionnels, classifieur de famille structurale validé par groupes
-chimiques et dans le temps, modèle géométrique de paramètre de maille, simulation de
-diffractogramme de poudre, et criblage de 739 222 compositions.
+chimiques et dans le temps, paramètre de maille calculé à partir des rayons de Shannon
+et validé sur 132 mailles mesurées sourcées, simulation de diffractogramme de poudre, et
+criblage de 739 222 compositions.
 
 ## Résultats principaux (v1.1)
 
@@ -112,6 +113,9 @@ Depuis l'étape « outil de travail » (voir le journal des modifications), la p
   prédictions et l'exporter ;
 - **des exports** : la prédiction (.csv), le profil de diffraction simulé (.xy), la liste
   des réflexions avec leurs distances interréticulaires ;
+- **le paramètre de maille** de la phase prédite, avec l'incertitude mesurée pour sa
+  famille (± 0,23 à 1,18 %) et ce que le calcul a supposé : valences, lacunes d'oxygène,
+  rayons estimés, et un avertissement pour les rocksalt à gros cation (Sr, K, Na) ;
 - **la densité théorique** (rayons X) de la phase prédite ;
 - **la confrontation à un diffractogramme mesuré** : le fichier (deux colonnes 2θ,
   intensité, ou .xrdml) est indexé sur chacun des cinq prototypes cubiques, la maille est
@@ -141,7 +145,10 @@ r["family"], r["probability"], r["in_domain"], r["lattice"]["a"], r["lattice"]["
 
 Les deux moteurs sont comparés à chaque commit sur les 1 272 compositions de la base et
 du jeu de contrôle, sur les lignes de tableau des 1 086 formules (caractère pour
-caractère) et sur l'indexation de sept motifs mesurés synthétiques (`QC/parity_check.txt`).
+caractère), sur l'indexation de sept motifs mesurés synthétiques, et sur le modèle de
+maille seul dans 6 492 cas — chaque composition sous chacun des cinq prototypes, plus les
+oxydes de référence : écart nul, remarques identiques au caractère près
+(`QC/parity_check.txt`).
 
 | Contrôle | Résultat | Rapport |
 |---|---|---|
@@ -176,7 +183,8 @@ thermo/     calculs par potentiel interatomique appris (CHGNet) et leurs analyse
 data/thermo/  résultats de ces calculs et références thermochimiques sourcées
 tools/      chaîne de production (voir ci-dessous), apprentissage actif et contrôles
 tests/      suite pytest exécutée en intégration continue
-QC/         rapports régénérés : nettoyage, entraînement, criblage, parité, audits
+QC/         rapports régénérés : nettoyage, entraînement, criblage, parité, audits,
+            maille, densité, affinement DRX
 ```
 
 | Fichier | Contenu |
@@ -232,6 +240,14 @@ publiés doivent être exactement la sortie de la chaîne.
   pondération équilibrée des classes. Trois validations : 20 plis groupés par système
   cationique ; temporelle (≤ 2024 → 2025-2027) ; chimie inédite (20 familles de systèmes
   retirées tour à tour). Probabilités calibrées par mise à l'échelle de température.
+- **Maille** : pas de régresseur. Rayons de Shannon (1976) à la valence et à la
+  coordinence de chaque site ; valences par électroneutralité dans un ordre fixé ; sites
+  par classe chimique (pérovskite, pyrochlore) ou préférence de site (spinelle) ; une
+  relation publiée par prototype — contact (rocksalt), contact avec lacunes en sphères
+  dures (fluorine), Ubic 2007 (pérovskite), O'Neill et Navrotsky 1983 (spinelle), Mouta et
+  al. 2013 (pyrochlore). Aucune constante ajustée. CHGNet pour les spinelles qu'il
+  couvre. Une correction apprise a été jugée hors échantillon et n'apporte pas assez
+  pour être intégrée.
 
 Le détail complet, les contrôles physiques et les pièges de portage sont dans
 [`docs/RAPPORT_plateforme_HEO.md`](docs/RAPPORT_plateforme_HEO.md).
@@ -250,9 +266,10 @@ Le détail complet, les contrôles physiques et les pièges de portage sont dans
   inégalement : 9 pérovskites (dont 6 d'un même article), 10 pyrochlores (9 zirconates).
   Les titanates, stannates et hafnates pyrochlores, les pérovskites à site A alcalin et
   toute composition éloignée de ces séries restent peu ou pas vérifiés.
-- **Rocksalt : critère de 1 % non atteint** (1,18 %). Les compositions contenant Sr²⁺ ou
-  K⁺ ont la maille de la matrice sans ce cation : le modèle prédit une dilatation que la
-  mesure ne montre pas (+4,6 % pour le strontium). La page le signale, sans corriger.
+- **Rocksalt : critère de 1 % non atteint** (1,18 %). Les compositions contenant Sr²⁺,
+  K⁺ ou Na⁺ ont la maille de la matrice sans ce cation : le modèle prédit une dilatation
+  que la mesure ne montre pas (+4,6 % pour Sr, +2,6 % pour K, +0,8 % pour Na). La page et
+  la ligne de commande le signalent, sans corriger.
 - **Fluorine : validation non aveugle.** La correction des lacunes d'oxygène a été ajoutée
   après la lecture des résidus (amendement A1 du protocole) ; sans elle, l'erreur est de
   1,40 %. Les fluorines au manganèse sont sous-estimées de 0,6 % (valence supposée).
